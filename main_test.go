@@ -318,8 +318,8 @@ func Test_userService_Register(t *testing.T) {
 
 				// Verify claims
 				if claims, ok := token.Claims.(jwt.MapClaims); ok {
-					if claims["username"] != float64(1) {
-						t.Errorf("Expected token claim ID to be 1, got %v", claims["id"])
+					if claims["id"] != float64(1) {
+						t.Errorf("Expected token claim ID to be 1, got %q", claims["id"])
 					}
 				} else {
 					t.Errorf("Failed to parse token claims")
