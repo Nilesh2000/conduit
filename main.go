@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net/http"
 	"time"
 )
 
@@ -91,3 +92,9 @@ type UserResponse struct {
 }
 
 type ErrorResponse = GenericErrorModel
+
+func RegisterHandler(userService UserService) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+	}
+}

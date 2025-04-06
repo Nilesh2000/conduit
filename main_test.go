@@ -70,7 +70,7 @@ func TestRegister(t *testing.T) {
 
 			rr := httptest.NewRecorder()
 
-			handler := Register(mockUserService)
+			handler := RegisterHandler(mockUserService)
 			handler.ServeHTTP(rr, req)
 
 			if got, want := rr.Code, tt.expectedStatus; got != want {
