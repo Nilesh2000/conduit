@@ -186,7 +186,7 @@ func TestUserHandler_Register(t *testing.T) {
 				}
 			}`,
 			mockRegister: func(username, email, password string) (*User, error) {
-				return nil, ErrInternalServerError
+				return nil, ErrInternalServer
 			},
 			expectedStatus: http.StatusInternalServerError,
 			expectedResponse: ErrorResponse{

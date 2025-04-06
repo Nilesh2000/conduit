@@ -109,7 +109,7 @@ type UserService interface {
 
 var ErrUsernameTaken = errors.New("username already taken")
 var ErrEmailTaken = errors.New("email already registered")
-var ErrInternalServerError = errors.New("internal server error")
+var ErrInternalServer = errors.New("internal server error")
 
 type RegisterRequest struct {
 	User struct {
