@@ -28,7 +28,7 @@ func TestUserHandler_Register(t *testing.T) {
 		expectedResponse interface{}
 	}{
 		{
-			name: "Valid Registration",
+			name: "Valid registration",
 			requestBody: `{
 				"user": {
 					"username": "testuser",
@@ -96,7 +96,7 @@ func TestUserHandler_Register(t *testing.T) {
 			},
 		},
 		{
-			name: "Invalid Email",
+			name: "Invalid email",
 			requestBody: `{
 					"user": {
 						"username": "testuser",
