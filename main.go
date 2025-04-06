@@ -94,6 +94,7 @@ type UserService interface {
 
 var ErrUsernameTaken = errors.New("Username already taken")
 var ErrEmailTaken = errors.New("Email already registered")
+var ErrInternalServerError = errors.New("Internal server error")
 
 type RegisterRequest struct {
 	User struct {
@@ -169,7 +170,18 @@ func (h *UserHandler) Register() http.HandlerFunc {
 			return
 		}
 
-		user, _ := h.userService.Register(req.User.Username, req.User.Email, req.User.Password)
+		user, err := h.userService.Register(req.User.Username, req.User.Email, req.User.Password)
+		if err != nil {
+			switch {
+			case errors.Is(err, ErrUsernameTaken):
+				h.respondWithError(w, http.StatusUnprocessableEntity, []string{"Username already taken"})
+			case errors.Is(err, ErrEmailTaken):
+				h.respondWithError(w, http.StatusUnprocessableEntity, []string{"Email already registered"})
+			default:
+				h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+			}
+			return
+		}
 
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(UserResponse{
