@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -127,7 +126,7 @@ type UserResponse struct {
 type ErrorResponse = GenericErrorModel
 
 type userService struct {
-	db *sql.DB
+	userRepository UserRepository
 }
 
 type UserHandler struct {
