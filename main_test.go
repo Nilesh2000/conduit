@@ -19,7 +19,7 @@ func (m *MockUserService) Register(username, email, password string) (*User, err
 	return m.RegisterFunc(username, email, password)
 }
 
-func TestRegister(t *testing.T) {
+func TestUserHandler_Register(t *testing.T) {
 	tests := []struct {
 		name             string
 		requestBody      string
@@ -114,7 +114,7 @@ func TestRegister(t *testing.T) {
 
 			rr := httptest.NewRecorder()
 
-			handler := userHandler.RegisterHandler(mockUserService)
+			handler := userHandler.Register(mockUserService)
 			handler.ServeHTTP(rr, req)
 
 			if got, want := rr.Code, tt.expectedStatus; got != want {
