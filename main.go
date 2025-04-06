@@ -85,3 +85,9 @@ type GenericErrorModel struct {
 type UserService interface {
 	Register(username, email, password string) (*User, error)
 }
+
+type UserResponse struct {
+	User User `json:"user"`
+}
+
+type ErrorResponse = GenericErrorModel
