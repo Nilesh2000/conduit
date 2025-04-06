@@ -199,11 +199,11 @@ func (h *UserHandler) Register() http.HandlerFunc {
 		if err != nil {
 			switch {
 			case errors.Is(err, ErrUsernameTaken):
-				h.respondWithError(w, http.StatusUnprocessableEntity, []string{"Username already taken"})
+				h.respondWithError(w, http.StatusUnprocessableEntity, []string{"username already taken"})
 			case errors.Is(err, ErrEmailTaken):
-				h.respondWithError(w, http.StatusUnprocessableEntity, []string{"Email already registered"})
+				h.respondWithError(w, http.StatusUnprocessableEntity, []string{"email already registered"})
 			default:
-				h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+				h.respondWithError(w, http.StatusInternalServerError, []string{"internal server error"})
 			}
 			return
 		}
