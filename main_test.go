@@ -7,8 +7,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/golang-jwt/jwt"
 )
 
@@ -203,10 +203,7 @@ func TestUserHandler_Register(t *testing.T) {
 				RegisterFunc: tt.mockRegister,
 			}
 
-			userHandler := &UserHandler{
-				userService: mockUserService,
-				Validate:    validator.New(),
-			}
+			userHandler := NewUserHandler(mockUserService)
 
 			req := httptest.NewRequest(http.MethodPost, "/api/users", strings.NewReader(tt.requestBody))
 			req.Header.Set("Content-Type", "application/json")
