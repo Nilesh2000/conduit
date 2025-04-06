@@ -15,6 +15,8 @@ type MockUserService struct {
 	RegisterFunc func(username, email, password string) (*User, error)
 }
 
+var _ UserService = (*MockUserService)(nil)
+
 func (m *MockUserService) Register(username, email, password string) (*User, error) {
 	return m.RegisterFunc(username, email, password)
 }
