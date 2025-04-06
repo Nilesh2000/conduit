@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/golang-jwt/jwt"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type LoginUser struct {
@@ -148,7 +150,45 @@ func NewUserService(userRepository UserRepository, jwtSecret string, jwtExpirati
 }
 
 func (s *userService) Register(username, email, password string) (*User, error) {
-	return nil, nil
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, ErrInternalServer
+	}
+
+	repoUser, err := s.userRepository.CreateUser(username, email, string(hashedPassword))
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrDuplicateUsername):
+			return nil, ErrUsernameTaken
+		case errors.Is(err, ErrDuplicateEmail):
+			return nil, ErrEmailTaken
+		default:
+			return nil, ErrInternalServer
+		}
+	}
+
+	token, err := s.generateToken(repoUser.ID)
+	if err != nil {
+		return nil, ErrInternalServer
+	}
+
+	return &User{
+		Email:    repoUser.Email,
+		Token:    token,
+		Username: repoUser.Username,
+		Bio:      repoUser.Bio,
+		Image:    repoUser.Image,
+	}, nil
+}
+
+func (s *userService) generateToken(userID int64) (string, error) {
+	claims := jwt.MapClaims{
+		"id":  userID,
+		"exp": time.Now().Add(s.jwtExpiration).Unix(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString([]byte(s.jwtSecret))
 }
 
 type UserHandler struct {
