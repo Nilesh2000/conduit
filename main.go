@@ -81,3 +81,7 @@ type GenericErrorModel struct {
 		Body []string
 	}
 }
+
+type UserService interface {
+	Register(username, email, password string) (*User, error)
+}
