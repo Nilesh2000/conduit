@@ -89,7 +89,7 @@ type GenericErrorModel struct {
 }
 
 type UserRepo struct {
-	ID       int
+	ID       int64
 	Username string
 	Email    string
 	Password string
