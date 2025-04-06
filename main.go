@@ -109,6 +109,13 @@ type UserHandler struct {
 	Validate    *validator.Validate
 }
 
+func NewUserHandler(userService UserService) *UserHandler {
+	return &UserHandler{
+		userService: userService,
+		Validate:    validator.New(),
+	}
+}
+
 func RegisterHandler(userService UserService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
