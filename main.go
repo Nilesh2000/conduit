@@ -116,7 +116,7 @@ func NewUserHandler(userService UserService) *UserHandler {
 	}
 }
 
-func (h *UserHandler) Register(userService UserService) http.HandlerFunc {
+func (h *UserHandler) Register() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
@@ -133,7 +133,7 @@ func (h *UserHandler) Register(userService UserService) http.HandlerFunc {
 			return
 		}
 
-		user, _ := userService.Register(req.User.Username, req.User.Email, req.User.Password)
+		user, _ := h.userService.Register(req.User.Username, req.User.Email, req.User.Password)
 
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(UserResponse{
