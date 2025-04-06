@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
+
+	"github.com/go-playground/validator/v10"
 )
 
 type LoginUser struct {
@@ -101,6 +103,11 @@ type UserResponse struct {
 }
 
 type ErrorResponse = GenericErrorModel
+
+type UserHandler struct {
+	userService UserService
+	Validate    *validator.Validate
+}
 
 func RegisterHandler(userService UserService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
