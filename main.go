@@ -103,7 +103,17 @@ func RegisterHandler(userService UserService) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 
 		var req RegisterRequest
-		_ = json.NewDecoder(r.Body).Decode(&req)
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			json.NewEncoder(w).Encode(ErrorResponse{
+				Errors: struct {
+					Body []string
+				}{
+					Body: []string{"Invalid request body"},
+				},
+			})
+			return
+		}
 
 		user, _ := userService.Register(req.User.Username, req.User.Email, req.User.Password)
 
