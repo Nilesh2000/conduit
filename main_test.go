@@ -263,6 +263,9 @@ func (m *MockUserRepository) GetUserByEmail(email string) (*UserRepo, error) {
 }
 
 func Test_userService_Register(t *testing.T) {
+	jwtSecret := "test-secret"
+	jwtExpiration := time.Hour * 24
+
 	tests := []struct {
 		name           string
 		username       string
@@ -310,7 +313,7 @@ func Test_userService_Register(t *testing.T) {
 
 				// Verify token is a valid JWT
 				token, err := jwt.Parse(u.Token, func(token *jwt.Token) (interface{}, error) {
-					return []byte("secret"), nil
+					return []byte(jwtSecret), nil
 				})
 				if !token.Valid || err != nil {
 					t.Errorf("Invalid token: %v", err)
@@ -334,9 +337,7 @@ func Test_userService_Register(t *testing.T) {
 				CreateUserFunc: tt.mockCreateUser,
 			}
 
-			userService := &userService{
-				userRepository: mockUserRepository,
-			}
+			userService := NewUserService(mockUserRepository, jwtSecret, jwtExpiration)
 
 			user, err := userService.Register(tt.username, tt.email, tt.password)
 			if err != nil {
