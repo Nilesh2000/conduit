@@ -95,6 +95,26 @@ func TestUserHandler_Register(t *testing.T) {
 				}{Body: []string{"Username is required", "Password is required"}},
 			},
 		},
+		{
+			name: "Invalid Email",
+			requestBody: `{
+					"user": {
+						"username": "testuser",
+						"email": "invalid-email",
+						"password": "password"
+					}
+				}`,
+			mockRegister: func(username, email, password string) (*User, error) {
+				t.Errorf("Register should not be called for invalid email")
+				return nil, nil
+			},
+			expectedStatus: http.StatusUnprocessableEntity,
+			expectedResponse: ErrorResponse{
+				Errors: struct {
+					Body []string
+				}{Body: []string{"invalid-email is not a valid email"}},
+			},
+		},
 	}
 
 	for _, tt := range tests {
