@@ -135,6 +135,44 @@ func TestUserHandler_Register(t *testing.T) {
 				}{Body: []string{"Password must be at least 8 characters long"}},
 			},
 		},
+		{
+			name: "Username already taken",
+			requestBody: `{
+				"user": {
+					"username": "existinguser",
+					"email": "test@example.com",
+					"password": "password"
+				}
+			}`,
+			mockRegister: func(username, email, password string) (*User, error) {
+				return nil, ErrUsernameTaken
+			},
+			expectedStatus: http.StatusUnprocessableEntity,
+			expectedResponse: ErrorResponse{
+				Errors: struct {
+					Body []string
+				}{Body: []string{"Username already taken"}},
+			},
+		},
+		{
+			name: "Email already registered",
+			requestBody: `{
+				"user": {
+					"username": "testuser",
+					"email": "existing@example.com",
+					"password": "password"
+				}
+			}`,
+			mockRegister: func(username, email, password string) (*User, error) {
+				return nil, ErrEmailTaken
+			},
+			expectedStatus: http.StatusUnprocessableEntity,
+			expectedResponse: ErrorResponse{
+				Errors: struct {
+					Body []string
+				}{Body: []string{"Email already registered"}},
+			},
+		},
 	}
 
 	for _, tt := range tests {
