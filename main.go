@@ -116,7 +116,7 @@ func NewUserHandler(userService UserService) *UserHandler {
 	}
 }
 
-func RegisterHandler(userService UserService) http.HandlerFunc {
+func (h *UserHandler) RegisterHandler(userService UserService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
