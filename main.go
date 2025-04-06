@@ -116,12 +116,26 @@ func NewUserHandler(userService UserService) *UserHandler {
 	}
 }
 
+func (h *UserHandler) respondWithError(w http.ResponseWriter, status int, errors []string) {
+	w.WriteHeader(status)
+
+	response := ErrorResponse{}
+	response.Errors.Body = errors
+
+	json.NewEncoder(w).Encode(response)
+}
+
 func (h *UserHandler) Register() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
 		var req RegisterRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			h.respondWithError(w, http.StatusUnprocessableEntity, []string{"Invalid request body"})
+			return
+		}
+
+		if err := h.Validate.Struct(req); err != nil {
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			json.NewEncoder(w).Encode(ErrorResponse{
 				Errors: struct {
