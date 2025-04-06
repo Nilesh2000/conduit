@@ -108,6 +108,12 @@ type UserService interface {
 }
 
 var (
+	ErrDuplicateUsername = errors.New("username already exists")
+	ErrDuplicateEmail    = errors.New("email already exists")
+	ErrInternal          = errors.New("internal repository error")
+)
+
+var (
 	ErrUsernameTaken  = errors.New("username already taken")
 	ErrEmailTaken     = errors.New("email already registered")
 	ErrInternalServer = errors.New("internal server error")
