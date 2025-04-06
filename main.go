@@ -107,9 +107,9 @@ type UserService interface {
 	Register(username, email, password string) (*User, error)
 }
 
-var ErrUsernameTaken = errors.New("Username already taken")
-var ErrEmailTaken = errors.New("Email already registered")
-var ErrInternalServerError = errors.New("Internal server error")
+var ErrUsernameTaken = errors.New("username already taken")
+var ErrEmailTaken = errors.New("email already registered")
+var ErrInternalServerError = errors.New("internal server error")
 
 type RegisterRequest struct {
 	User struct {

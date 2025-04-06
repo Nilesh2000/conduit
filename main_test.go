@@ -154,7 +154,7 @@ func TestUserHandler_Register(t *testing.T) {
 			expectedResponse: ErrorResponse{
 				Errors: struct {
 					Body []string
-				}{Body: []string{"Username already taken"}},
+				}{Body: []string{"username already taken"}},
 			},
 		},
 		{
@@ -173,7 +173,7 @@ func TestUserHandler_Register(t *testing.T) {
 			expectedResponse: ErrorResponse{
 				Errors: struct {
 					Body []string
-				}{Body: []string{"Email already registered"}},
+				}{Body: []string{"email already registered"}},
 			},
 		},
 		{
@@ -192,7 +192,7 @@ func TestUserHandler_Register(t *testing.T) {
 			expectedResponse: ErrorResponse{
 				Errors: struct {
 					Body []string
-				}{Body: []string{"Internal server error"}},
+				}{Body: []string{"internal server error"}},
 			},
 		},
 	}
