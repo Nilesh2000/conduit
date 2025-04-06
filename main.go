@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -90,6 +91,9 @@ type GenericErrorModel struct {
 type UserService interface {
 	Register(username, email, password string) (*User, error)
 }
+
+var ErrUsernameTaken = errors.New("Username already taken")
+var ErrEmailTaken = errors.New("Email already registered")
 
 type RegisterRequest struct {
 	User struct {
