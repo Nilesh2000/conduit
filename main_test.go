@@ -114,7 +114,7 @@ func TestUserHandler_Register(t *testing.T) {
 
 			rr := httptest.NewRecorder()
 
-			handler := userHandler.Register(mockUserService)
+			handler := userHandler.Register()
 			handler.ServeHTTP(rr, req)
 
 			if got, want := rr.Code, tt.expectedStatus; got != want {
