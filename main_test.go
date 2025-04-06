@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -337,8 +338,8 @@ func Test_userService_Register(t *testing.T) {
 			userService := NewUserService(mockUserRepository, jwtSecret, jwtExpiration)
 
 			user, err := userService.Register(tt.username, tt.email, tt.password)
-			if err != nil {
-				t.Errorf("Expected no error, got %v", err)
+			if !errors.Is(err, tt.expectedError) {
+				t.Errorf("Expected error %v, got %v", tt.expectedError, err)
 			}
 
 			if err == nil && tt.validateFunc != nil {
