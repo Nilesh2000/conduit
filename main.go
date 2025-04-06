@@ -87,6 +87,10 @@ type UserService interface {
 	Register(username, email, password string) (*User, error)
 }
 
+type RegisterRequest struct {
+	User NewUser `json:"user"`
+}
+
 type UserResponse struct {
 	User User `json:"user"`
 }
