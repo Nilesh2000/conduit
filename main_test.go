@@ -327,6 +327,39 @@ func Test_userService_Register(t *testing.T) {
 				}
 			},
 		},
+		{
+			name:     "Username already taken",
+			username: "existinguser",
+			email:    "test@example.com",
+			password: "password",
+			mockCreateUser: func(username, email, password string) (*UserRepo, error) {
+				return nil, ErrDuplicateUsername
+			},
+			expectedError: ErrUsernameTaken,
+			validateFunc:  nil,
+		},
+		{
+			name:     "Email already registered",
+			username: "testuser",
+			email:    "existing@example.com",
+			password: "password",
+			mockCreateUser: func(username, email, password string) (*UserRepo, error) {
+				return nil, ErrDuplicateEmail
+			},
+			expectedError: ErrEmailTaken,
+			validateFunc:  nil,
+		},
+		{
+			name:     "Repository error",
+			username: "testuser",
+			email:    "test@example.com",
+			password: "password",
+			mockCreateUser: func(username, email, password string) (*UserRepo, error) {
+				return nil, ErrInternal
+			},
+			expectedError: ErrInternalServer,
+			validateFunc:  nil,
+		},
 	}
 
 	for _, tt := range tests {
