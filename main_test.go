@@ -109,7 +109,7 @@ func TestUserHandler_Register(t *testing.T) {
 				Validate:    validator.New(),
 			}
 
-			req := httptest.NewRequest("POST", "/api/users", strings.NewReader(tt.requestBody))
+			req := httptest.NewRequest(http.MethodPost, "/api/users", strings.NewReader(tt.requestBody))
 			req.Header.Set("Content-Type", "application/json")
 
 			rr := httptest.NewRecorder()
