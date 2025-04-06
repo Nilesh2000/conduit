@@ -57,6 +57,24 @@ func TestRegister(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Invalid JSON",
+			requestBody: `{
+				"user": {
+					"username": "testuser",
+					"email": "test@example.com",
+			}`,
+			mockRegister: func(username, email, password string) (*User, error) {
+				t.Errorf("Register should not be called for invalid JSON")
+				return nil, nil
+			},
+			expectedStatus: http.StatusUnprocessableEntity,
+			expectedResponse: ErrorResponse{
+				Errors: struct {
+					Body []string
+				}{Body: []string{"Invalid request body"}},
+			},
+		},
 	}
 
 	for _, tt := range tests {
