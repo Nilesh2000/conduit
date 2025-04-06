@@ -75,6 +75,25 @@ func TestRegister(t *testing.T) {
 				}{Body: []string{"Invalid request body"}},
 			},
 		},
+		{
+			name: "Missing required fields",
+			requestBody: `{
+				"user": {
+					"email": "test@example.com",
+					"password": "password"
+				}
+			}`,
+			mockRegister: func(username, email, password string) (*User, error) {
+				t.Errorf("Register should not be called for missing required fields")
+				return nil, nil
+			},
+			expectedStatus: http.StatusUnprocessableEntity,
+			expectedResponse: ErrorResponse{
+				Errors: struct {
+					Body []string
+				}{Body: []string{"Username is required"}},
+			},
+		},
 	}
 
 	for _, tt := range tests {
