@@ -129,6 +129,10 @@ type userService struct {
 	userRepository UserRepository
 }
 
+func (s *userService) Register(username, email, password string) (*User, error) {
+	return nil, nil
+}
+
 type UserHandler struct {
 	userService UserService
 	Validate    *validator.Validate
