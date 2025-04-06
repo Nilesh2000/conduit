@@ -173,6 +173,25 @@ func TestUserHandler_Register(t *testing.T) {
 				}{Body: []string{"Email already registered"}},
 			},
 		},
+		{
+			name: "Internal server error",
+			requestBody: `{
+				"user": {
+					"username": "testuser",
+					"email": "test@example.com",
+					"password": "password"
+				}
+			}`,
+			mockRegister: func(username, email, password string) (*User, error) {
+				return nil, ErrInternalServerError
+			},
+			expectedStatus: http.StatusInternalServerError,
+			expectedResponse: ErrorResponse{
+				Errors: struct {
+					Body []string
+				}{Body: []string{"Internal server error"}},
+			},
+		},
 	}
 
 	for _, tt := range tests {
