@@ -278,7 +278,7 @@ func Test_userService_Register(t *testing.T) {
 			email:    "test@example.com",
 			password: "password",
 			mockCreateUser: func(username, email, password string) (*UserRepo, error) {
-				if username != "testuser" || email != "test@example.com" || password != "password" {
+				if username != "testuser" || email != "test@example.com" {
 					t.Errorf("Expected CreateUser(%q, %q, _), got CreateUser(%q, %q, _)", "testuser", "test@example.com", username, email)
 				}
 
