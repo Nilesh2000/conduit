@@ -7,6 +7,8 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/go-playground/validator/v10"
 )
 
 type MockUserService struct {
@@ -102,12 +104,17 @@ func TestRegister(t *testing.T) {
 				RegisterFunc: tt.mockRegister,
 			}
 
+			userHandler := &UserHandler{
+				userService: mockUserService,
+				Validate:    validator.New(),
+			}
+
 			req := httptest.NewRequest("POST", "/api/users", strings.NewReader(tt.requestBody))
 			req.Header.Set("Content-Type", "application/json")
 
 			rr := httptest.NewRecorder()
 
-			handler := RegisterHandler(mockUserService)
+			handler := userHandler.RegisterHandler(mockUserService)
 			handler.ServeHTTP(rr, req)
 
 			if got, want := rr.Code, tt.expectedStatus; got != want {
