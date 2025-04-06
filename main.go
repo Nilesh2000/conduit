@@ -89,6 +89,21 @@ type GenericErrorModel struct {
 	}
 }
 
+type UserRepo struct {
+	ID       int
+	Username string
+	Email    string
+	Password string
+	Bio      string
+	Image    string
+}
+
+type UserRepository interface {
+	CreateUser(username, email, password string) (*UserRepo, error)
+	GetUserByUsername(username string) (*UserRepo, error)
+	GetUserByEmail(email string) (*UserRepo, error)
+}
+
 type UserService interface {
 	Register(username, email, password string) (*User, error)
 }
