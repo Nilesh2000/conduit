@@ -133,6 +133,14 @@ type userService struct {
 	jwtExpiration  time.Duration
 }
 
+func NewUserService(userRepository UserRepository, jwtSecret string, jwtExpiration time.Duration) UserService {
+	return &userService{
+		userRepository: userRepository,
+		jwtSecret:      []byte(jwtSecret),
+		jwtExpiration:  jwtExpiration,
+	}
+}
+
 func (s *userService) Register(username, email, password string) (*User, error) {
 	return nil, nil
 }
