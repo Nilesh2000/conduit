@@ -240,3 +240,23 @@ func TestUserHandler_Register(t *testing.T) {
 		})
 	}
 }
+
+type MockUserRepository struct {
+	CreateUserFunc        func(username, email, password string) (*UserRepo, error)
+	GetUserByUsernameFunc func(username string) (*UserRepo, error)
+	GetUserByEmailFunc    func(email string) (*UserRepo, error)
+}
+
+var _ UserRepository = (*MockUserRepository)(nil)
+
+func (m *MockUserRepository) CreateUser(username, email, password string) (*UserRepo, error) {
+	return m.CreateUserFunc(username, email, password)
+}
+
+func (m *MockUserRepository) GetUserByUsername(username string) (*UserRepo, error) {
+	return m.GetUserByUsernameFunc(username)
+}
+
+func (m *MockUserRepository) GetUserByEmail(email string) (*UserRepo, error) {
+	return m.GetUserByEmailFunc(email)
+}
