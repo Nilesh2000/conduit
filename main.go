@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"net/http"
 	"time"
 )
@@ -100,5 +101,15 @@ type ErrorResponse = GenericErrorModel
 func RegisterHandler(userService UserService) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+
+		var req RegisterRequest
+		_ = json.NewDecoder(r.Body).Decode(&req)
+
+		user, _ := userService.Register(req.User.Username, req.User.Email, req.User.Password)
+
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(UserResponse{
+			User: *user,
+		})
 	}
 }
