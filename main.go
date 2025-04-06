@@ -129,6 +129,8 @@ type ErrorResponse = GenericErrorModel
 
 type userService struct {
 	userRepository UserRepository
+	jwtSecret      []byte
+	jwtExpiration  time.Duration
 }
 
 func (s *userService) Register(username, email, password string) (*User, error) {
