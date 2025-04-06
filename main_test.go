@@ -81,8 +81,7 @@ func TestUserHandler_Register(t *testing.T) {
 			name: "Missing required fields",
 			requestBody: `{
 				"user": {
-					"email": "test@example.com",
-					"password": "password"
+					"email": "test@example.com"
 				}
 			}`,
 			mockRegister: func(username, email, password string) (*User, error) {
@@ -93,7 +92,7 @@ func TestUserHandler_Register(t *testing.T) {
 			expectedResponse: ErrorResponse{
 				Errors: struct {
 					Body []string
-				}{Body: []string{"Username is required"}},
+				}{Body: []string{"Username is required", "Password is required"}},
 			},
 		},
 	}
