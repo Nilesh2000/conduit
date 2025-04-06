@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -125,6 +126,29 @@ func (h *UserHandler) respondWithError(w http.ResponseWriter, status int, errors
 	json.NewEncoder(w).Encode(response)
 }
 
+func (h *UserHandler) translateValidationErrors(err error) []string {
+	var validationErrors []string
+
+	if validationErrs, ok := err.(validator.ValidationErrors); ok {
+		for _, e := range validationErrs {
+			switch e.Tag() {
+			case "required":
+				validationErrors = append(validationErrors, fmt.Sprintf("%s is required", e.Field()))
+			case "email":
+				validationErrors = append(validationErrors, fmt.Sprintf("%s is not a valid email", e.Field()))
+			case "min":
+				validationErrors = append(validationErrors, fmt.Sprintf("%s must be at least %s characters long", e.Field(), e.Param()))
+			default:
+				validationErrors = append(validationErrors, fmt.Sprintf("%s is not valid", e.Field()))
+			}
+		}
+	} else {
+		validationErrors = append(validationErrors, "Invalid request body")
+	}
+
+	return validationErrors
+}
+
 func (h *UserHandler) Register() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -136,14 +160,8 @@ func (h *UserHandler) Register() http.HandlerFunc {
 		}
 
 		if err := h.Validate.Struct(req); err != nil {
-			w.WriteHeader(http.StatusUnprocessableEntity)
-			json.NewEncoder(w).Encode(ErrorResponse{
-				Errors: struct {
-					Body []string
-				}{
-					Body: []string{"Invalid request body"},
-				},
-			})
+			errors := h.translateValidationErrors(err)
+			h.respondWithError(w, http.StatusUnprocessableEntity, errors)
 			return
 		}
 
