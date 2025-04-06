@@ -115,6 +115,26 @@ func TestUserHandler_Register(t *testing.T) {
 				}{Body: []string{"invalid-email is not a valid email"}},
 			},
 		},
+		{
+			name: "Password too short",
+			requestBody: `{
+				"user": {
+					"username": "testuser",
+					"email": "test@example.com",
+					"password": "short"
+				}
+			}`,
+			mockRegister: func(username, email, password string) (*User, error) {
+				t.Errorf("Register should not be called for short password")
+				return nil, nil
+			},
+			expectedStatus: http.StatusUnprocessableEntity,
+			expectedResponse: ErrorResponse{
+				Errors: struct {
+					Body []string
+				}{Body: []string{"Password must be at least 8 characters long"}},
+			},
+		},
 	}
 
 	for _, tt := range tests {
