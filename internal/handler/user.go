@@ -12,8 +12,8 @@ import (
 
 type GenericErrorModel struct {
 	Errors struct {
-		Body []string
-	}
+		Body []string `json:"body"`
+	} `json:"errors"`
 }
 
 type ErrorResponse = GenericErrorModel
