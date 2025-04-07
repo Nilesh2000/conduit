@@ -11,9 +11,7 @@ import (
 )
 
 type MockUserRepository struct {
-	createUserFunc        func(username, email, password string) (*repository.User, error)
-	getUserByUsernameFunc func(username string) (*repository.User, error)
-	getUserByEmailFunc    func(email string) (*repository.User, error)
+	createUserFunc func(username, email, password string) (*repository.User, error)
 }
 
 var _ UserRepository = (*MockUserRepository)(nil)
