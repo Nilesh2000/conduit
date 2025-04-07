@@ -105,6 +105,51 @@ func TestCreate(t *testing.T) {
 			expectedErr:  repository.ErrDuplicateEmail,
 			validateUser: nil,
 		},
+		{
+			name:     "Database Error",
+			username: "testuser",
+			email:    "test@example.com",
+			password: "hashedPassword",
+			mockSetup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectBegin()
+
+				mock.ExpectQuery(`INSERT INTO users \(username, email, password, bio, image, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5, \$6, \$7\) RETURNING id`).
+					WithArgs("testuser", "test@example.com", "hashedPassword", "", "", sqlmock.AnyArg(), sqlmock.AnyArg()).
+					WillReturnError(errors.New("database error"))
+
+				mock.ExpectRollback()
+			},
+			expectedErr:  repository.ErrInternal,
+			validateUser: nil,
+		},
+		{
+			name:     "Transaction Begin Error",
+			username: "testuser",
+			email:    "test@example.com",
+			password: "hashedPassword",
+			mockSetup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectBegin().WillReturnError(errors.New("transaction error"))
+			},
+			expectedErr:  repository.ErrInternal,
+			validateUser: nil,
+		},
+		{
+			name:     "Transaction Commit Error",
+			username: "testuser",
+			email:    "test@example.com",
+			password: "hashedPassword",
+			mockSetup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectBegin()
+
+				mock.ExpectQuery(`INSERT INTO users \(username, email, password, bio, image, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5, \$6, \$7\) RETURNING id`).
+					WithArgs("testuser", "test@example.com", "hashedPassword", "", "", sqlmock.AnyArg(), sqlmock.AnyArg()).
+					WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+
+				mock.ExpectCommit().WillReturnError(errors.New("commit error"))
+			},
+			expectedErr:  repository.ErrInternal,
+			validateUser: nil,
+		},
 	}
 
 	for _, tt := range tests {
