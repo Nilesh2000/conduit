@@ -30,8 +30,10 @@ func (m *MockUserRepository) GetUserByEmail(email string) (*repository.User, err
 }
 
 func Test_userService_Register(t *testing.T) {
-	jwtSecret := "test-secret"
-	jwtExpiration := time.Hour * 24
+	const (
+		jwtSecret     = "test-secret"
+		jwtExpiration = time.Hour * 24
+	)
 
 	tests := []struct {
 		name           string
