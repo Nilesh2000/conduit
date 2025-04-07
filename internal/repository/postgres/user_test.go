@@ -34,7 +34,7 @@ func TestCreate(t *testing.T) {
 			mockSetup: func() {
 				mock.ExpectBegin()
 
-				mock.ExpectQuery("INSERT INTO users (username, email, password, bio, image, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7)").
+				mock.ExpectQuery(`INSERT INTO users \(username, email, password, bio, image, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5, \$6, \$7\) RETURNING id`).
 					WithArgs("testuser", "test@example.com", "hashedPassword", "", "", sqlmock.AnyArg(), sqlmock.AnyArg()).
 					WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 
