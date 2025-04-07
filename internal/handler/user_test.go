@@ -34,12 +34,12 @@ func TestUserHandler_Register(t *testing.T) {
 				"user": {
 					"username": "testuser",
 					"email": "test@example.com",
-					"password": "password"
+					"password": "password123"
 				}
 			}`,
 			mockRegister: func(username, email, password string) (*service.User, error) {
-				if username != "testuser" || email != "test@example.com" || password != "password" {
-					t.Errorf("Expected Register(%q, %q, %q), got Register(%q, %q, %q)", "testuser", "test@example.com", "password", username, email, password)
+				if username != "testuser" || email != "test@example.com" || password != "password123" {
+					t.Errorf("Expected Register(%q, %q, %q), got Register(%q, %q, %q)", "testuser", "test@example.com", "password123", username, email, password)
 				}
 				return &service.User{
 					Email:    email,
@@ -102,7 +102,7 @@ func TestUserHandler_Register(t *testing.T) {
 					"user": {
 						"username": "testuser",
 						"email": "invalid-email",
-						"password": "password"
+						"password": "password123"
 					}
 				}`,
 			mockRegister: func(username, email, password string) (*service.User, error) {
@@ -142,7 +142,7 @@ func TestUserHandler_Register(t *testing.T) {
 				"user": {
 					"username": "existinguser",
 					"email": "test@example.com",
-					"password": "password"
+					"password": "password123"
 				}
 			}`,
 			mockRegister: func(username, email, password string) (*service.User, error) {
@@ -161,7 +161,7 @@ func TestUserHandler_Register(t *testing.T) {
 				"user": {
 					"username": "testuser",
 					"email": "existing@example.com",
-					"password": "password"
+					"password": "password123"
 				}
 			}`,
 			mockRegister: func(username, email, password string) (*service.User, error) {
@@ -180,7 +180,7 @@ func TestUserHandler_Register(t *testing.T) {
 				"user": {
 					"username": "testuser",
 					"email": "test@example.com",
-					"password": "password"
+					"password": "password123"
 				}
 			}`,
 			mockRegister: func(username, email, password string) (*service.User, error) {

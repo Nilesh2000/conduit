@@ -40,7 +40,7 @@ func Test_userService_Register(t *testing.T) {
 			name:     "Valid registration",
 			username: "testuser",
 			email:    "test@example.com",
-			password: "password",
+			password: "password123",
 			setupMock: func() *MockUserRepository {
 				return &MockUserRepository{
 					createFunc: func(username, email, password string) (*repository.User, error) {
@@ -48,7 +48,7 @@ func Test_userService_Register(t *testing.T) {
 							t.Errorf("Expected Create(%q, %q, _), got Create(%q, %q, _)", "testuser", "test@example.com", username, email)
 						}
 
-						err := bcrypt.CompareHashAndPassword([]byte(password), []byte("password"))
+						err := bcrypt.CompareHashAndPassword([]byte(password), []byte("password123"))
 						if err != nil {
 							t.Errorf("Password not properly hashed: %v", err)
 						}
@@ -107,7 +107,7 @@ func Test_userService_Register(t *testing.T) {
 			name:     "Username already taken",
 			username: "existinguser",
 			email:    "test@example.com",
-			password: "password",
+			password: "password123",
 			setupMock: func() *MockUserRepository {
 				return &MockUserRepository{
 					createFunc: func(username, email, password string) (*repository.User, error) {
@@ -122,7 +122,7 @@ func Test_userService_Register(t *testing.T) {
 			name:     "Email already taken",
 			username: "testuser",
 			email:    "existing@example.com",
-			password: "password",
+			password: "password123",
 			setupMock: func() *MockUserRepository {
 				return &MockUserRepository{
 					createFunc: func(username, email, password string) (*repository.User, error) {
@@ -153,7 +153,7 @@ func Test_userService_Register(t *testing.T) {
 			name:     "Repository error",
 			username: "testuser",
 			email:    "test@example.com",
-			password: "password",
+			password: "password123",
 			setupMock: func() *MockUserRepository {
 				return &MockUserRepository{
 					createFunc: func(username, email, password string) (*repository.User, error) {
