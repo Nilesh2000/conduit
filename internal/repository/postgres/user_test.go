@@ -22,7 +22,7 @@ func TestCreate(t *testing.T) {
 		username     string
 		email        string
 		password     string
-		mockSetup    func()
+		mockSetup    func(mock sqlmock.Sqlmock)
 		expectedErr  error
 		validateUser func(*testing.T, *repository.User)
 	}{
@@ -31,7 +31,7 @@ func TestCreate(t *testing.T) {
 			username: "testuser",
 			email:    "test@example.com",
 			password: "hashedPassword",
-			mockSetup: func() {
+			mockSetup: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin()
 
 				mock.ExpectQuery(`INSERT INTO users \(username, email, password, bio, image, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5, \$6, \$7\) RETURNING id`).
@@ -66,7 +66,7 @@ func TestCreate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.mockSetup()
+			tt.mockSetup(mock)
 
 			user, err := repo.Create(tt.username, tt.email, tt.password)
 
