@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/lib/pq"
 )
 
 func TestCreate(t *testing.T) {
@@ -61,6 +62,48 @@ func TestCreate(t *testing.T) {
 					t.Errorf("Expected empty image, got %q", user.Image)
 				}
 			},
+		},
+		{
+			name:     "Duplicate username",
+			username: "existinguser",
+			email:    "new@example.com",
+			password: "hashedPassword",
+			mockSetup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectBegin()
+
+				mock.ExpectQuery(`INSERT INTO users \(username, email, password, bio, image, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5, \$6, \$7\) RETURNING id`).
+					WithArgs("existinguser", "new@example.com", "hashedPassword", "", "", sqlmock.AnyArg(), sqlmock.AnyArg()).
+					WillReturnError(&pq.Error{
+						Code:       "23505",
+						Message:    "duplicate key value violates unique constraint",
+						Constraint: "users_username_key",
+					})
+
+				mock.ExpectRollback()
+			},
+			expectedErr:  repository.ErrDuplicateUsername,
+			validateUser: nil,
+		},
+		{
+			name:     "Duplicate email",
+			username: "newuser",
+			email:    "existing@example.com",
+			password: "hashedPassword",
+			mockSetup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectBegin()
+
+				mock.ExpectQuery(`INSERT INTO users \(username, email, password, bio, image, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5, \$6, \$7\) RETURNING id`).
+					WithArgs("newuser", "existing@example.com", "hashedPassword", "", "", sqlmock.AnyArg(), sqlmock.AnyArg()).
+					WillReturnError(&pq.Error{
+						Code:       "23505",
+						Message:    "duplicate key value violates unique constraint",
+						Constraint: "users_email_key",
+					})
+
+				mock.ExpectRollback()
+			},
+			expectedErr:  repository.ErrDuplicateEmail,
+			validateUser: nil,
 		},
 	}
 
