@@ -35,7 +35,7 @@ func Test_userService_Register(t *testing.T) {
 		password       string
 		mockCreateUser func(username, email, password string) (*repository.User, error)
 		expectedError  error
-		validateFunc   func(*User)
+		validateFunc   func(t *testing.T, u *User)
 	}{
 		{
 			name:     "Valid registration",
@@ -62,7 +62,7 @@ func Test_userService_Register(t *testing.T) {
 				}, nil
 			},
 			expectedError: nil,
-			validateFunc: func(u *User) {
+			validateFunc: func(t *testing.T, u *User) {
 				if u.Username != "testuser" {
 					t.Errorf("Expected Username 'testuser', got %q", u.Username)
 				}
