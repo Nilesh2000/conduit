@@ -114,7 +114,7 @@ func Test_userService_Register(t *testing.T) {
 			validateFunc:  nil,
 		},
 		{
-			name:     "Email already registered",
+			name:     "Email already taken",
 			username: "testuser",
 			email:    "existing@example.com",
 			password: "password",
