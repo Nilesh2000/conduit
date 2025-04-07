@@ -84,8 +84,11 @@ func Test_userService_Register(t *testing.T) {
 				token, err := jwt.Parse(u.Token, func(token *jwt.Token) (interface{}, error) {
 					return []byte(jwtSecret), nil
 				})
-				if !token.Valid || err != nil {
-					t.Errorf("Invalid token: %v", err)
+				if err != nil {
+					t.Errorf("Failed to parse token: %v", err)
+				}
+				if !token.Valid {
+					t.Errorf("Invalid token")
 				}
 
 				// Verify claims
