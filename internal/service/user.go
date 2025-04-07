@@ -18,9 +18,7 @@ type User struct {
 }
 
 type UserRepository interface {
-	CreateUser(username, email, password string) (*repository.User, error)
-	GetUserByUsername(username string) (*repository.User, error)
-	GetUserByEmail(email string) (*repository.User, error)
+	Create(username, email, password string) (*repository.User, error)
 }
 
 type userService struct {
@@ -45,7 +43,7 @@ func (s *userService) Register(username, email, password string) (*User, error) 
 		return nil, ErrInternalServer
 	}
 
-	repoUser, err := s.userRepository.CreateUser(username, email, string(hashedPassword))
+	repoUser, err := s.userRepository.Create(username, email, string(hashedPassword))
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrDuplicateUsername):

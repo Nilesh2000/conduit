@@ -18,16 +18,8 @@ type MockUserRepository struct {
 
 var _ UserRepository = (*MockUserRepository)(nil)
 
-func (m *MockUserRepository) CreateUser(username, email, password string) (*repository.User, error) {
+func (m *MockUserRepository) Create(username, email, password string) (*repository.User, error) {
 	return m.createUserFunc(username, email, password)
-}
-
-func (m *MockUserRepository) GetUserByUsername(username string) (*repository.User, error) {
-	return m.getUserByUsernameFunc(username)
-}
-
-func (m *MockUserRepository) GetUserByEmail(email string) (*repository.User, error) {
-	return m.getUserByEmailFunc(email)
 }
 
 func Test_userService_Register(t *testing.T) {
