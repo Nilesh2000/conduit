@@ -3,6 +3,7 @@ package service
 import (
 	"conduit/internal/repository"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -121,6 +122,18 @@ func Test_userService_Register(t *testing.T) {
 				return nil, repository.ErrDuplicateEmail
 			},
 			expectedError: ErrEmailTaken,
+			validateFunc:  nil,
+		},
+		{
+			name:     "Password hashing error",
+			username: "testuser",
+			email:    "test@example.com",
+			password: strings.Repeat("a", 73), // 73 bytes will exceed bcrypt's limit
+			mockCreateUser: func(username, email, password string) (*repository.User, error) {
+				t.Errorf("Create should not be called when password hashing fails")
+				return nil, nil
+			},
+			expectedError: ErrInternalServer,
 			validateFunc:  nil,
 		},
 		{
