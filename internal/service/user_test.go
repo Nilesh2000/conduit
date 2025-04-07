@@ -11,13 +11,13 @@ import (
 )
 
 type MockUserRepository struct {
-	createUserFunc func(username, email, password string) (*repository.User, error)
+	createFunc func(username, email, password string) (*repository.User, error)
 }
 
 var _ UserRepository = (*MockUserRepository)(nil)
 
 func (m *MockUserRepository) Create(username, email, password string) (*repository.User, error) {
-	return m.createUserFunc(username, email, password)
+	return m.createFunc(username, email, password)
 }
 
 func Test_userService_Register(t *testing.T) {
@@ -142,7 +142,7 @@ func Test_userService_Register(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockUserRepository := &MockUserRepository{
-				createUserFunc: tt.mockCreateUser,
+				createFunc: tt.mockCreateUser,
 			}
 
 			userService := NewUserService(mockUserRepository, jwtSecret, jwtExpiration)
