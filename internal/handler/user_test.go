@@ -11,13 +11,13 @@ import (
 )
 
 type MockUserService struct {
-	RegisterFunc func(username, email, password string) (*service.User, error)
+	registerFunc func(username, email, password string) (*service.User, error)
 }
 
 var _ UserService = (*MockUserService)(nil)
 
 func (m *MockUserService) Register(username, email, password string) (*service.User, error) {
-	return m.RegisterFunc(username, email, password)
+	return m.registerFunc(username, email, password)
 }
 
 func TestUserHandler_Register(t *testing.T) {
@@ -198,7 +198,7 @@ func TestUserHandler_Register(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockUserService := &MockUserService{
-				RegisterFunc: tt.mockRegister,
+				registerFunc: tt.mockRegister,
 			}
 
 			userHandler := NewUserHandler(mockUserService)
