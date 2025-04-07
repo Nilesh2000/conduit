@@ -74,7 +74,7 @@ func TestUserHandler_Register(t *testing.T) {
 			expectedStatus: http.StatusUnprocessableEntity,
 			expectedResponse: ErrorResponse{
 				Errors: struct {
-					Body []string
+					Body []string `json:"body"`
 				}{Body: []string{"Invalid request body"}},
 			},
 		},
@@ -92,7 +92,7 @@ func TestUserHandler_Register(t *testing.T) {
 			expectedStatus: http.StatusUnprocessableEntity,
 			expectedResponse: ErrorResponse{
 				Errors: struct {
-					Body []string
+					Body []string `json:"body"`
 				}{Body: []string{"Username is required", "Password is required"}},
 			},
 		},
@@ -112,7 +112,7 @@ func TestUserHandler_Register(t *testing.T) {
 			expectedStatus: http.StatusUnprocessableEntity,
 			expectedResponse: ErrorResponse{
 				Errors: struct {
-					Body []string
+					Body []string `json:"body"`
 				}{Body: []string{"invalid-email is not a valid email"}},
 			},
 		},
@@ -132,7 +132,7 @@ func TestUserHandler_Register(t *testing.T) {
 			expectedStatus: http.StatusUnprocessableEntity,
 			expectedResponse: ErrorResponse{
 				Errors: struct {
-					Body []string
+					Body []string `json:"body"`
 				}{Body: []string{"Password must be at least 8 characters long"}},
 			},
 		},
@@ -151,7 +151,7 @@ func TestUserHandler_Register(t *testing.T) {
 			expectedStatus: http.StatusUnprocessableEntity,
 			expectedResponse: ErrorResponse{
 				Errors: struct {
-					Body []string
+					Body []string `json:"body"`
 				}{Body: []string{"username already taken"}},
 			},
 		},
@@ -170,7 +170,7 @@ func TestUserHandler_Register(t *testing.T) {
 			expectedStatus: http.StatusUnprocessableEntity,
 			expectedResponse: ErrorResponse{
 				Errors: struct {
-					Body []string
+					Body []string `json:"body"`
 				}{Body: []string{"email already registered"}},
 			},
 		},
@@ -189,7 +189,7 @@ func TestUserHandler_Register(t *testing.T) {
 			expectedStatus: http.StatusInternalServerError,
 			expectedResponse: ErrorResponse{
 				Errors: struct {
-					Body []string
+					Body []string `json:"body"`
 				}{Body: []string{"internal server error"}},
 			},
 		},
