@@ -10,23 +10,23 @@ import (
 )
 
 type MockUserRepository struct {
-	CreateUserFunc        func(username, email, password string) (*repository.User, error)
-	GetUserByUsernameFunc func(username string) (*repository.User, error)
-	GetUserByEmailFunc    func(email string) (*repository.User, error)
+	createUserFunc        func(username, email, password string) (*repository.User, error)
+	getUserByUsernameFunc func(username string) (*repository.User, error)
+	getUserByEmailFunc    func(email string) (*repository.User, error)
 }
 
 var _ UserRepository = (*MockUserRepository)(nil)
 
 func (m *MockUserRepository) CreateUser(username, email, password string) (*repository.User, error) {
-	return m.CreateUserFunc(username, email, password)
+	return m.createUserFunc(username, email, password)
 }
 
 func (m *MockUserRepository) GetUserByUsername(username string) (*repository.User, error) {
-	return m.GetUserByUsernameFunc(username)
+	return m.getUserByUsernameFunc(username)
 }
 
 func (m *MockUserRepository) GetUserByEmail(email string) (*repository.User, error) {
-	return m.GetUserByEmailFunc(email)
+	return m.getUserByEmailFunc(email)
 }
 
 func Test_userService_Register(t *testing.T) {
@@ -134,7 +134,7 @@ func Test_userService_Register(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockUserRepository := &MockUserRepository{
-				CreateUserFunc: tt.mockCreateUser,
+				createUserFunc: tt.mockCreateUser,
 			}
 
 			userService := NewUserService(mockUserRepository, jwtSecret, jwtExpiration)
