@@ -53,3 +53,7 @@ func (r *UserRepository) Create(username, email, password string) (*repository.U
 		Image:    "",
 	}, nil
 }
+
+func (r *UserRepository) FindByEmail(email string) (*repository.User, error) {
+	return nil, nil
+}

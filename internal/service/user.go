@@ -19,6 +19,7 @@ type User struct {
 
 type UserRepository interface {
 	Create(username, email, password string) (*repository.User, error)
+	FindByEmail(email string) (*repository.User, error)
 }
 
 type userService struct {

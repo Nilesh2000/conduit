@@ -12,13 +12,18 @@ import (
 )
 
 type MockUserRepository struct {
-	createFunc func(username, email, password string) (*repository.User, error)
+	createFunc      func(username, email, password string) (*repository.User, error)
+	findByEmailFunc func(email string) (*repository.User, error)
 }
 
 var _ UserRepository = (*MockUserRepository)(nil)
 
 func (m *MockUserRepository) Create(username, email, password string) (*repository.User, error) {
 	return m.createFunc(username, email, password)
+}
+
+func (m *MockUserRepository) FindByEmail(email string) (*repository.User, error) {
+	return m.findByEmailFunc(email)
 }
 
 func Test_userService_Register(t *testing.T) {
