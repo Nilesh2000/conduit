@@ -55,5 +55,25 @@ func (r *UserRepository) Create(username, email, password string) (*repository.U
 }
 
 func (r *UserRepository) FindByEmail(email string) (*repository.User, error) {
-	return nil, nil
+	var user repository.User
+	var bio, image sql.NullString
+
+	err := r.db.QueryRow("SELECT id, username, email, password, bio, image FROM users WHERE email = $1", email).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &bio, &image)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, repository.ErrUserNotFound
+		}
+		return nil, repository.ErrInternal
+	}
+
+	if bio.Valid {
+		user.Bio = bio.String
+	}
+
+	if image.Valid {
+		user.Image = image.String
+	}
+
+	return &user, nil
 }
