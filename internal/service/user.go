@@ -70,6 +70,35 @@ func (s *userService) Register(username, email, password string) (*User, error) 
 	}, nil
 }
 
+func (s *userService) Login(email, password string) (*User, error) {
+	repoUser, err := s.userRepository.FindByEmail(email)
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrUserNotFound):
+			return nil, ErrUserNotFound
+		default:
+			return nil, ErrInternalServer
+		}
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(repoUser.Password), []byte(password)); err != nil {
+		return nil, ErrInvalidCredentials
+	}
+
+	token, err := s.generateToken(repoUser.ID)
+	if err != nil {
+		return nil, ErrInternalServer
+	}
+
+	return &User{
+		Email:    repoUser.Email,
+		Token:    token,
+		Username: repoUser.Username,
+		Bio:      repoUser.Bio,
+		Image:    repoUser.Image,
+	}, nil
+}
+
 func (s *userService) generateToken(userID int64) (string, error) {
 	claims := jwt.MapClaims{
 		"id":  userID,
