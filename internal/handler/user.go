@@ -26,6 +26,13 @@ type RegisterRequest struct {
 	} `json:"user"`
 }
 
+type LoginRequest struct {
+	User struct {
+		Email    string `json:"email" validate:"required,email"`
+		Password string `json:"password" validate:"required"`
+	} `json:"user"`
+}
+
 type UserResponse struct {
 	User service.User `json:"user"`
 }
