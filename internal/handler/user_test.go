@@ -12,12 +12,17 @@ import (
 
 type MockUserService struct {
 	registerFunc func(username, email, password string) (*service.User, error)
+	loginFunc    func(email, password string) (*service.User, error)
 }
 
 var _ UserService = (*MockUserService)(nil)
 
 func (m *MockUserService) Register(username, email, password string) (*service.User, error) {
 	return m.registerFunc(username, email, password)
+}
+
+func (m *MockUserService) Login(email, password string) (*service.User, error) {
+	return m.loginFunc(email, password)
 }
 
 func TestUserHandler_Register(t *testing.T) {
@@ -217,6 +222,179 @@ func TestUserHandler_Register(t *testing.T) {
 
 			var got interface{}
 			if tt.expectedStatus == http.StatusCreated {
+				var resp UserResponse
+				if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
+					t.Errorf("Failed to unmarshal response: %v", err)
+				}
+				got = resp
+			} else {
+				var resp ErrorResponse
+				if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
+					t.Errorf("Failed to unmarshal response: %v", err)
+				}
+				got = resp
+			}
+
+			if !reflect.DeepEqual(got, tt.expectedResponse) {
+				t.Errorf("Response body: got %v, want %v", got, tt.expectedResponse)
+			}
+		})
+	}
+}
+
+func TestUserHandler_Login(t *testing.T) {
+	tests := []struct {
+		name             string
+		requestBody      string
+		mockLogin        func(email, password string) (*service.User, error)
+		expectedStatus   int
+		expectedResponse interface{}
+	}{
+		{
+			name: "Valid login",
+			requestBody: `{
+				"user": {
+					"email": "test@example.com",
+					"password": "password123"
+				}
+			}`,
+			mockLogin: func(email, password string) (*service.User, error) {
+				if email != "test@example.com" || password != "password123" {
+					t.Errorf("Expected Login(%q, %q), got Login(%q, %q)", "test@example.com", "password123", email, password)
+				}
+				return &service.User{
+					Email:    email,
+					Token:    "jwt.token.here",
+					Username: "testuser",
+					Bio:      "I'm a test user",
+					Image:    "https://example.com/image.jpg",
+				}, nil
+			},
+			expectedStatus: http.StatusOK,
+			expectedResponse: UserResponse{
+				User: service.User{
+					Email:    "test@example.com",
+					Token:    "jwt.token.here",
+					Username: "testuser",
+					Bio:      "I'm a test user",
+					Image:    "https://example.com/image.jpg",
+				},
+			},
+		},
+		{
+			name: "Invalid JSON",
+			requestBody: `{
+				"user": {
+					"email": "test@example.com",
+					"password": "password123"
+			}`,
+			mockLogin: func(email, password string) (*service.User, error) {
+				t.Errorf("Login should not be called for invalid JSON")
+				return nil, nil
+			},
+			expectedStatus: http.StatusUnprocessableEntity,
+			expectedResponse: ErrorResponse{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"Invalid request body"}},
+			},
+		},
+		{
+			name: "Missing required fields",
+			requestBody: `{
+				"user": {
+					"email": "test@example.com"
+				}
+			}`,
+			mockLogin: func(email, password string) (*service.User, error) {
+				t.Errorf("Login should not be called for missing required fields")
+				return nil, nil
+			},
+			expectedStatus: http.StatusUnprocessableEntity,
+			expectedResponse: ErrorResponse{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"Password is required"}},
+			},
+		},
+		{
+			name: "Invalid credentials",
+			requestBody: `{
+				"user": {
+					"email": "test@example.com",
+					"password": "wrongpassword"
+				}
+			}`,
+			mockLogin: func(email, password string) (*service.User, error) {
+				return nil, service.ErrInvalidCredentials
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedResponse: ErrorResponse{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"invalid credentials"}},
+			},
+		},
+		{
+			name: "User not found",
+			requestBody: `{
+				"user": {
+					"email": "nonexistent@example.com",
+					"password": "password123"
+				}
+			}`,
+			mockLogin: func(email, password string) (*service.User, error) {
+				return nil, service.ErrUserNotFound
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedResponse: ErrorResponse{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"invalid credentials"}},
+			},
+		},
+		{
+			name: "Internal server error",
+			requestBody: `{
+				"user": {
+					"email": "test@example.com",
+					"password": "password123"
+				}
+			}`,
+			mockLogin: func(email, password string) (*service.User, error) {
+				return nil, service.ErrInternalServer
+			},
+			expectedStatus: http.StatusInternalServerError,
+			expectedResponse: ErrorResponse{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"internal server error"}},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockUserService := &MockUserService{
+				loginFunc: tt.mockLogin,
+			}
+
+			userHandler := NewUserHandler(mockUserService)
+
+			req := httptest.NewRequest(http.MethodPost, "/api/users/login", strings.NewReader(tt.requestBody))
+			req.Header.Set("Content-Type", "application/json")
+
+			rr := httptest.NewRecorder()
+
+			handler := userHandler.Login()
+			handler.ServeHTTP(rr, req)
+
+			if got, want := rr.Code, tt.expectedStatus; got != want {
+				t.Errorf("Status code: got %v, want %v", got, want)
+			}
+
+			var got interface{}
+			if tt.expectedStatus == http.StatusOK {
 				var resp UserResponse
 				if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
 					t.Errorf("Failed to unmarshal response: %v", err)
