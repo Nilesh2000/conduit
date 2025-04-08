@@ -74,11 +74,11 @@ func (h *UserHandler) Register() http.HandlerFunc {
 		if err != nil {
 			switch {
 			case errors.Is(err, service.ErrUsernameTaken):
-				h.respondWithError(w, http.StatusUnprocessableEntity, []string{"username already taken"})
+				h.respondWithError(w, http.StatusUnprocessableEntity, []string{"Username already taken"})
 			case errors.Is(err, service.ErrEmailTaken):
-				h.respondWithError(w, http.StatusUnprocessableEntity, []string{"email already registered"})
+				h.respondWithError(w, http.StatusUnprocessableEntity, []string{"Email already registered"})
 			default:
-				h.respondWithError(w, http.StatusInternalServerError, []string{"internal server error"})
+				h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
 			}
 			return
 		}
@@ -110,9 +110,9 @@ func (h *UserHandler) Login() http.HandlerFunc {
 		if err != nil {
 			switch {
 			case errors.Is(err, service.ErrInvalidCredentials) || errors.Is(err, service.ErrUserNotFound):
-				h.respondWithError(w, http.StatusUnauthorized, []string{"invalid credentials"})
+				h.respondWithError(w, http.StatusUnauthorized, []string{"Invalid credentials"})
 			default:
-				h.respondWithError(w, http.StatusInternalServerError, []string{"internal server error"})
+				h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
 			}
 			return
 		}

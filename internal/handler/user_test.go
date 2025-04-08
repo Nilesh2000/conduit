@@ -157,7 +157,7 @@ func TestUserHandler_Register(t *testing.T) {
 			expectedResponse: ErrorResponse{
 				Errors: struct {
 					Body []string `json:"body"`
-				}{Body: []string{"username already taken"}},
+				}{Body: []string{"Username already taken"}},
 			},
 		},
 		{
@@ -176,7 +176,7 @@ func TestUserHandler_Register(t *testing.T) {
 			expectedResponse: ErrorResponse{
 				Errors: struct {
 					Body []string `json:"body"`
-				}{Body: []string{"email already registered"}},
+				}{Body: []string{"Email already registered"}},
 			},
 		},
 		{
@@ -195,7 +195,7 @@ func TestUserHandler_Register(t *testing.T) {
 			expectedResponse: ErrorResponse{
 				Errors: struct {
 					Body []string `json:"body"`
-				}{Body: []string{"internal server error"}},
+				}{Body: []string{"Internal server error"}},
 			},
 		},
 	}
@@ -332,7 +332,7 @@ func TestUserHandler_Login(t *testing.T) {
 			expectedResponse: ErrorResponse{
 				Errors: struct {
 					Body []string `json:"body"`
-				}{Body: []string{"invalid credentials"}},
+				}{Body: []string{"Invalid credentials"}},
 			},
 		},
 		{
@@ -350,7 +350,7 @@ func TestUserHandler_Login(t *testing.T) {
 			expectedResponse: ErrorResponse{
 				Errors: struct {
 					Body []string `json:"body"`
-				}{Body: []string{"invalid credentials"}},
+				}{Body: []string{"Invalid credentials"}},
 			},
 		},
 		{
@@ -368,7 +368,7 @@ func TestUserHandler_Login(t *testing.T) {
 			expectedResponse: ErrorResponse{
 				Errors: struct {
 					Body []string `json:"body"`
-				}{Body: []string{"internal server error"}},
+				}{Body: []string{"Internal server error"}},
 			},
 		},
 	}
