@@ -188,3 +188,157 @@ func Test_userService_Register(t *testing.T) {
 		})
 	}
 }
+
+func Test_userService_Login(t *testing.T) {
+	const (
+		jwtSecret     = "test-secret"
+		jwtExpiration = time.Hour * 24
+	)
+
+	tests := []struct {
+		name          string
+		email         string
+		password      string
+		setupMock     func() *MockUserRepository
+		expectedError error
+		validateFunc  func(t *testing.T, u *User)
+	}{
+		{
+			name:     "Valid login",
+			email:    "test@example.com",
+			password: "password123",
+			setupMock: func() *MockUserRepository {
+				return &MockUserRepository{
+					findByEmailFunc: func(email string) (*repository.User, error) {
+						if email != "test@example.com" {
+							t.Errorf("Expected FindByEmail(%q), got FindByEmail(%q)", "test@example.com", email)
+						}
+
+						hashedPassword, err := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+						if err != nil {
+							t.Errorf("Failed to hash password: %v", err)
+						}
+
+						return &repository.User{
+							ID:       1,
+							Username: "testuser",
+							Email:    "test@example.com",
+							Password: string(hashedPassword),
+							Bio:      "I'm a test user",
+							Image:    "https://example.com/image.jpg",
+						}, nil
+					},
+				}
+			},
+			expectedError: nil,
+			validateFunc: func(t *testing.T, u *User) {
+				if u.Email != "test@example.com" {
+					t.Errorf("Expected Email 'test@example.com', got %q", u.Email)
+				}
+				if u.Token == "" {
+					t.Errorf("Expected non-empty token")
+				}
+				if u.Username != "testuser" {
+					t.Errorf("Expected Username 'testuser', got %q", u.Username)
+				}
+				if u.Bio != "I'm a test user" {
+					t.Errorf("Expected bio 'I'm a test user', got %q", u.Bio)
+				}
+				if u.Image != "https://example.com/image.jpg" {
+					t.Errorf("Expected image 'https://example.com/image.jpg', got %q", u.Image)
+				}
+
+				// Verify token
+				token, err := jwt.Parse(u.Token, func(token *jwt.Token) (interface{}, error) {
+					return []byte(jwtSecret), nil
+				})
+				if err != nil {
+					t.Errorf("Failed to parse token: %v", err)
+				}
+				if !token.Valid {
+					t.Errorf("Token is not valid")
+				}
+
+				// Verify claims
+				if claims, ok := token.Claims.(jwt.MapClaims); ok {
+					if claims["id"] != float64(1) {
+						t.Errorf("Expected token claim ID to be 1, got %q", claims["id"])
+					}
+				} else {
+					t.Errorf("Failed to parse token claims")
+				}
+			},
+		},
+		{
+			name:     "User not found",
+			email:    "nonexistent@example.com",
+			password: "password123",
+			setupMock: func() *MockUserRepository {
+				return &MockUserRepository{
+					findByEmailFunc: func(email string) (*repository.User, error) {
+						return nil, repository.ErrUserNotFound
+					},
+				}
+			},
+			expectedError: ErrUserNotFound,
+			validateFunc:  nil,
+		},
+		{
+			name:     "Invalid password",
+			email:    "test@example.com",
+			password: "wrongpassword",
+			setupMock: func() *MockUserRepository {
+				return &MockUserRepository{
+					findByEmailFunc: func(email string) (*repository.User, error) {
+						hashedPassword, err := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+						if err != nil {
+							t.Errorf("Failed to hash password: %v", err)
+						}
+
+						return &repository.User{
+							ID:       1,
+							Username: "testuser",
+							Email:    "test@example.com",
+							Password: string(hashedPassword),
+							Bio:      "I'm a test user",
+							Image:    "https://example.com/image.jpg",
+						}, nil
+					},
+				}
+			},
+			expectedError: ErrInvalidCredentials,
+			validateFunc:  nil,
+		},
+		{
+			name:     "Repository error",
+			email:    "test@example.com",
+			password: "password123",
+			setupMock: func() *MockUserRepository {
+				return &MockUserRepository{
+					findByEmailFunc: func(email string) (*repository.User, error) {
+						return nil, repository.ErrInternal
+					},
+				}
+			},
+			expectedError: ErrInternalServer,
+			validateFunc:  nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockUserRepository := tt.setupMock()
+
+			userService := NewUserService(mockUserRepository, jwtSecret, jwtExpiration)
+
+			user, err := userService.Login(tt.email, tt.password)
+			if !errors.Is(err, tt.expectedError) {
+				t.Errorf("Expected error %v, got %v", tt.expectedError, err)
+			}
+
+			if err == nil && tt.validateFunc != nil {
+				tt.validateFunc(t, user)
+			}
+		})
+	}
+}
