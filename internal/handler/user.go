@@ -39,6 +39,7 @@ type UserResponse struct {
 
 type UserService interface {
 	Register(username, email, password string) (*service.User, error)
+	Login(email, password string) (*service.User, error)
 }
 
 type UserHandler struct {
@@ -83,6 +84,40 @@ func (h *UserHandler) Register() http.HandlerFunc {
 		}
 
 		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(UserResponse{
+			User: *user,
+		})
+	}
+}
+
+func (h *UserHandler) Login() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		var req LoginRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			h.respondWithError(w, http.StatusUnprocessableEntity, []string{"Invalid request body"})
+			return
+		}
+
+		if err := h.Validate.Struct(req); err != nil {
+			errors := h.translateValidationErrors(err)
+			h.respondWithError(w, http.StatusUnprocessableEntity, errors)
+			return
+		}
+
+		user, err := h.userService.Login(req.User.Email, req.User.Password)
+		if err != nil {
+			switch {
+			case errors.Is(err, service.ErrInvalidCredentials) || errors.Is(err, service.ErrUserNotFound):
+				h.respondWithError(w, http.StatusUnauthorized, []string{"invalid credentials"})
+			default:
+				h.respondWithError(w, http.StatusInternalServerError, []string{"internal server error"})
+			}
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(UserResponse{
 			User: *user,
 		})
