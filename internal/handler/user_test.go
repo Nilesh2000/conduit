@@ -201,12 +201,12 @@ func TestUserHandler_Register(t *testing.T) {
 				registerFunc: tt.mockRegister,
 			}
 
-			userHandler := NewUserHandler(mockUserService)
-
 			req := httptest.NewRequest(http.MethodPost, "/api/users", strings.NewReader(tt.requestBody))
 			req.Header.Set("Content-Type", "application/json")
 
 			rr := httptest.NewRecorder()
+
+			userHandler := NewUserHandler(mockUserService)
 
 			handler := userHandler.Register()
 			handler.ServeHTTP(rr, req)
