@@ -10,21 +10,26 @@ import (
 	"testing"
 )
 
+// MockUserService is a mock implementation of the UserService interface
 type MockUserService struct {
 	registerFunc func(username, email, password string) (*service.User, error)
 	loginFunc    func(email, password string) (*service.User, error)
 }
 
+// Ensure MockUserService implements the UserService interface
 var _ UserService = (*MockUserService)(nil)
 
+// Register creates a new user in the mock service
 func (m *MockUserService) Register(username, email, password string) (*service.User, error) {
 	return m.registerFunc(username, email, password)
 }
 
+// Login logs in a user in the mock service
 func (m *MockUserService) Login(email, password string) (*service.User, error) {
 	return m.loginFunc(email, password)
 }
 
+// TestUserHandler_Register tests the Register method of the UserHandler
 func TestUserHandler_Register(t *testing.T) {
 	tests := []struct {
 		name             string
@@ -202,24 +207,31 @@ func TestUserHandler_Register(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Setup mock service
 			mockUserService := &MockUserService{
 				registerFunc: tt.mockRegister,
 			}
 
+			// Create handler
+			userHandler := NewUserHandler(mockUserService)
+
+			// Create request
 			req := httptest.NewRequest(http.MethodPost, "/api/users", strings.NewReader(tt.requestBody))
 			req.Header.Set("Content-Type", "application/json")
 
+			// Create response recorder
 			rr := httptest.NewRecorder()
 
-			userHandler := NewUserHandler(mockUserService)
-
+			// Serve request
 			handler := userHandler.Register()
 			handler.ServeHTTP(rr, req)
 
+			// Check status code
 			if got, want := rr.Code, tt.expectedStatus; got != want {
 				t.Errorf("Status code: got %v, want %v", got, want)
 			}
 
+			// Check response body
 			var got interface{}
 			if tt.expectedStatus == http.StatusCreated {
 				var resp UserResponse
@@ -242,6 +254,7 @@ func TestUserHandler_Register(t *testing.T) {
 	}
 }
 
+// TestUserHandler_Login tests the Login method of the UserHandler
 func TestUserHandler_Login(t *testing.T) {
 	tests := []struct {
 		name             string
@@ -375,24 +388,31 @@ func TestUserHandler_Login(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Setup mock service
 			mockUserService := &MockUserService{
 				loginFunc: tt.mockLogin,
 			}
 
+			// Create handler
 			userHandler := NewUserHandler(mockUserService)
 
+			// Create request
 			req := httptest.NewRequest(http.MethodPost, "/api/users/login", strings.NewReader(tt.requestBody))
 			req.Header.Set("Content-Type", "application/json")
 
+			// Create response recorder
 			rr := httptest.NewRecorder()
 
+			// Serve request
 			handler := userHandler.Login()
 			handler.ServeHTTP(rr, req)
 
+			// Check status code
 			if got, want := rr.Code, tt.expectedStatus; got != want {
 				t.Errorf("Status code: got %v, want %v", got, want)
 			}
 
+			// Check response body
 			var got interface{}
 			if tt.expectedStatus == http.StatusOK {
 				var resp UserResponse

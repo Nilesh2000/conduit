@@ -10,6 +10,7 @@ import (
 	"github.com/lib/pq"
 )
 
+// TestCreate tests the Create method of the UserRepository
 func TestCreate(t *testing.T) {
 	// Create a mock database
 	db, mock, err := sqlmock.New()
@@ -198,6 +199,7 @@ func TestCreate(t *testing.T) {
 	}
 }
 
+// TestFindByEmail tests the FindByEmail method of the UserRepository
 func TestFindByEmail(t *testing.T) {
 	// Create a mock database
 	db, mock, err := sqlmock.New()

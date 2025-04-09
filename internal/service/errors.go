@@ -2,6 +2,7 @@ package service
 
 import "errors"
 
+// Service errors
 var (
 	ErrUsernameTaken  = errors.New("username already taken")
 	ErrEmailTaken     = errors.New("email already registered")

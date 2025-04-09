@@ -18,6 +18,7 @@ type GenericErrorModel struct {
 
 type ErrorResponse = GenericErrorModel
 
+// RegisterRequest represents the request body for user registration
 type RegisterRequest struct {
 	User struct {
 		Username string `json:"username" validate:"required"`
@@ -26,6 +27,7 @@ type RegisterRequest struct {
 	} `json:"user"`
 }
 
+// LoginRequest represents the request body for user login
 type LoginRequest struct {
 	User struct {
 		Email    string `json:"email" validate:"required,email"`
@@ -33,20 +35,24 @@ type LoginRequest struct {
 	} `json:"user"`
 }
 
+// UserResponse represents the response body for user operations
 type UserResponse struct {
 	User service.User `json:"user"`
 }
 
+// UserService defines the interface for user service operations
 type UserService interface {
 	Register(username, email, password string) (*service.User, error)
 	Login(email, password string) (*service.User, error)
 }
 
+// UserHandler handles user-related HTTP requests
 type UserHandler struct {
 	userService UserService
 	Validate    *validator.Validate
 }
 
+// NewUserHandler creates a new UserHandler
 func NewUserHandler(userService UserService) *UserHandler {
 	return &UserHandler{
 		userService: userService,
@@ -54,23 +60,30 @@ func NewUserHandler(userService UserService) *UserHandler {
 	}
 }
 
+// Register returns a handler function for user registration
 func (h *UserHandler) Register() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Set the content type to JSON
 		w.Header().Set("Content-Type", "application/json")
 
+		// Parse request body
 		var req RegisterRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			h.respondWithError(w, http.StatusUnprocessableEntity, []string{"Invalid request body"})
 			return
 		}
 
+		// Validate request body
 		if err := h.Validate.Struct(req); err != nil {
 			errors := h.translateValidationErrors(err)
 			h.respondWithError(w, http.StatusUnprocessableEntity, errors)
 			return
 		}
 
+		// Call service to register user
 		user, err := h.userService.Register(req.User.Username, req.User.Email, req.User.Password)
+
+		// Handle errors
 		if err != nil {
 			switch {
 			case errors.Is(err, service.ErrUsernameTaken):
@@ -83,6 +96,7 @@ func (h *UserHandler) Register() http.HandlerFunc {
 			return
 		}
 
+		// Respond with created user
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(UserResponse{
 			User: *user,
@@ -90,23 +104,30 @@ func (h *UserHandler) Register() http.HandlerFunc {
 	}
 }
 
+// Login returns a handler function for user login
 func (h *UserHandler) Login() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Set the content type to JSON
 		w.Header().Set("Content-Type", "application/json")
 
+		// Parse request body
 		var req LoginRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			h.respondWithError(w, http.StatusUnprocessableEntity, []string{"Invalid request body"})
 			return
 		}
 
+		// Validate request body
 		if err := h.Validate.Struct(req); err != nil {
 			errors := h.translateValidationErrors(err)
 			h.respondWithError(w, http.StatusUnprocessableEntity, errors)
 			return
 		}
 
+		// Call service to login user
 		user, err := h.userService.Login(req.User.Email, req.User.Password)
+
+		// Handle errors
 		if err != nil {
 			switch {
 			case errors.Is(err, service.ErrInvalidCredentials) || errors.Is(err, service.ErrUserNotFound):
@@ -117,6 +138,7 @@ func (h *UserHandler) Login() http.HandlerFunc {
 			return
 		}
 
+		// Respond with user data
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(UserResponse{
 			User: *user,
@@ -124,6 +146,7 @@ func (h *UserHandler) Login() http.HandlerFunc {
 	}
 }
 
+// translateValidationErrors translates validation errors into a list of error messages
 func (h *UserHandler) translateValidationErrors(err error) []string {
 	var validationErrors []string
 
@@ -147,6 +170,7 @@ func (h *UserHandler) translateValidationErrors(err error) []string {
 	return validationErrors
 }
 
+// respondWithError sends an error response with the given status code and errors
 func (h *UserHandler) respondWithError(w http.ResponseWriter, status int, errors []string) {
 	w.WriteHeader(status)
 
