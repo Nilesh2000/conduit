@@ -11,6 +11,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// MockUserRepository is a mock implementation of the UserRepository interface
 type MockUserRepository struct {
 	createFunc      func(username, email, password string) (*repository.User, error)
 	findByEmailFunc func(email string) (*repository.User, error)
@@ -18,14 +19,17 @@ type MockUserRepository struct {
 
 var _ UserRepository = (*MockUserRepository)(nil)
 
+// Create creates a new user in the repository
 func (m *MockUserRepository) Create(username, email, password string) (*repository.User, error) {
 	return m.createFunc(username, email, password)
 }
 
+// FindByEmail finds a user by email in the repository
 func (m *MockUserRepository) FindByEmail(email string) (*repository.User, error) {
 	return m.findByEmailFunc(email)
 }
 
+// Test_userService_Register tests the Register method of the userService
 func Test_userService_Register(t *testing.T) {
 	const (
 		jwtSecret     = "test-secret"
@@ -178,15 +182,21 @@ func Test_userService_Register(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Setup mock repository
 			mockUserRepository := tt.setupMock()
 
+			// Create service with mock repository
 			userService := NewUserService(mockUserRepository, jwtSecret, jwtExpiration)
 
+			// Call Register
 			user, err := userService.Register(tt.username, tt.email, tt.password)
+
+			// Validate error
 			if !errors.Is(err, tt.expectedError) {
 				t.Errorf("Expected error %v, got %v", tt.expectedError, err)
 			}
 
+			// Validate user if expected
 			if err == nil && tt.validateFunc != nil {
 				tt.validateFunc(t, user)
 			}
@@ -194,6 +204,7 @@ func Test_userService_Register(t *testing.T) {
 	}
 }
 
+// Test_userService_Login tests the Login method of the userService
 func Test_userService_Login(t *testing.T) {
 	const (
 		jwtSecret     = "test-secret"
@@ -337,15 +348,21 @@ func Test_userService_Login(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Setup mock repository
 			mockUserRepository := tt.setupMock()
 
+			// Create service with mock repository
 			userService := NewUserService(mockUserRepository, jwtSecret, jwtExpiration)
 
+			// Call Login
 			user, err := userService.Login(tt.email, tt.password)
+
+			// Validate error
 			if !errors.Is(err, tt.expectedError) {
 				t.Errorf("Expected error %v, got %v", tt.expectedError, err)
 			}
 
+			// Validate user if expected
 			if err == nil && tt.validateFunc != nil {
 				tt.validateFunc(t, user)
 			}
