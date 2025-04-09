@@ -93,6 +93,7 @@ func main() {
 
 	router := http.NewServeMux()
 	router.HandleFunc("POST /api/users", userHandler.Register())
+	router.HandleFunc("POST /api/users/login", userHandler.Login())
 
 	server := &http.Server{
 		Addr:    ":8080",
