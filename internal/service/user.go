@@ -3,9 +3,11 @@ package service
 import (
 	"conduit/internal/repository"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -98,9 +100,16 @@ func (s *userService) Login(email, password string) (*User, error) {
 }
 
 func (s *userService) generateToken(userID int64) (string, error) {
-	claims := jwt.MapClaims{
-		"id":  userID,
-		"exp": time.Now().Add(s.jwtExpiration).Unix(),
+	now := time.Now()
+	expirationTime := now.Add(s.jwtExpiration)
+
+	claims := jwt.StandardClaims{
+		ExpiresAt: expirationTime.Unix(),
+		Id:        uuid.New().String(),
+		IssuedAt:  now.Unix(),
+		Issuer:    "conduit-api",
+		NotBefore: now.Unix(),
+		Subject:   fmt.Sprintf("%d", userID),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

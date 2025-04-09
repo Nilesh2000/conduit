@@ -88,7 +88,7 @@ func Test_userService_Register(t *testing.T) {
 				}
 
 				// Verify token
-				token, err := jwt.Parse(u.Token, func(token *jwt.Token) (interface{}, error) {
+				token, err := jwt.ParseWithClaims(u.Token, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
 					return []byte(jwtSecret), nil
 				})
 				if err != nil {
@@ -99,12 +99,17 @@ func Test_userService_Register(t *testing.T) {
 				}
 
 				// Verify claims
-				if claims, ok := token.Claims.(jwt.MapClaims); ok {
-					if claims["id"] != float64(1) {
-						t.Errorf("Expected token claim ID to be 1, got %q", claims["id"])
+				if claims, ok := token.Claims.(*jwt.StandardClaims); ok {
+					expectedSubject := "1"
+					if claims.Subject != expectedSubject {
+						t.Errorf("Expected token subject to be %q, got %q", expectedSubject, claims.Subject)
+					}
+
+					if claims.Issuer != "conduit-api" {
+						t.Errorf("Expected token issuer to be 'conduit-api', got %q", claims.Issuer)
 					}
 				} else {
-					t.Errorf("Failed to parse token claims")
+					t.Errorf("Failed to parse token claims as StandardClaims")
 				}
 			},
 		},
@@ -249,7 +254,7 @@ func Test_userService_Login(t *testing.T) {
 				}
 
 				// Verify token
-				token, err := jwt.Parse(u.Token, func(token *jwt.Token) (interface{}, error) {
+				token, err := jwt.ParseWithClaims(u.Token, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
 					return []byte(jwtSecret), nil
 				})
 				if err != nil {
@@ -260,12 +265,17 @@ func Test_userService_Login(t *testing.T) {
 				}
 
 				// Verify claims
-				if claims, ok := token.Claims.(jwt.MapClaims); ok {
-					if claims["id"] != float64(1) {
-						t.Errorf("Expected token claim ID to be 1, got %q", claims["id"])
+				if claims, ok := token.Claims.(*jwt.StandardClaims); ok {
+					expectedSubject := "1"
+					if claims.Subject != expectedSubject {
+						t.Errorf("Expected token subject to be %q, got %q", expectedSubject, claims.Subject)
+					}
+
+					if claims.Issuer != "conduit-api" {
+						t.Errorf("Expected token issuer to be 'conduit-api', got %q", claims.Issuer)
 					}
 				} else {
-					t.Errorf("Failed to parse token claims")
+					t.Errorf("Failed to parse token claims as StandardClaims")
 				}
 			},
 		},
