@@ -8,27 +8,37 @@ import (
 	"github.com/lib/pq"
 )
 
+// UserRepository implements the repository.UserRepository using PostgreSQL
 type UserRepository struct {
 	db *sql.DB
 }
 
-func NewUserRepository(db *sql.DB) *UserRepository {
+// New creates a new UserRepository
+func New(db *sql.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 
+// Create creates a new user in the database
 func (r *UserRepository) Create(username, email, password string) (*repository.User, error) {
+	// Begin a transaction
 	tx, err := r.db.Begin()
 	if err != nil {
 		return nil, repository.ErrInternal
 	}
 	defer tx.Rollback()
 
+	// Insert user
 	now := time.Now()
 	var userID int64
 	err = tx.QueryRow("INSERT INTO users (username, email, password, bio, image, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id", username, email, password, "", "", now, now).Scan(&userID)
+
+	// Handle database errors
 	if err != nil {
+		// PostgreSQL specific error handling
 		if pqErr, ok := err.(*pq.Error); ok {
+			// Check for unique violation error codes
 			if pqErr.Code == "23505" {
+				// Determine which constraint was violated
 				if pqErr.Constraint == "users_username_key" {
 					return nil, repository.ErrDuplicateUsername
 				}
@@ -40,10 +50,12 @@ func (r *UserRepository) Create(username, email, password string) (*repository.U
 		return nil, repository.ErrInternal
 	}
 
+	// Commit the transaction
 	if err := tx.Commit(); err != nil {
 		return nil, repository.ErrInternal
 	}
 
+	// Return the created user
 	return &repository.User{
 		ID:       userID,
 		Username: username,
@@ -54,6 +66,7 @@ func (r *UserRepository) Create(username, email, password string) (*repository.U
 	}, nil
 }
 
+// FindByEmail finds a user by email in the database
 func (r *UserRepository) FindByEmail(email string) (*repository.User, error) {
 	var user repository.User
 	var bio, image sql.NullString
@@ -67,6 +80,7 @@ func (r *UserRepository) FindByEmail(email string) (*repository.User, error) {
 		return nil, repository.ErrInternal
 	}
 
+	// Handle nullable values
 	if bio.Valid {
 		user.Bio = bio.String
 	}

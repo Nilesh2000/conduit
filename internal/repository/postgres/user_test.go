@@ -11,14 +11,17 @@ import (
 )
 
 func TestCreate(t *testing.T) {
+	// Create a mock database
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("Error creating mock database: %v", err)
 	}
 	defer db.Close()
 
-	repo := NewUserRepository(db)
+	// Create repository with mock database
+	repo := New(db)
 
+	// Define test cases
 	tests := []struct {
 		name         string
 		username     string
@@ -34,12 +37,15 @@ func TestCreate(t *testing.T) {
 			email:    "test@example.com",
 			password: "hashedPassword",
 			mockSetup: func(mock sqlmock.Sqlmock) {
+				// Expect begin transaction
 				mock.ExpectBegin()
 
+				// Expect insert query with returning id
 				mock.ExpectQuery(`INSERT INTO users \(username, email, password, bio, image, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5, \$6, \$7\) RETURNING id`).
 					WithArgs("testuser", "test@example.com", "hashedPassword", "", "", sqlmock.AnyArg(), sqlmock.AnyArg()).
 					WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 
+				// Expect commit transaction
 				mock.ExpectCommit()
 			},
 			expectedErr: nil,
@@ -70,8 +76,10 @@ func TestCreate(t *testing.T) {
 			email:    "new@example.com",
 			password: "hashedPassword",
 			mockSetup: func(mock sqlmock.Sqlmock) {
+				// Expect begin transaction
 				mock.ExpectBegin()
 
+				// Expect insert query to fail with duplicate key error on username
 				mock.ExpectQuery(`INSERT INTO users \(username, email, password, bio, image, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5, \$6, \$7\) RETURNING id`).
 					WithArgs("existinguser", "new@example.com", "hashedPassword", "", "", sqlmock.AnyArg(), sqlmock.AnyArg()).
 					WillReturnError(&pq.Error{
@@ -80,6 +88,7 @@ func TestCreate(t *testing.T) {
 						Constraint: "users_username_key",
 					})
 
+				// Expect rollback
 				mock.ExpectRollback()
 			},
 			expectedErr:  repository.ErrDuplicateUsername,
@@ -91,8 +100,10 @@ func TestCreate(t *testing.T) {
 			email:    "existing@example.com",
 			password: "hashedPassword",
 			mockSetup: func(mock sqlmock.Sqlmock) {
+				// Expect begin transaction
 				mock.ExpectBegin()
 
+				// Expect insert query to fail with duplicate key error on email
 				mock.ExpectQuery(`INSERT INTO users \(username, email, password, bio, image, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5, \$6, \$7\) RETURNING id`).
 					WithArgs("newuser", "existing@example.com", "hashedPassword", "", "", sqlmock.AnyArg(), sqlmock.AnyArg()).
 					WillReturnError(&pq.Error{
@@ -101,6 +112,7 @@ func TestCreate(t *testing.T) {
 						Constraint: "users_email_key",
 					})
 
+				// Expect rollback
 				mock.ExpectRollback()
 			},
 			expectedErr:  repository.ErrDuplicateEmail,
@@ -112,12 +124,15 @@ func TestCreate(t *testing.T) {
 			email:    "test@example.com",
 			password: "hashedPassword",
 			mockSetup: func(mock sqlmock.Sqlmock) {
+				// Expect begin transaction
 				mock.ExpectBegin()
 
+				// Expect insert query to fail with generic database error
 				mock.ExpectQuery(`INSERT INTO users \(username, email, password, bio, image, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5, \$6, \$7\) RETURNING id`).
 					WithArgs("testuser", "test@example.com", "hashedPassword", "", "", sqlmock.AnyArg(), sqlmock.AnyArg()).
 					WillReturnError(errors.New("database error"))
 
+				// Expect rollback
 				mock.ExpectRollback()
 			},
 			expectedErr:  repository.ErrInternal,
@@ -140,12 +155,15 @@ func TestCreate(t *testing.T) {
 			email:    "test@example.com",
 			password: "hashedPassword",
 			mockSetup: func(mock sqlmock.Sqlmock) {
+				// Expect begin transaction
 				mock.ExpectBegin()
 
+				// Expect insert query with returning id
 				mock.ExpectQuery(`INSERT INTO users \(username, email, password, bio, image, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5, \$6, \$7\) RETURNING id`).
 					WithArgs("testuser", "test@example.com", "hashedPassword", "", "", sqlmock.AnyArg(), sqlmock.AnyArg()).
 					WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
 
+				// Expect commit transaction to fail
 				mock.ExpectCommit().WillReturnError(errors.New("commit error"))
 			},
 			expectedErr:  repository.ErrInternal,
@@ -153,20 +171,26 @@ func TestCreate(t *testing.T) {
 		},
 	}
 
+	// Run tests
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Setup mock expectations
 			tt.mockSetup(mock)
 
+			// Call Create method
 			user, err := repo.Create(tt.username, tt.email, tt.password)
 
+			// Verify error
 			if !errors.Is(err, tt.expectedErr) {
 				t.Errorf("Expected error %v, got %v", tt.expectedErr, err)
 			}
 
+			// Validate user if expected
 			if err == nil && tt.validateUser != nil {
 				tt.validateUser(t, user)
 			}
 
+			// Ensure all expectations were met
 			if err := mock.ExpectationsWereMet(); err != nil {
 				t.Errorf("Unfulfilled mock expectations: %v", err)
 			}
@@ -175,14 +199,17 @@ func TestCreate(t *testing.T) {
 }
 
 func TestFindByEmail(t *testing.T) {
+	// Create a mock database
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("Error creating mock database: %v", err)
 	}
 	defer db.Close()
 
-	repo := NewUserRepository(db)
+	// Create repository with mock database
+	repo := New(db)
 
+	// Define test cases
 	tests := []struct {
 		name         string
 		email        string
@@ -261,20 +288,25 @@ func TestFindByEmail(t *testing.T) {
 		},
 	}
 
+	// Run tests
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// Setup mock expectations
 			tt.mockSetup(mock)
 
+			// Call FindByEmail method
 			user, err := repo.FindByEmail(tt.email)
 
 			if !errors.Is(err, tt.expectedErr) {
 				t.Errorf("Expected error %v, got %v", tt.expectedErr, err)
 			}
 
+			// Validate user if expected
 			if err == nil && tt.validateUser != nil {
 				tt.validateUser(t, user)
 			}
 
+			// Ensure all expectations were met
 			if err := mock.ExpectationsWereMet(); err != nil {
 				t.Errorf("Unfulfilled mock expectations: %v", err)
 			}

@@ -87,7 +87,7 @@ func main() {
 		log.Fatalf("Failed to ping database: %v", err)
 	}
 
-	userRepository := postgres.NewUserRepository(db)
+	userRepository := postgres.New(db)
 	userService := service.NewUserService(userRepository, "secret", time.Hour*24)
 	userHandler := handler.NewUserHandler(userService)
 
