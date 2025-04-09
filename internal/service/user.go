@@ -26,7 +26,6 @@ type userService struct {
 	userRepository UserRepository
 	jwtSecret      []byte
 	jwtExpiration  time.Duration
-	signingMethod  jwt.SigningMethod
 }
 
 func NewUserService(userRepository UserRepository, jwtSecret string, jwtExpiration time.Duration) *userService {
@@ -34,7 +33,6 @@ func NewUserService(userRepository UserRepository, jwtSecret string, jwtExpirati
 		userRepository: userRepository,
 		jwtSecret:      []byte(jwtSecret),
 		jwtExpiration:  jwtExpiration,
-		signingMethod:  jwt.SigningMethodHS256,
 	}
 }
 
@@ -105,6 +103,6 @@ func (s *userService) generateToken(userID int64) (string, error) {
 		"exp": time.Now().Add(s.jwtExpiration).Unix(),
 	}
 
-	token := jwt.NewWithClaims(s.signingMethod, claims)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(s.jwtSecret))
 }
