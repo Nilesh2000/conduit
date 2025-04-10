@@ -31,11 +31,11 @@ type RegisterRequest struct {
 // UpdateUserRequest represents the request body for updating a user
 type UpdateUserRequest struct {
 	User struct {
-		Username string `json:"username" validate:"omitempty"`
-		Email    string `json:"email" validate:"omitempty,email"`
-		Password string `json:"password" validate:"omitempty,min=8"`
-		Bio      string `json:"bio" validate:"omitempty"`
-		Image    string `json:"image" validate:"omitempty"`
+		Username *string `json:"username" validate:"omitempty"`
+		Email    *string `json:"email" validate:"omitempty,email"`
+		Password *string `json:"password" validate:"omitempty,min=8"`
+		Bio      *string `json:"bio" validate:"omitempty"`
+		Image    *string `json:"image" validate:"omitempty"`
 	} `json:"user"`
 }
 
@@ -57,7 +57,7 @@ type UserService interface {
 	Register(username, email, password string) (*service.User, error)
 	Login(email, password string) (*service.User, error)
 	GetCurrentUser(userID int64) (*service.User, error)
-	UpdateUser(userID int64, username, email, password, bio, image string) (*service.User, error)
+	UpdateUser(userID int64, username, email, password, bio, image *string) (*service.User, error)
 }
 
 // UserHandler handles user-related HTTP requests

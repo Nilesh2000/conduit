@@ -124,7 +124,7 @@ func (r *UserRepository) FindByID(id int64) (*repository.User, error) {
 }
 
 // Update updates a user in the database
-func (r *UserRepository) Update(userID int64, user repository.User) (*repository.User, error) {
+func (r *UserRepository) Update(userID int64, username, email, password, bio, image *string) (*repository.User, error) {
 	// Begin a transaction
 	tx, err := r.db.Begin()
 	if err != nil {
@@ -135,30 +135,31 @@ func (r *UserRepository) Update(userID int64, user repository.User) (*repository
 	query := `
 		UPDATE users
 		SET
-			username = COALESCE(NULLIF($1, ''), username),
-			email = COALESCE(NULLIF($2, ''), email),
-			password = COALESCE(NULLIF($3, ''), password),
-			bio = COALESCE(NULLIF($4, ''), bio),
-			image = COALESCE(NULLIF($5, ''), image),
+			username = COALESCE($1, username),
+			email = COALESCE($2, email),
+			password = COALESCE($3, password),
+			bio = COALESCE($4, bio),
+			image = COALESCE($5, image),
 			updated_at = $6
 		WHERE id = $7
 		RETURNING id, username, email, password, bio, image
 	`
 
+	now := time.Now()
 	var updatedUser repository.User
-	var bio, image sql.NullString
+	var nsBio, nsImage sql.NullString
 
 	// Update user
 	err = tx.QueryRow(
 		query,
-		user.Username,
-		user.Email,
-		user.Password,
-		user.Bio,
-		user.Image,
-		time.Now(),
+		username,
+		email,
+		password,
+		bio,
+		image,
+		now,
 		userID,
-	).Scan(&updatedUser.ID, &updatedUser.Username, &updatedUser.Email, &updatedUser.Password, &bio, &image)
+	).Scan(&updatedUser.ID, &updatedUser.Username, &updatedUser.Email, &updatedUser.Password, &nsBio, &nsImage)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -180,12 +181,12 @@ func (r *UserRepository) Update(userID int64, user repository.User) (*repository
 	}
 
 	// Handle nullable values
-	if bio.Valid {
-		updatedUser.Bio = bio.String
+	if nsBio.Valid {
+		updatedUser.Bio = nsBio.String
 	}
 
-	if image.Valid {
-		updatedUser.Image = image.String
+	if nsImage.Valid {
+		updatedUser.Image = nsImage.String
 	}
 
 	// Commit the transaction

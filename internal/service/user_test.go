@@ -16,7 +16,7 @@ type MockUserRepository struct {
 	createFunc      func(username, email, password string) (*repository.User, error)
 	findByEmailFunc func(email string) (*repository.User, error)
 	findByIDFunc    func(id int64) (*repository.User, error)
-	updateFunc      func(userID int64, user repository.User) (*repository.User, error)
+	updateFunc      func(userID int64, username, email, password, bio, image *string) (*repository.User, error)
 }
 
 var _ UserRepository = (*MockUserRepository)(nil)
@@ -37,8 +37,8 @@ func (m *MockUserRepository) FindByID(id int64) (*repository.User, error) {
 }
 
 // Update updates a user in the repository
-func (m *MockUserRepository) Update(userID int64, user repository.User) (*repository.User, error) {
-	return m.updateFunc(userID, user)
+func (m *MockUserRepository) Update(userID int64, username, email, password, bio, image *string) (*repository.User, error) {
+	return m.updateFunc(userID, username, email, password, bio, image)
 }
 
 // Test_userService_Register tests the Register method of the userService

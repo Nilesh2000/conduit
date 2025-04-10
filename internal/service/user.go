@@ -25,7 +25,7 @@ type UserRepository interface {
 	Create(username, email, password string) (*repository.User, error)
 	FindByEmail(email string) (*repository.User, error)
 	FindByID(id int64) (*repository.User, error)
-	Update(userID int64, user repository.User) (*repository.User, error)
+	Update(userID int64, username, email, password, bio, image *string) (*repository.User, error)
 }
 
 // userService implements the UserService interface
@@ -136,20 +136,19 @@ func (s *userService) GetCurrentUser(userID int64) (*User, error) {
 }
 
 // UpdateUser updates a user in the system
-func (s *userService) UpdateUser(userID int64, username, email, password, bio, image string) (*User, error) {
-	// Hash the password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, ErrInternalServer
+func (s *userService) UpdateUser(userID int64, username, email, password, bio, image *string) (*User, error) {
+	// Hash the password if provided
+	var hashedPassword *string
+	if password != nil {
+		hashedBytes, err := bcrypt.GenerateFromPassword([]byte(*password), bcrypt.DefaultCost)
+		if err != nil {
+			return nil, ErrInternalServer
+		}
+		h := string(hashedBytes)
+		hashedPassword = &h
 	}
 
-	repoUser, err := s.userRepository.Update(userID, repository.User{
-		Username: username,
-		Email:    email,
-		Password: string(hashedPassword),
-		Bio:      bio,
-		Image:    image,
-	})
+	repoUser, err := s.userRepository.Update(userID, username, email, hashedPassword, bio, image)
 
 	switch {
 	case errors.Is(err, repository.ErrDuplicateUsername):
