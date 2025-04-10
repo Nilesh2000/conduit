@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -172,6 +173,10 @@ func (h *UserHandler) GetCurrentUser() http.HandlerFunc {
 			return
 		}
 
+		// Get token from context
+		authHeader := r.Header.Get("Authorization")
+		token := strings.TrimPrefix(authHeader, "Token ")
+
 		// Call service to get current user
 		user, err := h.userService.GetCurrentUser(userID)
 		if err != nil {
@@ -183,6 +188,9 @@ func (h *UserHandler) GetCurrentUser() http.HandlerFunc {
 			}
 			return
 		}
+
+		// Add token to user
+		user.Token = token
 
 		// Respond with user data
 		w.WriteHeader(http.StatusOK)

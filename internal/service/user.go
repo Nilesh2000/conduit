@@ -127,14 +127,8 @@ func (s *userService) GetCurrentUser(userID int64) (*User, error) {
 		}
 	}
 
-	token, err := s.generateToken(repoUser.ID)
-	if err != nil {
-		return nil, ErrInternalServer
-	}
-
 	return &User{
 		Email:    repoUser.Email,
-		Token:    token,
 		Username: repoUser.Username,
 		Bio:      repoUser.Bio,
 		Image:    repoUser.Image,
