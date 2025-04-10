@@ -1,7 +1,9 @@
 package handler
 
 import (
+	"conduit/internal/middleware"
 	"conduit/internal/service"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -483,6 +485,137 @@ func TestUserHandler_Login(t *testing.T) {
 
 			// Serve request
 			handler := userHandler.Login()
+			handler.ServeHTTP(rr, req)
+
+			// Check status code
+			if got, want := rr.Code, tt.expectedStatus; got != want {
+				t.Errorf("Status code: got %v, want %v", got, want)
+			}
+
+			// Check response body
+			var got interface{}
+			if tt.expectedStatus == http.StatusOK {
+				var resp UserResponse
+				if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
+					t.Errorf("Failed to unmarshal response: %v", err)
+				}
+				got = resp
+			} else {
+				var resp GenericErrorModel
+				if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
+					t.Errorf("Failed to unmarshal response: %v", err)
+				}
+				got = resp
+			}
+
+			if !reflect.DeepEqual(got, tt.expectedResponse) {
+				t.Errorf("Response body: got %v, want %v", got, tt.expectedResponse)
+			}
+		})
+	}
+}
+
+// TestUserHandler_GetCurrentUser tests the GetCurrentUser method of the UserHandler
+func TestUserHandler_GetCurrentUser(t *testing.T) {
+	tests := []struct {
+		name             string
+		setupMock        func() *MockUserService
+		authToken        string
+		expectedStatus   int
+		expectedResponse interface{}
+	}{
+		{
+			name: "Valid current user",
+			setupMock: func() *MockUserService {
+				mockService := &MockUserService{
+					getCurrentUserFunc: func(userID int64) (*service.User, error) {
+						if userID != 1 {
+							t.Errorf("Expected service called with userID 1, got %d", userID)
+						}
+						return &service.User{
+							Email:    "test@example.com",
+							Username: "testuser",
+							Bio:      "I'm a test user",
+							Image:    "https://example.com/image.jpg",
+						}, nil
+					},
+				}
+				return mockService
+			},
+			authToken:      "jwt.token.here",
+			expectedStatus: http.StatusOK,
+			expectedResponse: UserResponse{
+				User: service.User{
+					Email:    "test@example.com",
+					Token:    "jwt.token.here",
+					Username: "testuser",
+					Bio:      "I'm a test user",
+					Image:    "https://example.com/image.jpg",
+				},
+			},
+		},
+		{
+			name: "User not found",
+			setupMock: func() *MockUserService {
+				mockService := &MockUserService{
+					getCurrentUserFunc: func(userID int64) (*service.User, error) {
+						return nil, service.ErrUserNotFound
+					},
+				}
+				return mockService
+			},
+			authToken:      "jwt.token.here",
+			expectedStatus: http.StatusNotFound,
+			expectedResponse: GenericErrorModel{Errors: struct {
+				Body []string `json:"body"`
+			}{Body: []string{"User not found"}},
+			},
+		},
+		{
+			name: "Internal server error",
+			setupMock: func() *MockUserService {
+				mockService := &MockUserService{
+					getCurrentUserFunc: func(userID int64) (*service.User, error) {
+						return nil, service.ErrInternalServer
+					},
+				}
+				return mockService
+			},
+			authToken:      "jwt.token.here",
+			expectedStatus: http.StatusInternalServerError,
+			expectedResponse: GenericErrorModel{Errors: struct {
+				Body []string `json:"body"`
+			}{Body: []string{"Internal server error"}},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Setup mock service
+			mockUserService := tt.setupMock()
+
+			// Create handler
+			userHandler := NewUserHandler(mockUserService)
+
+			// Create request
+			req := httptest.NewRequest(http.MethodGet, "/api/user", nil)
+
+			// Add authorization token
+			if tt.authToken != "" {
+				req.Header.Set("Authorization", "Token "+tt.authToken)
+			}
+
+			// Setup context with user ID
+			ctx := req.Context()
+			ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
+			req = req.WithContext(ctx)
+
+			// Create response recorder
+			rr := httptest.NewRecorder()
+
+			// Serve request
+			handler := userHandler.GetCurrentUser()
 			handler.ServeHTTP(rr, req)
 
 			// Check status code
