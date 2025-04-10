@@ -25,6 +25,7 @@ type UserRepository interface {
 	Create(username, email, password string) (*repository.User, error)
 	FindByEmail(email string) (*repository.User, error)
 	FindByID(id int64) (*repository.User, error)
+	Update(userID int64, user repository.User) (*repository.User, error)
 }
 
 // userService implements the UserService interface
@@ -124,6 +125,47 @@ func (s *userService) GetCurrentUser(userID int64) (*User, error) {
 		default:
 			return nil, ErrInternalServer
 		}
+	}
+
+	token, err := s.generateToken(repoUser.ID)
+	if err != nil {
+		return nil, ErrInternalServer
+	}
+
+	return &User{
+		Email:    repoUser.Email,
+		Token:    token,
+		Username: repoUser.Username,
+		Bio:      repoUser.Bio,
+		Image:    repoUser.Image,
+	}, nil
+}
+
+// UpdateUser updates a user in the system
+func (s *userService) UpdateUser(userID int64, username, email, password, bio, image string) (*User, error) {
+	// Hash the password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, ErrInternalServer
+	}
+
+	repoUser, err := s.userRepository.Update(userID, repository.User{
+		Username: username,
+		Email:    email,
+		Password: string(hashedPassword),
+		Bio:      bio,
+		Image:    image,
+	})
+
+	switch {
+	case errors.Is(err, repository.ErrDuplicateUsername):
+		return nil, ErrUsernameTaken
+	case errors.Is(err, repository.ErrDuplicateEmail):
+		return nil, ErrEmailTaken
+	case errors.Is(err, repository.ErrUserNotFound):
+		return nil, ErrUserNotFound
+	case errors.Is(err, repository.ErrInternal):
+		return nil, ErrInternalServer
 	}
 
 	token, err := s.generateToken(repoUser.ID)

@@ -15,6 +15,7 @@ type MockUserService struct {
 	registerFunc       func(username, email, password string) (*service.User, error)
 	loginFunc          func(email, password string) (*service.User, error)
 	getCurrentUserFunc func(userID int64) (*service.User, error)
+	updateUserFunc     func(userID int64, username, email, password, bio, image string) (*service.User, error)
 }
 
 // Ensure MockUserService implements the UserService interface
@@ -33,6 +34,11 @@ func (m *MockUserService) Login(email, password string) (*service.User, error) {
 // GetCurrentUser gets the current user in the mock service
 func (m *MockUserService) GetCurrentUser(userID int64) (*service.User, error) {
 	return m.getCurrentUserFunc(userID)
+}
+
+// UpdateUser updates a user in the mock service
+func (m *MockUserService) UpdateUser(userID int64, username, email, password, bio, image string) (*service.User, error) {
+	return m.updateUserFunc(userID, username, email, password, bio, image)
 }
 
 // TestUserHandler_Register tests the Register method of the UserHandler

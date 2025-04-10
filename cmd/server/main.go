@@ -102,6 +102,7 @@ func main() {
 	router.HandleFunc("POST /api/users", userHandler.Register())
 	router.HandleFunc("POST /api/users/login", userHandler.Login())
 	router.HandleFunc("GET /api/user", userHandler.GetCurrentUser())
+	router.HandleFunc("PUT /api/user", userHandler.UpdateCurrentUser())
 
 	// Start server
 	server := &http.Server{

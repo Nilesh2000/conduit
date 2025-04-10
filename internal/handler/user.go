@@ -27,6 +27,17 @@ type RegisterRequest struct {
 	} `json:"user"`
 }
 
+// UpdateUserRequest represents the request body for updating a user
+type UpdateUserRequest struct {
+	User struct {
+		Username string `json:"username" validate:"required"`
+		Email    string `json:"email" validate:"required,email"`
+		Password string `json:"password" validate:"required,min=8"`
+		Bio      string `json:"bio"`
+		Image    string `json:"image"`
+	} `json:"user"`
+}
+
 // LoginRequest represents the request body for user login
 type LoginRequest struct {
 	User struct {
@@ -45,6 +56,7 @@ type UserService interface {
 	Register(username, email, password string) (*service.User, error)
 	Login(email, password string) (*service.User, error)
 	GetCurrentUser(userID int64) (*service.User, error)
+	UpdateUser(userID int64, username, email, password, bio, image string) (*service.User, error)
 }
 
 // UserHandler handles user-related HTTP requests
@@ -173,6 +185,59 @@ func (h *UserHandler) GetCurrentUser() http.HandlerFunc {
 		}
 
 		// Respond with user data
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(UserResponse{
+			User: *user,
+		})
+	}
+}
+
+// UpdateCurrentUser returns a handler function for updating the current user
+func (h *UserHandler) UpdateCurrentUser() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Set the content type to JSON
+		w.Header().Set("Content-Type", "application/json")
+
+		// Get user ID from context
+		userID, ok := middleware.GetUserIDFromContext(r.Context())
+		if !ok {
+			h.respondWithError(w, http.StatusUnauthorized, []string{"Unauthorized"})
+			return
+		}
+
+		// Parse request body
+		var req UpdateUserRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			h.respondWithError(w, http.StatusUnprocessableEntity, []string{"Invalid request body"})
+			return
+		}
+
+		// Validate request body
+		if err := h.Validate.Struct(req); err != nil {
+			errors := h.translateValidationErrors(err)
+			h.respondWithError(w, http.StatusUnprocessableEntity, errors)
+			return
+		}
+
+		// Call service to update user
+		user, err := h.userService.UpdateUser(userID, req.User.Username, req.User.Email, req.User.Password, req.User.Bio, req.User.Image)
+
+		// Handle errors
+		if err != nil {
+			switch {
+			case errors.Is(err, service.ErrUsernameTaken):
+				h.respondWithError(w, http.StatusUnprocessableEntity, []string{"Username already taken"})
+			case errors.Is(err, service.ErrEmailTaken):
+				h.respondWithError(w, http.StatusUnprocessableEntity, []string{"Email already registered"})
+			case errors.Is(err, service.ErrUserNotFound):
+				h.respondWithError(w, http.StatusNotFound, []string{"User not found"})
+			default:
+				h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+			}
+			return
+		}
+
+		// Respond with updated user
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(UserResponse{
 			User: *user,

@@ -117,3 +117,76 @@ func (r *UserRepository) FindByID(id int64) (*repository.User, error) {
 
 	return &user, nil
 }
+
+// Update updates a user in the database
+func (r *UserRepository) Update(userID int64, user repository.User) (*repository.User, error) {
+	// Begin a transaction
+	tx, err := r.db.Begin()
+	if err != nil {
+		return nil, repository.ErrInternal
+	}
+	defer tx.Rollback()
+
+	query := `
+		UPDATE users
+		SET
+			email = COALESCE(NULLIF($1, ''), email),
+			username = COALESCE(NULLIF($2, ''), username),
+			password = COALESCE(NULLIF($3, ''), password),
+			bio = COALESCE(NULLIF($4, ''), bio),
+			image = COALESCE(NULLIF($5, ''), image),
+			updated_at = $6
+		WHERE id = $7
+		RETURNING id, username, email, password, bio, image
+	`
+
+	var updatedUser repository.User
+	var bio, image sql.NullString
+
+	// Update user
+	err = tx.QueryRow(
+		query,
+		user.Username,
+		user.Email,
+		user.Password,
+		user.Bio,
+		user.Image,
+		time.Now(),
+		userID,
+	).Scan(&updatedUser.ID, &updatedUser.Username, &updatedUser.Email, &updatedUser.Password, &bio, &image)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, repository.ErrUserNotFound
+		}
+
+		// PostgreSQL specific error handling
+		if pqErr, ok := err.(*pq.Error); ok {
+			if pqErr.Code == "23505" {
+				if pqErr.Constraint == "users_username_key" {
+					return nil, repository.ErrDuplicateUsername
+				}
+				if pqErr.Constraint == "users_email_key" {
+					return nil, repository.ErrDuplicateEmail
+				}
+			}
+		}
+		return nil, repository.ErrInternal
+	}
+
+	// Handle nullable values
+	if bio.Valid {
+		updatedUser.Bio = bio.String
+	}
+
+	if image.Valid {
+		updatedUser.Image = image.String
+	}
+
+	// Commit the transaction
+	if err := tx.Commit(); err != nil {
+		return nil, repository.ErrInternal
+	}
+
+	return &updatedUser, nil
+}
