@@ -27,10 +27,22 @@ func (r *UserRepository) Create(username, email, password string) (*repository.U
 	}
 	defer tx.Rollback()
 
-	// Insert user
+	query := `
+		INSERT INTO users (username, email, password, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id, username, email, password
+	`
+
 	now := time.Now()
-	var userID int64
-	err = tx.QueryRow("INSERT INTO users (username, email, password, bio, image, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id", username, email, password, "", "", now, now).Scan(&userID)
+	var user repository.User
+
+	// Insert user
+	err = tx.QueryRow(query, username, email, password, now, now).Scan(
+		&user.ID,
+		&user.Username,
+		&user.Email,
+		&user.Password,
+	)
 
 	// Handle database errors
 	if err != nil {
@@ -56,14 +68,7 @@ func (r *UserRepository) Create(username, email, password string) (*repository.U
 	}
 
 	// Return the created user
-	return &repository.User{
-		ID:       userID,
-		Username: username,
-		Email:    email,
-		Password: password,
-		Bio:      "",
-		Image:    "",
-	}, nil
+	return &user, nil
 }
 
 // FindByEmail finds a user by email in the database

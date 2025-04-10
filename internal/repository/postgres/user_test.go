@@ -42,9 +42,9 @@ func TestCreate(t *testing.T) {
 				mock.ExpectBegin()
 
 				// Expect insert query with returning id
-				mock.ExpectQuery(`INSERT INTO users \(username, email, password, bio, image, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5, \$6, \$7\) RETURNING id`).
-					WithArgs("testuser", "test@example.com", "hashedPassword", "", "", sqlmock.AnyArg(), sqlmock.AnyArg()).
-					WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+				mock.ExpectQuery(`INSERT INTO users \(username, email, password, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5\) RETURNING id, username, email, password`).
+					WithArgs("testuser", "test@example.com", "hashedPassword", sqlmock.AnyArg(), sqlmock.AnyArg()).
+					WillReturnRows(sqlmock.NewRows([]string{"id", "username", "email", "password"}).AddRow(1, "testuser", "test@example.com", "hashedPassword"))
 
 				// Expect commit transaction
 				mock.ExpectCommit()
@@ -81,8 +81,8 @@ func TestCreate(t *testing.T) {
 				mock.ExpectBegin()
 
 				// Expect insert query to fail with duplicate key error on username
-				mock.ExpectQuery(`INSERT INTO users \(username, email, password, bio, image, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5, \$6, \$7\) RETURNING id`).
-					WithArgs("existinguser", "new@example.com", "hashedPassword", "", "", sqlmock.AnyArg(), sqlmock.AnyArg()).
+				mock.ExpectQuery(`INSERT INTO users \(username, email, password, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5\) RETURNING id, username, email, password`).
+					WithArgs("existinguser", "new@example.com", "hashedPassword", sqlmock.AnyArg(), sqlmock.AnyArg()).
 					WillReturnError(&pq.Error{
 						Code:       "23505",
 						Message:    "duplicate key value violates unique constraint",
@@ -105,8 +105,8 @@ func TestCreate(t *testing.T) {
 				mock.ExpectBegin()
 
 				// Expect insert query to fail with duplicate key error on email
-				mock.ExpectQuery(`INSERT INTO users \(username, email, password, bio, image, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5, \$6, \$7\) RETURNING id`).
-					WithArgs("newuser", "existing@example.com", "hashedPassword", "", "", sqlmock.AnyArg(), sqlmock.AnyArg()).
+				mock.ExpectQuery(`INSERT INTO users \(username, email, password, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5\) RETURNING id, username, email, password`).
+					WithArgs("newuser", "existing@example.com", "hashedPassword", sqlmock.AnyArg(), sqlmock.AnyArg()).
 					WillReturnError(&pq.Error{
 						Code:       "23505",
 						Message:    "duplicate key value violates unique constraint",
@@ -129,8 +129,8 @@ func TestCreate(t *testing.T) {
 				mock.ExpectBegin()
 
 				// Expect insert query to fail with generic database error
-				mock.ExpectQuery(`INSERT INTO users \(username, email, password, bio, image, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5, \$6, \$7\) RETURNING id`).
-					WithArgs("testuser", "test@example.com", "hashedPassword", "", "", sqlmock.AnyArg(), sqlmock.AnyArg()).
+				mock.ExpectQuery(`INSERT INTO users \(username, email, password, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5\) RETURNING id, username, email, password`).
+					WithArgs("testuser", "test@example.com", "hashedPassword", sqlmock.AnyArg(), sqlmock.AnyArg()).
 					WillReturnError(errors.New("database error"))
 
 				// Expect rollback
@@ -160,9 +160,9 @@ func TestCreate(t *testing.T) {
 				mock.ExpectBegin()
 
 				// Expect insert query with returning id
-				mock.ExpectQuery(`INSERT INTO users \(username, email, password, bio, image, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5, \$6, \$7\) RETURNING id`).
-					WithArgs("testuser", "test@example.com", "hashedPassword", "", "", sqlmock.AnyArg(), sqlmock.AnyArg()).
-					WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(1))
+				mock.ExpectQuery(`INSERT INTO users \(username, email, password, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5\) RETURNING id, username, email, password`).
+					WithArgs("testuser", "test@example.com", "hashedPassword", sqlmock.AnyArg(), sqlmock.AnyArg()).
+					WillReturnRows(sqlmock.NewRows([]string{"id", "username", "email", "password"}).AddRow(1, "testuser", "test@example.com", "hashedPassword"))
 
 				// Expect commit transaction to fail
 				mock.ExpectCommit().WillReturnError(errors.New("commit error"))
