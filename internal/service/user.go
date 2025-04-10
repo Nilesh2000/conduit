@@ -162,14 +162,8 @@ func (s *userService) UpdateUser(userID int64, username, email, password, bio, i
 		return nil, ErrInternalServer
 	}
 
-	token, err := s.generateToken(repoUser.ID)
-	if err != nil {
-		return nil, ErrInternalServer
-	}
-
 	return &User{
 		Email:    repoUser.Email,
-		Token:    token,
 		Username: repoUser.Username,
 		Bio:      repoUser.Bio,
 		Image:    repoUser.Image,

@@ -213,6 +213,10 @@ func (h *UserHandler) UpdateCurrentUser() http.HandlerFunc {
 			return
 		}
 
+		// Get token from context
+		authHeader := r.Header.Get("Authorization")
+		token := strings.TrimPrefix(authHeader, "Token ")
+
 		// Parse request body
 		var req UpdateUserRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -244,6 +248,9 @@ func (h *UserHandler) UpdateCurrentUser() http.HandlerFunc {
 			}
 			return
 		}
+
+		// Add token to user
+		user.Token = token
 
 		// Respond with updated user
 		w.WriteHeader(http.StatusOK)
