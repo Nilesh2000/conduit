@@ -46,7 +46,7 @@ func TestUserHandler_Register(t *testing.T) {
 	tests := []struct {
 		name             string
 		requestBody      string
-		mockRegister     func(username, email, password string) (*service.User, error)
+		setupMock        func() *MockUserService
 		expectedStatus   int
 		expectedResponse interface{}
 	}{
@@ -59,17 +59,22 @@ func TestUserHandler_Register(t *testing.T) {
 					"password": "password123"
 				}
 			}`,
-			mockRegister: func(username, email, password string) (*service.User, error) {
-				if username != "testuser" || email != "test@example.com" || password != "password123" {
-					t.Errorf("Expected Register(%q, %q, %q), got Register(%q, %q, %q)", "testuser", "test@example.com", "password123", username, email, password)
+			setupMock: func() *MockUserService {
+				mockService := &MockUserService{
+					registerFunc: func(username, email, password string) (*service.User, error) {
+						if username != "testuser" || email != "test@example.com" || password != "password123" {
+							t.Errorf("Expected Register(%q, %q, %q), got Register(%q, %q, %q)", "testuser", "test@example.com", "password123", username, email, password)
+						}
+						return &service.User{
+							Email:    email,
+							Token:    "jwt.token.here",
+							Username: username,
+							Bio:      "",
+							Image:    "",
+						}, nil
+					},
 				}
-				return &service.User{
-					Email:    email,
-					Token:    "jwt.token.here",
-					Username: username,
-					Bio:      "",
-					Image:    "",
-				}, nil
+				return mockService
 			},
 			expectedStatus: http.StatusCreated,
 			expectedResponse: UserResponse{
@@ -89,9 +94,14 @@ func TestUserHandler_Register(t *testing.T) {
 					"username": "testuser",
 					"email": "test@example.com",
 			}`,
-			mockRegister: func(username, email, password string) (*service.User, error) {
-				t.Errorf("Register should not be called for invalid JSON")
-				return nil, nil
+			setupMock: func() *MockUserService {
+				mockService := &MockUserService{
+					registerFunc: func(username, email, password string) (*service.User, error) {
+						t.Errorf("Register should not be called for invalid JSON")
+						return nil, nil
+					},
+				}
+				return mockService
 			},
 			expectedStatus: http.StatusUnprocessableEntity,
 			expectedResponse: GenericErrorModel{
@@ -107,9 +117,14 @@ func TestUserHandler_Register(t *testing.T) {
 					"email": "test@example.com"
 				}
 			}`,
-			mockRegister: func(username, email, password string) (*service.User, error) {
-				t.Errorf("Register should not be called for missing required fields")
-				return nil, nil
+			setupMock: func() *MockUserService {
+				mockService := &MockUserService{
+					registerFunc: func(username, email, password string) (*service.User, error) {
+						t.Errorf("Register should not be called for missing required fields")
+						return nil, nil
+					},
+				}
+				return mockService
 			},
 			expectedStatus: http.StatusUnprocessableEntity,
 			expectedResponse: GenericErrorModel{
@@ -127,9 +142,14 @@ func TestUserHandler_Register(t *testing.T) {
 						"password": "password123"
 					}
 				}`,
-			mockRegister: func(username, email, password string) (*service.User, error) {
-				t.Errorf("Register should not be called for invalid email")
-				return nil, nil
+			setupMock: func() *MockUserService {
+				mockService := &MockUserService{
+					registerFunc: func(username, email, password string) (*service.User, error) {
+						t.Errorf("Register should not be called for invalid email")
+						return nil, nil
+					},
+				}
+				return mockService
 			},
 			expectedStatus: http.StatusUnprocessableEntity,
 			expectedResponse: GenericErrorModel{
@@ -147,9 +167,14 @@ func TestUserHandler_Register(t *testing.T) {
 					"password": "short"
 				}
 			}`,
-			mockRegister: func(username, email, password string) (*service.User, error) {
-				t.Errorf("Register should not be called for short password")
-				return nil, nil
+			setupMock: func() *MockUserService {
+				mockService := &MockUserService{
+					registerFunc: func(username, email, password string) (*service.User, error) {
+						t.Errorf("Register should not be called for short password")
+						return nil, nil
+					},
+				}
+				return mockService
 			},
 			expectedStatus: http.StatusUnprocessableEntity,
 			expectedResponse: GenericErrorModel{
@@ -167,8 +192,13 @@ func TestUserHandler_Register(t *testing.T) {
 					"password": "password123"
 				}
 			}`,
-			mockRegister: func(username, email, password string) (*service.User, error) {
-				return nil, service.ErrUsernameTaken
+			setupMock: func() *MockUserService {
+				mockService := &MockUserService{
+					registerFunc: func(username, email, password string) (*service.User, error) {
+						return nil, service.ErrUsernameTaken
+					},
+				}
+				return mockService
 			},
 			expectedStatus: http.StatusUnprocessableEntity,
 			expectedResponse: GenericErrorModel{
@@ -186,8 +216,13 @@ func TestUserHandler_Register(t *testing.T) {
 					"password": "password123"
 				}
 			}`,
-			mockRegister: func(username, email, password string) (*service.User, error) {
-				return nil, service.ErrEmailTaken
+			setupMock: func() *MockUserService {
+				mockService := &MockUserService{
+					registerFunc: func(username, email, password string) (*service.User, error) {
+						return nil, service.ErrEmailTaken
+					},
+				}
+				return mockService
 			},
 			expectedStatus: http.StatusUnprocessableEntity,
 			expectedResponse: GenericErrorModel{
@@ -205,8 +240,13 @@ func TestUserHandler_Register(t *testing.T) {
 					"password": "password123"
 				}
 			}`,
-			mockRegister: func(username, email, password string) (*service.User, error) {
-				return nil, service.ErrInternalServer
+			setupMock: func() *MockUserService {
+				mockService := &MockUserService{
+					registerFunc: func(username, email, password string) (*service.User, error) {
+						return nil, service.ErrInternalServer
+					},
+				}
+				return mockService
 			},
 			expectedStatus: http.StatusInternalServerError,
 			expectedResponse: GenericErrorModel{
@@ -220,9 +260,7 @@ func TestUserHandler_Register(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup mock service
-			mockUserService := &MockUserService{
-				registerFunc: tt.mockRegister,
-			}
+			mockUserService := tt.setupMock()
 
 			// Create handler
 			userHandler := NewUserHandler(mockUserService)
