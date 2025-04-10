@@ -1,6 +1,7 @@
 package main
 
 import (
+	"conduit/internal/config"
 	"conduit/internal/handler"
 	"conduit/internal/repository/postgres"
 	"conduit/internal/service"
@@ -75,8 +76,14 @@ type NewComment struct {
 }
 
 func main() {
-	connStr := "postgres://postgres:admin@localhost:5432/conduit?sslmode=disable"
-	db, err := sql.Open("postgres", connStr)
+	// Load configuration
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("Failed to load configuration: %v", err)
+	}
+
+	// Connect to database
+	db, err := sql.Open("postgres", cfg.Database.GetDSN())
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
@@ -88,17 +95,19 @@ func main() {
 	}
 
 	userRepository := postgres.New(db)
-	userService := service.NewUserService(userRepository, "secret", time.Hour*24)
+	userService := service.NewUserService(userRepository, cfg.JWT.SecretKey, cfg.JWT.Expiry)
 	userHandler := handler.NewUserHandler(userService)
 
 	router := http.NewServeMux()
 	router.HandleFunc("POST /api/users", userHandler.Register())
 	router.HandleFunc("POST /api/users/login", userHandler.Login())
 
+	// Start server
 	server := &http.Server{
-		Addr:    ":8080",
+		Addr:    ":" + cfg.Server.Port,
 		Handler: router,
 	}
 
+	log.Printf("Starting server on :%s", cfg.Server.Port)
 	log.Fatal(server.ListenAndServe())
 }
