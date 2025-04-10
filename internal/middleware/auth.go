@@ -25,8 +25,8 @@ type GenericErrorModel struct {
 }
 
 // RequireAuth middleware validates the JWT token and adds the user ID to the request context
-func RequireAuth(jwtSecret []byte) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
+func RequireAuth(jwtSecret []byte) func(http.HandlerFunc) http.HandlerFunc {
+	return func(next http.HandlerFunc) http.HandlerFunc {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" || !strings.HasPrefix(authHeader, "Token ") {
