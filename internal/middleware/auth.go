@@ -14,8 +14,8 @@ import (
 // contextKey is a type for context keys to avoid collisions
 type contextKey string
 
-// userIDContextKey is the context key for the user ID
-const userIDContextKey = contextKey("userID")
+// UserIDContextKey is the context key for the user ID
+const UserIDContextKey = contextKey("userID")
 
 // GenericErrorModel represents the API error response body
 type GenericErrorModel struct {
@@ -65,7 +65,7 @@ func RequireAuth(jwtSecret []byte) func(http.HandlerFunc) http.HandlerFunc {
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), userIDContextKey, userID)
+			ctx := context.WithValue(r.Context(), UserIDContextKey, userID)
 
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
@@ -74,7 +74,7 @@ func RequireAuth(jwtSecret []byte) func(http.HandlerFunc) http.HandlerFunc {
 
 // GetUserIDFromContext retrieves the user ID from the request context
 func GetUserIDFromContext(ctx context.Context) (int64, bool) {
-	userID, ok := ctx.Value(userIDContextKey).(int64)
+	userID, ok := ctx.Value(UserIDContextKey).(int64)
 	return userID, ok
 }
 
