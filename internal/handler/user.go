@@ -10,13 +10,12 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+// GenericErrorModel represents the error response body
 type GenericErrorModel struct {
 	Errors struct {
 		Body []string `json:"body"`
 	} `json:"errors"`
 }
-
-type ErrorResponse = GenericErrorModel
 
 // RegisterRequest represents the request body for user registration
 type RegisterRequest struct {
@@ -174,7 +173,7 @@ func (h *UserHandler) translateValidationErrors(err error) []string {
 func (h *UserHandler) respondWithError(w http.ResponseWriter, status int, errors []string) {
 	w.WriteHeader(status)
 
-	response := ErrorResponse{}
+	response := GenericErrorModel{}
 	response.Errors.Body = errors
 
 	json.NewEncoder(w).Encode(response)

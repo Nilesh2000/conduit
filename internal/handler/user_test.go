@@ -82,7 +82,7 @@ func TestUserHandler_Register(t *testing.T) {
 				return nil, nil
 			},
 			expectedStatus: http.StatusUnprocessableEntity,
-			expectedResponse: ErrorResponse{
+			expectedResponse: GenericErrorModel{
 				Errors: struct {
 					Body []string `json:"body"`
 				}{Body: []string{"Invalid request body"}},
@@ -100,7 +100,7 @@ func TestUserHandler_Register(t *testing.T) {
 				return nil, nil
 			},
 			expectedStatus: http.StatusUnprocessableEntity,
-			expectedResponse: ErrorResponse{
+			expectedResponse: GenericErrorModel{
 				Errors: struct {
 					Body []string `json:"body"`
 				}{Body: []string{"Username is required", "Password is required"}},
@@ -120,7 +120,7 @@ func TestUserHandler_Register(t *testing.T) {
 				return nil, nil
 			},
 			expectedStatus: http.StatusUnprocessableEntity,
-			expectedResponse: ErrorResponse{
+			expectedResponse: GenericErrorModel{
 				Errors: struct {
 					Body []string `json:"body"`
 				}{Body: []string{"invalid-email is not a valid email"}},
@@ -140,7 +140,7 @@ func TestUserHandler_Register(t *testing.T) {
 				return nil, nil
 			},
 			expectedStatus: http.StatusUnprocessableEntity,
-			expectedResponse: ErrorResponse{
+			expectedResponse: GenericErrorModel{
 				Errors: struct {
 					Body []string `json:"body"`
 				}{Body: []string{"Password must be at least 8 characters long"}},
@@ -159,7 +159,7 @@ func TestUserHandler_Register(t *testing.T) {
 				return nil, service.ErrUsernameTaken
 			},
 			expectedStatus: http.StatusUnprocessableEntity,
-			expectedResponse: ErrorResponse{
+			expectedResponse: GenericErrorModel{
 				Errors: struct {
 					Body []string `json:"body"`
 				}{Body: []string{"Username already taken"}},
@@ -178,7 +178,7 @@ func TestUserHandler_Register(t *testing.T) {
 				return nil, service.ErrEmailTaken
 			},
 			expectedStatus: http.StatusUnprocessableEntity,
-			expectedResponse: ErrorResponse{
+			expectedResponse: GenericErrorModel{
 				Errors: struct {
 					Body []string `json:"body"`
 				}{Body: []string{"Email already registered"}},
@@ -197,7 +197,7 @@ func TestUserHandler_Register(t *testing.T) {
 				return nil, service.ErrInternalServer
 			},
 			expectedStatus: http.StatusInternalServerError,
-			expectedResponse: ErrorResponse{
+			expectedResponse: GenericErrorModel{
 				Errors: struct {
 					Body []string `json:"body"`
 				}{Body: []string{"Internal server error"}},
@@ -240,7 +240,7 @@ func TestUserHandler_Register(t *testing.T) {
 				}
 				got = resp
 			} else {
-				var resp ErrorResponse
+				var resp GenericErrorModel
 				if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
 					t.Errorf("Failed to unmarshal response: %v", err)
 				}
@@ -306,7 +306,7 @@ func TestUserHandler_Login(t *testing.T) {
 				return nil, nil
 			},
 			expectedStatus: http.StatusUnprocessableEntity,
-			expectedResponse: ErrorResponse{
+			expectedResponse: GenericErrorModel{
 				Errors: struct {
 					Body []string `json:"body"`
 				}{Body: []string{"Invalid request body"}},
@@ -324,7 +324,7 @@ func TestUserHandler_Login(t *testing.T) {
 				return nil, nil
 			},
 			expectedStatus: http.StatusUnprocessableEntity,
-			expectedResponse: ErrorResponse{
+			expectedResponse: GenericErrorModel{
 				Errors: struct {
 					Body []string `json:"body"`
 				}{Body: []string{"Password is required"}},
@@ -342,7 +342,7 @@ func TestUserHandler_Login(t *testing.T) {
 				return nil, service.ErrInvalidCredentials
 			},
 			expectedStatus: http.StatusUnauthorized,
-			expectedResponse: ErrorResponse{
+			expectedResponse: GenericErrorModel{
 				Errors: struct {
 					Body []string `json:"body"`
 				}{Body: []string{"Invalid credentials"}},
@@ -360,7 +360,7 @@ func TestUserHandler_Login(t *testing.T) {
 				return nil, service.ErrUserNotFound
 			},
 			expectedStatus: http.StatusUnauthorized,
-			expectedResponse: ErrorResponse{
+			expectedResponse: GenericErrorModel{
 				Errors: struct {
 					Body []string `json:"body"`
 				}{Body: []string{"Invalid credentials"}},
@@ -378,7 +378,7 @@ func TestUserHandler_Login(t *testing.T) {
 				return nil, service.ErrInternalServer
 			},
 			expectedStatus: http.StatusInternalServerError,
-			expectedResponse: ErrorResponse{
+			expectedResponse: GenericErrorModel{
 				Errors: struct {
 					Body []string `json:"body"`
 				}{Body: []string{"Internal server error"}},
@@ -421,7 +421,7 @@ func TestUserHandler_Login(t *testing.T) {
 				}
 				got = resp
 			} else {
-				var resp ErrorResponse
+				var resp GenericErrorModel
 				if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
 					t.Errorf("Failed to unmarshal response: %v", err)
 				}
