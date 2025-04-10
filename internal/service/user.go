@@ -24,6 +24,7 @@ type User struct {
 type UserRepository interface {
 	Create(username, email, password string) (*repository.User, error)
 	FindByEmail(email string) (*repository.User, error)
+	FindByID(id int64) (*repository.User, error)
 }
 
 // userService implements the UserService interface
@@ -104,6 +105,32 @@ func (s *userService) Login(email, password string) (*User, error) {
 	}
 
 	// Return user data
+	return &User{
+		Email:    repoUser.Email,
+		Token:    token,
+		Username: repoUser.Username,
+		Bio:      repoUser.Bio,
+		Image:    repoUser.Image,
+	}, nil
+}
+
+// GetCurrentUser gets the current user in the system
+func (s *userService) GetCurrentUser(userID int64) (*User, error) {
+	repoUser, err := s.userRepository.FindByID(userID)
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrUserNotFound):
+			return nil, ErrUserNotFound
+		default:
+			return nil, ErrInternalServer
+		}
+	}
+
+	token, err := s.generateToken(repoUser.ID)
+	if err != nil {
+		return nil, ErrInternalServer
+	}
+
 	return &User{
 		Email:    repoUser.Email,
 		Token:    token,

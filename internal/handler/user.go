@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"conduit/internal/middleware"
 	"conduit/internal/service"
 	"encoding/json"
 	"errors"
@@ -43,6 +44,7 @@ type UserResponse struct {
 type UserService interface {
 	Register(username, email, password string) (*service.User, error)
 	Login(email, password string) (*service.User, error)
+	GetCurrentUser(userID int64) (*service.User, error)
 }
 
 // UserHandler handles user-related HTTP requests
@@ -131,6 +133,39 @@ func (h *UserHandler) Login() http.HandlerFunc {
 			switch {
 			case errors.Is(err, service.ErrInvalidCredentials) || errors.Is(err, service.ErrUserNotFound):
 				h.respondWithError(w, http.StatusUnauthorized, []string{"Invalid credentials"})
+			default:
+				h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+			}
+			return
+		}
+
+		// Respond with user data
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(UserResponse{
+			User: *user,
+		})
+	}
+}
+
+// GetCurrentUser returns a handler function for getting the current user
+func (h *UserHandler) GetCurrentUser() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Set the content type to JSON
+		w.Header().Set("Content-Type", "application/json")
+
+		// Get user ID from context
+		userID, ok := middleware.GetUserIDFromContext(r.Context())
+		if !ok {
+			h.respondWithError(w, http.StatusUnauthorized, []string{"Unauthorized"})
+			return
+		}
+
+		// Call service to get current user
+		user, err := h.userService.GetCurrentUser(userID)
+		if err != nil {
+			switch {
+			case errors.Is(err, service.ErrUserNotFound):
+				h.respondWithError(w, http.StatusNotFound, []string{"User not found"})
 			default:
 				h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
 			}

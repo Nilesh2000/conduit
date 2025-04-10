@@ -15,6 +15,7 @@ import (
 type MockUserRepository struct {
 	createFunc      func(username, email, password string) (*repository.User, error)
 	findByEmailFunc func(email string) (*repository.User, error)
+	findByIDFunc    func(id int64) (*repository.User, error)
 }
 
 var _ UserRepository = (*MockUserRepository)(nil)
@@ -27,6 +28,11 @@ func (m *MockUserRepository) Create(username, email, password string) (*reposito
 // FindByEmail finds a user by email in the repository
 func (m *MockUserRepository) FindByEmail(email string) (*repository.User, error) {
 	return m.findByEmailFunc(email)
+}
+
+// FindByID finds a user by ID in the repository
+func (m *MockUserRepository) FindByID(id int64) (*repository.User, error) {
+	return m.findByIDFunc(id)
 }
 
 // Test_userService_Register tests the Register method of the userService

@@ -91,3 +91,29 @@ func (r *UserRepository) FindByEmail(email string) (*repository.User, error) {
 
 	return &user, nil
 }
+
+// FindByID finds a user by ID in the database
+func (r *UserRepository) FindByID(id int64) (*repository.User, error) {
+	var user repository.User
+	var bio, image sql.NullString
+
+	err := r.db.QueryRow("SELECT id, username, email, password, bio, image FROM users WHERE id = $1", id).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &bio, &image)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, repository.ErrUserNotFound
+		}
+		return nil, repository.ErrInternal
+	}
+
+	// Handle nullable values
+	if bio.Valid {
+		user.Bio = bio.String
+	}
+
+	if image.Valid {
+		user.Image = image.String
+	}
+
+	return &user, nil
+}

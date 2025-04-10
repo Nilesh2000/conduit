@@ -101,6 +101,7 @@ func main() {
 	router := http.NewServeMux()
 	router.HandleFunc("POST /api/users", userHandler.Register())
 	router.HandleFunc("POST /api/users/login", userHandler.Login())
+	router.HandleFunc("GET /api/user", userHandler.GetCurrentUser())
 
 	// Start server
 	server := &http.Server{
