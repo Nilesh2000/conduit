@@ -13,11 +13,11 @@ import (
 
 // User represents a user in the system
 type User struct {
-	Email    string
-	Token    string
-	Username string
-	Bio      string
-	Image    string
+	Email    string `json:"email"`
+	Token    string `json:"token"`
+	Username string `json:"username"`
+	Bio      string `json:"bio"`
+	Image    string `json:"image"`
 }
 
 // UserRepository defines the interface for user repository operations
