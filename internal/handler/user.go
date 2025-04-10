@@ -30,11 +30,11 @@ type RegisterRequest struct {
 // UpdateUserRequest represents the request body for updating a user
 type UpdateUserRequest struct {
 	User struct {
-		Username string `json:"username" validate:"required"`
-		Email    string `json:"email" validate:"required,email"`
-		Password string `json:"password" validate:"required,min=8"`
-		Bio      string `json:"bio"`
-		Image    string `json:"image"`
+		Username string `json:"username" validate:"omitempty"`
+		Email    string `json:"email" validate:"omitempty,email"`
+		Password string `json:"password" validate:"omitempty,min=8"`
+		Bio      string `json:"bio" validate:"omitempty"`
+		Image    string `json:"image" validate:"omitempty"`
 	} `json:"user"`
 }
 

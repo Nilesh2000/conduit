@@ -3,6 +3,7 @@ package main
 import (
 	"conduit/internal/config"
 	"conduit/internal/handler"
+	"conduit/internal/middleware"
 	"conduit/internal/repository/postgres"
 	"conduit/internal/service"
 	"database/sql"
@@ -101,8 +102,9 @@ func main() {
 	router := http.NewServeMux()
 	router.HandleFunc("POST /api/users", userHandler.Register())
 	router.HandleFunc("POST /api/users/login", userHandler.Login())
-	router.HandleFunc("GET /api/user", userHandler.GetCurrentUser())
-	router.HandleFunc("PUT /api/user", userHandler.UpdateCurrentUser())
+
+	router.HandleFunc("GET /api/user", middleware.RequireAuth([]byte(cfg.JWT.SecretKey))(userHandler.GetCurrentUser()))
+	router.HandleFunc("PUT /api/user", middleware.RequireAuth([]byte(cfg.JWT.SecretKey))(userHandler.UpdateCurrentUser()))
 
 	// Start server
 	server := &http.Server{

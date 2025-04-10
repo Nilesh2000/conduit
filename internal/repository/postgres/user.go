@@ -130,8 +130,8 @@ func (r *UserRepository) Update(userID int64, user repository.User) (*repository
 	query := `
 		UPDATE users
 		SET
-			email = COALESCE(NULLIF($1, ''), email),
-			username = COALESCE(NULLIF($2, ''), username),
+			username = COALESCE(NULLIF($1, ''), username),
+			email = COALESCE(NULLIF($2, ''), email),
 			password = COALESCE(NULLIF($3, ''), password),
 			bio = COALESCE(NULLIF($4, ''), bio),
 			image = COALESCE(NULLIF($5, ''), image),
