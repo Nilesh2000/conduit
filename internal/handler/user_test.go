@@ -309,7 +309,7 @@ func TestUserHandler_Login(t *testing.T) {
 	tests := []struct {
 		name             string
 		requestBody      string
-		mockLogin        func(email, password string) (*service.User, error)
+		setupMock        func() *MockUserService
 		expectedStatus   int
 		expectedResponse interface{}
 	}{
@@ -321,17 +321,22 @@ func TestUserHandler_Login(t *testing.T) {
 					"password": "password123"
 				}
 			}`,
-			mockLogin: func(email, password string) (*service.User, error) {
-				if email != "test@example.com" || password != "password123" {
-					t.Errorf("Expected Login(%q, %q), got Login(%q, %q)", "test@example.com", "password123", email, password)
+			setupMock: func() *MockUserService {
+				mockService := &MockUserService{
+					loginFunc: func(email, password string) (*service.User, error) {
+						if email != "test@example.com" || password != "password123" {
+							t.Errorf("Expected Login(%q, %q), got Login(%q, %q)", "test@example.com", "password123", email, password)
+						}
+						return &service.User{
+							Email:    email,
+							Token:    "jwt.token.here",
+							Username: "testuser",
+							Bio:      "I'm a test user",
+							Image:    "https://example.com/image.jpg",
+						}, nil
+					},
 				}
-				return &service.User{
-					Email:    email,
-					Token:    "jwt.token.here",
-					Username: "testuser",
-					Bio:      "I'm a test user",
-					Image:    "https://example.com/image.jpg",
-				}, nil
+				return mockService
 			},
 			expectedStatus: http.StatusOK,
 			expectedResponse: UserResponse{
@@ -351,9 +356,14 @@ func TestUserHandler_Login(t *testing.T) {
 					"email": "test@example.com",
 					"password": "password123"
 			}`,
-			mockLogin: func(email, password string) (*service.User, error) {
-				t.Errorf("Login should not be called for invalid JSON")
-				return nil, nil
+			setupMock: func() *MockUserService {
+				mockService := &MockUserService{
+					loginFunc: func(email, password string) (*service.User, error) {
+						t.Errorf("Login should not be called for invalid JSON")
+						return nil, nil
+					},
+				}
+				return mockService
 			},
 			expectedStatus: http.StatusUnprocessableEntity,
 			expectedResponse: GenericErrorModel{
@@ -369,9 +379,14 @@ func TestUserHandler_Login(t *testing.T) {
 					"email": "test@example.com"
 				}
 			}`,
-			mockLogin: func(email, password string) (*service.User, error) {
-				t.Errorf("Login should not be called for missing required fields")
-				return nil, nil
+			setupMock: func() *MockUserService {
+				mockService := &MockUserService{
+					loginFunc: func(email, password string) (*service.User, error) {
+						t.Errorf("Login should not be called for missing required fields")
+						return nil, nil
+					},
+				}
+				return mockService
 			},
 			expectedStatus: http.StatusUnprocessableEntity,
 			expectedResponse: GenericErrorModel{
@@ -388,8 +403,13 @@ func TestUserHandler_Login(t *testing.T) {
 					"password": "wrongpassword"
 				}
 			}`,
-			mockLogin: func(email, password string) (*service.User, error) {
-				return nil, service.ErrInvalidCredentials
+			setupMock: func() *MockUserService {
+				mockService := &MockUserService{
+					loginFunc: func(email, password string) (*service.User, error) {
+						return nil, service.ErrInvalidCredentials
+					},
+				}
+				return mockService
 			},
 			expectedStatus: http.StatusUnauthorized,
 			expectedResponse: GenericErrorModel{
@@ -406,8 +426,13 @@ func TestUserHandler_Login(t *testing.T) {
 					"password": "password123"
 				}
 			}`,
-			mockLogin: func(email, password string) (*service.User, error) {
-				return nil, service.ErrUserNotFound
+			setupMock: func() *MockUserService {
+				mockService := &MockUserService{
+					loginFunc: func(email, password string) (*service.User, error) {
+						return nil, service.ErrUserNotFound
+					},
+				}
+				return mockService
 			},
 			expectedStatus: http.StatusUnauthorized,
 			expectedResponse: GenericErrorModel{
@@ -424,8 +449,13 @@ func TestUserHandler_Login(t *testing.T) {
 					"password": "password123"
 				}
 			}`,
-			mockLogin: func(email, password string) (*service.User, error) {
-				return nil, service.ErrInternalServer
+			setupMock: func() *MockUserService {
+				mockService := &MockUserService{
+					loginFunc: func(email, password string) (*service.User, error) {
+						return nil, service.ErrInternalServer
+					},
+				}
+				return mockService
 			},
 			expectedStatus: http.StatusInternalServerError,
 			expectedResponse: GenericErrorModel{
@@ -439,9 +469,7 @@ func TestUserHandler_Login(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup mock service
-			mockUserService := &MockUserService{
-				loginFunc: tt.mockLogin,
-			}
+			mockUserService := tt.setupMock()
 
 			// Create handler
 			userHandler := NewUserHandler(mockUserService)
