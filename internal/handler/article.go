@@ -74,7 +74,12 @@ func (h *ArticleHandler) CreateArticle() http.HandlerFunc {
 		// Call service to create article
 		article, err := h.articleService.CreateArticle(userID, req.Article.Title, req.Article.Description, req.Article.Body, req.Article.TagList)
 		if err != nil {
-			h.respondWithError(w, http.StatusInternalServerError, []string{"Failed to create article"})
+			switch {
+			// case errors.Is(err, service.ErrUserNotFound):
+			// 	h.respondWithError(w, http.StatusNotFound, []string{"User not found"})
+			default:
+				h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+			}
 			return
 		}
 
