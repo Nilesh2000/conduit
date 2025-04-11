@@ -95,6 +95,8 @@ func TestUserHandler_Register(t *testing.T) {
 				"user": {
 					"username": "testuser",
 					"email": "test@example.com",
+					"password": "password123",
+				}
 			}`,
 			setupMock: func() *MockUserService {
 				mockService := &MockUserService{
@@ -356,7 +358,8 @@ func TestUserHandler_Login(t *testing.T) {
 			requestBody: `{
 				"user": {
 					"email": "test@example.com",
-					"password": "password123"
+					"password": "password123",
+				}
 			}`,
 			setupMock: func() *MockUserService {
 				mockService := &MockUserService{
@@ -756,7 +759,8 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 			name: "Invalid JSON",
 			requestBody: `{
 				"user": {
-					"email": "newmail@example.com"
+					"email": "newmail@example.com",
+				}
 			}`,
 			setupMock: func() *MockUserService {
 				mockService := &MockUserService{
