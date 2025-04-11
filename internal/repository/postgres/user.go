@@ -88,7 +88,8 @@ func (r *userRepository) FindByEmail(email string) (*repository.User, error) {
 	var user repository.User
 	var bio, image sql.NullString
 
-	err := r.db.QueryRow("SELECT id, username, email, password, bio, image, created_at, updated_at FROM users WHERE email = $1", email).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &bio, &image, &user.CreatedAt, &user.UpdatedAt)
+	err := r.db.QueryRow("SELECT id, username, email, password, bio, image, created_at, updated_at FROM users WHERE email = $1", email).
+		Scan(&user.ID, &user.Username, &user.Email, &user.Password, &bio, &image, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, repository.ErrUserNotFound
@@ -112,7 +113,8 @@ func (r *userRepository) FindByID(id int64) (*repository.User, error) {
 	var user repository.User
 	var bio, image sql.NullString
 
-	err := r.db.QueryRow("SELECT id, username, email, password, bio, image, created_at, updated_at FROM users WHERE id = $1", id).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &bio, &image, &user.CreatedAt, &user.UpdatedAt)
+	err := r.db.QueryRow("SELECT id, username, email, password, bio, image, created_at, updated_at FROM users WHERE id = $1", id).
+		Scan(&user.ID, &user.Username, &user.Email, &user.Password, &bio, &image, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, repository.ErrUserNotFound
@@ -132,7 +134,10 @@ func (r *userRepository) FindByID(id int64) (*repository.User, error) {
 }
 
 // Update updates a user in the database
-func (r *userRepository) Update(userID int64, username, email, password, bio, image *string) (*repository.User, error) {
+func (r *userRepository) Update(
+	userID int64,
+	username, email, password, bio, image *string,
+) (*repository.User, error) {
 	// Begin a transaction
 	tx, err := r.db.Begin()
 	if err != nil {

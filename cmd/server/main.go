@@ -69,10 +69,19 @@ func main() {
 	router.HandleFunc("POST /api/users", userHandler.Register())
 	router.HandleFunc("POST /api/users/login", userHandler.Login())
 
-	router.HandleFunc("GET /api/user", middleware.RequireAuth([]byte(cfg.JWT.SecretKey))(userHandler.GetCurrentUser()))
-	router.HandleFunc("PUT /api/user", middleware.RequireAuth([]byte(cfg.JWT.SecretKey))(userHandler.UpdateCurrentUser()))
+	router.HandleFunc(
+		"GET /api/user",
+		middleware.RequireAuth([]byte(cfg.JWT.SecretKey))(userHandler.GetCurrentUser()),
+	)
+	router.HandleFunc(
+		"PUT /api/user",
+		middleware.RequireAuth([]byte(cfg.JWT.SecretKey))(userHandler.UpdateCurrentUser()),
+	)
 
-	router.HandleFunc("POST /api/articles", middleware.RequireAuth([]byte(cfg.JWT.SecretKey))(articleHandler.CreateArticle()))
+	router.HandleFunc(
+		"POST /api/articles",
+		middleware.RequireAuth([]byte(cfg.JWT.SecretKey))(articleHandler.CreateArticle()),
+	)
 
 	// Start server
 	server := &http.Server{

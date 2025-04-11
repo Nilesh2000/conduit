@@ -40,7 +40,10 @@ func (m *MockUserService) GetCurrentUser(userID int64) (*service.User, error) {
 }
 
 // UpdateUser updates a user in the mock service
-func (m *MockUserService) UpdateUser(userID int64, username, email, password, bio, image *string) (*service.User, error) {
+func (m *MockUserService) UpdateUser(
+	userID int64,
+	username, email, password, bio, image *string,
+) (*service.User, error) {
 	return m.updateUserFunc(userID, username, email, password, bio, image)
 }
 
@@ -65,8 +68,17 @@ func TestUserHandler_Register(t *testing.T) {
 			setupMock: func() *MockUserService {
 				mockService := &MockUserService{
 					registerFunc: func(username, email, password string) (*service.User, error) {
-						if username != "testuser" || email != "test@example.com" || password != "password123" {
-							t.Errorf("Expected Register(%q, %q, %q), got Register(%q, %q, %q)", "testuser", "test@example.com", "password123", username, email, password)
+						if username != "testuser" || email != "test@example.com" ||
+							password != "password123" {
+							t.Errorf(
+								"Expected Register(%q, %q, %q), got Register(%q, %q, %q)",
+								"testuser",
+								"test@example.com",
+								"password123",
+								username,
+								email,
+								password,
+							)
 						}
 						return &service.User{
 							Email:    email,
@@ -271,7 +283,11 @@ func TestUserHandler_Register(t *testing.T) {
 			userHandler := NewUserHandler(mockUserService)
 
 			// Create request
-			req := httptest.NewRequest(http.MethodPost, "/api/users", strings.NewReader(tt.requestBody))
+			req := httptest.NewRequest(
+				http.MethodPost,
+				"/api/users",
+				strings.NewReader(tt.requestBody),
+			)
 			req.Header.Set("Content-Type", "application/json")
 
 			// Create response recorder
@@ -330,7 +346,13 @@ func TestUserHandler_Login(t *testing.T) {
 				mockService := &MockUserService{
 					loginFunc: func(email, password string) (*service.User, error) {
 						if email != "test@example.com" || password != "password123" {
-							t.Errorf("Expected Login(%q, %q), got Login(%q, %q)", "test@example.com", "password123", email, password)
+							t.Errorf(
+								"Expected Login(%q, %q), got Login(%q, %q)",
+								"test@example.com",
+								"password123",
+								email,
+								password,
+							)
 						}
 						return &service.User{
 							Email:    email,
@@ -481,7 +503,11 @@ func TestUserHandler_Login(t *testing.T) {
 			userHandler := NewUserHandler(mockUserService)
 
 			// Create request
-			req := httptest.NewRequest(http.MethodPost, "/api/users/login", strings.NewReader(tt.requestBody))
+			req := httptest.NewRequest(
+				http.MethodPost,
+				"/api/users/login",
+				strings.NewReader(tt.requestBody),
+			)
 			req.Header.Set("Content-Type", "application/json")
 
 			// Create response recorder
@@ -691,7 +717,10 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 							t.Errorf("Expected bio 'Updated bio', got %q", *bio)
 						}
 						if *image != "https://example.com/updated.jpg" {
-							t.Errorf("Expected image 'https://example.com/updated.jpg', got %q", *image)
+							t.Errorf(
+								"Expected image 'https://example.com/updated.jpg', got %q",
+								*image,
+							)
 						}
 						return &service.User{
 							Email:    *email,
@@ -890,7 +919,11 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 			userHandler := NewUserHandler(mockUserService)
 
 			// Create request
-			req := httptest.NewRequest(http.MethodPut, "/api/user", strings.NewReader(tt.requestBody))
+			req := httptest.NewRequest(
+				http.MethodPut,
+				"/api/user",
+				strings.NewReader(tt.requestBody),
+			)
 			req.Header.Set("Content-Type", "application/json")
 
 			// Add authorization token

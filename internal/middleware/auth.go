@@ -40,9 +40,13 @@ func RequireAuth(jwtSecret []byte) func(http.HandlerFunc) http.HandlerFunc {
 				return
 			}
 
-			token, err := jwt.ParseWithClaims(tokenString, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
-				return jwtSecret, nil
-			})
+			token, err := jwt.ParseWithClaims(
+				tokenString,
+				&jwt.StandardClaims{},
+				func(token *jwt.Token) (interface{}, error) {
+					return jwtSecret, nil
+				},
+			)
 			if err != nil || !token.Valid {
 				respondWithError(w, http.StatusUnauthorized, []string{"Unauthorized"})
 				return

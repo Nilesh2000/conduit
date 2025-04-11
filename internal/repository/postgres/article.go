@@ -20,7 +20,11 @@ func NewArticleRepository(db *sql.DB) *articleRepository {
 }
 
 // Create creates a new article in the database
-func (r *articleRepository) Create(userID int64, slug, title, description, body string, tagList []string) (*repository.Article, error) {
+func (r *articleRepository) Create(
+	userID int64,
+	slug, title, description, body string,
+	tagList []string,
+) (*repository.Article, error) {
 	// Begin a transaction
 	tx, err := r.db.Begin()
 	if err != nil {
@@ -78,13 +82,18 @@ func (r *articleRepository) Create(userID int64, slug, title, description, body 
 		for _, tag := range article.TagList {
 			var tagID int64
 			// Insert or update tag and get its ID
-			err := tx.QueryRow("INSERT INTO tags (name) VALUES ($1) ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name RETURNING id", tag).Scan(&tagID)
+			err := tx.QueryRow("INSERT INTO tags (name) VALUES ($1) ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name RETURNING id", tag).
+				Scan(&tagID)
 			if err != nil {
 				return nil, repository.ErrInternal
 			}
 
 			// Link tag to article
-			_, err = tx.Exec("INSERT INTO article_tags (article_id, tag_id) VALUES ($1, $2) ON CONFLICT DO NOTHING", article.ID, tagID)
+			_, err = tx.Exec(
+				"INSERT INTO article_tags (article_id, tag_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+				article.ID,
+				tagID,
+			)
 			if err != nil {
 				return nil, repository.ErrInternal
 			}

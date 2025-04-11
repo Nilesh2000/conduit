@@ -37,7 +37,11 @@ type userService struct {
 }
 
 // NewUserService creates a new user service
-func NewUserService(userRepository UserRepository, jwtSecret string, jwtExpiration time.Duration) *userService {
+func NewUserService(
+	userRepository UserRepository,
+	jwtSecret string,
+	jwtExpiration time.Duration,
+) *userService {
 	return &userService{
 		userRepository: userRepository,
 		jwtSecret:      []byte(jwtSecret),
@@ -137,7 +141,10 @@ func (s *userService) GetCurrentUser(userID int64) (*User, error) {
 }
 
 // UpdateUser updates a user in the system
-func (s *userService) UpdateUser(userID int64, username, email, password, bio, image *string) (*User, error) {
+func (s *userService) UpdateUser(
+	userID int64,
+	username, email, password, bio, image *string,
+) (*User, error) {
 	// Hash the password if provided
 	var hashedPassword *string
 	if password != nil {

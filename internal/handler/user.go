@@ -101,11 +101,23 @@ func (h *UserHandler) Register() http.HandlerFunc {
 		if err != nil {
 			switch {
 			case errors.Is(err, service.ErrUsernameTaken):
-				h.respondWithError(w, http.StatusUnprocessableEntity, []string{"Username already taken"})
+				h.respondWithError(
+					w,
+					http.StatusUnprocessableEntity,
+					[]string{"Username already taken"},
+				)
 			case errors.Is(err, service.ErrEmailTaken):
-				h.respondWithError(w, http.StatusUnprocessableEntity, []string{"Email already registered"})
+				h.respondWithError(
+					w,
+					http.StatusUnprocessableEntity,
+					[]string{"Email already registered"},
+				)
 			default:
-				h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+				h.respondWithError(
+					w,
+					http.StatusInternalServerError,
+					[]string{"Internal server error"},
+				)
 			}
 			return
 		}
@@ -146,7 +158,11 @@ func (h *UserHandler) Login() http.HandlerFunc {
 			case errors.Is(err, service.ErrInvalidCredentials) || errors.Is(err, service.ErrUserNotFound):
 				h.respondWithError(w, http.StatusUnauthorized, []string{"Invalid credentials"})
 			default:
-				h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+				h.respondWithError(
+					w,
+					http.StatusInternalServerError,
+					[]string{"Internal server error"},
+				)
 			}
 			return
 		}
@@ -183,7 +199,11 @@ func (h *UserHandler) GetCurrentUser() http.HandlerFunc {
 			case errors.Is(err, service.ErrUserNotFound):
 				h.respondWithError(w, http.StatusNotFound, []string{"User not found"})
 			default:
-				h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+				h.respondWithError(
+					w,
+					http.StatusInternalServerError,
+					[]string{"Internal server error"},
+				)
 			}
 			return
 		}
@@ -231,18 +251,37 @@ func (h *UserHandler) UpdateCurrentUser() http.HandlerFunc {
 		}
 
 		// Call service to update user
-		user, err := h.userService.UpdateUser(userID, req.User.Username, req.User.Email, req.User.Password, req.User.Bio, req.User.Image)
+		user, err := h.userService.UpdateUser(
+			userID,
+			req.User.Username,
+			req.User.Email,
+			req.User.Password,
+			req.User.Bio,
+			req.User.Image,
+		)
 		// Handle errors
 		if err != nil {
 			switch {
 			case errors.Is(err, service.ErrUsernameTaken):
-				h.respondWithError(w, http.StatusUnprocessableEntity, []string{"Username already taken"})
+				h.respondWithError(
+					w,
+					http.StatusUnprocessableEntity,
+					[]string{"Username already taken"},
+				)
 			case errors.Is(err, service.ErrEmailTaken):
-				h.respondWithError(w, http.StatusUnprocessableEntity, []string{"Email already registered"})
+				h.respondWithError(
+					w,
+					http.StatusUnprocessableEntity,
+					[]string{"Email already registered"},
+				)
 			case errors.Is(err, service.ErrUserNotFound):
 				h.respondWithError(w, http.StatusNotFound, []string{"User not found"})
 			default:
-				h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+				h.respondWithError(
+					w,
+					http.StatusInternalServerError,
+					[]string{"Internal server error"},
+				)
 			}
 			return
 		}
@@ -266,13 +305,25 @@ func (h *UserHandler) translateValidationErrors(err error) []string {
 		for _, e := range validationErrs {
 			switch e.Tag() {
 			case "required":
-				validationErrors = append(validationErrors, fmt.Sprintf("%s is required", e.Field()))
+				validationErrors = append(
+					validationErrors,
+					fmt.Sprintf("%s is required", e.Field()),
+				)
 			case "email":
-				validationErrors = append(validationErrors, fmt.Sprintf("%s is not a valid email", e.Value()))
+				validationErrors = append(
+					validationErrors,
+					fmt.Sprintf("%s is not a valid email", e.Value()),
+				)
 			case "min":
-				validationErrors = append(validationErrors, fmt.Sprintf("%s must be at least %s characters long", e.Field(), e.Param()))
+				validationErrors = append(
+					validationErrors,
+					fmt.Sprintf("%s must be at least %s characters long", e.Field(), e.Param()),
+				)
 			default:
-				validationErrors = append(validationErrors, fmt.Sprintf("%s is not valid", e.Field()))
+				validationErrors = append(
+					validationErrors,
+					fmt.Sprintf("%s is not valid", e.Field()),
+				)
 			}
 		}
 	} else {

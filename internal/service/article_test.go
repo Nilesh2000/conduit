@@ -8,6 +8,10 @@ type MockArticleRepository struct {
 }
 
 // Create is a mock implementation of the Create method
-func (m *MockArticleRepository) Create(userID int64, slug, title, description, body string, tagList []string) (*repository.Article, error) {
+func (m *MockArticleRepository) Create(
+	userID int64,
+	slug, title, description, body string,
+	tagList []string,
+) (*repository.Article, error) {
 	return m.createArticleFunc(userID, slug, title, description, body, tagList)
 }

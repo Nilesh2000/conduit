@@ -33,7 +33,11 @@ type Profile struct {
 
 // ArticleRepository is an interface for the article repository
 type ArticleRepository interface {
-	Create(userID int64, slug, title, description, body string, tagList []string) (*repository.Article, error)
+	Create(
+		userID int64,
+		slug, title, description, body string,
+		tagList []string,
+	) (*repository.Article, error)
 }
 
 // articleService implements the articleService interface
@@ -49,7 +53,11 @@ func NewArticleService(articleRepository ArticleRepository) *articleService {
 }
 
 // CreateArticle creates a new article
-func (s *articleService) CreateArticle(userID int64, title, description, body string, tagList []string) (*Article, error) {
+func (s *articleService) CreateArticle(
+	userID int64,
+	title, description, body string,
+	tagList []string,
+) (*Article, error) {
 	// Generate slug from title
 	slug := generateSlug(title)
 

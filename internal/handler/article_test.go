@@ -20,7 +20,11 @@ type MockArticleService struct {
 }
 
 // CreateArticle is a mock implementation of the CreateArticle method
-func (m *MockArticleService) CreateArticle(userID int64, title, description, body string, tagList []string) (*service.Article, error) {
+func (m *MockArticleService) CreateArticle(
+	userID int64,
+	title, description, body string,
+	tagList []string,
+) (*service.Article, error) {
 	return m.createArticleFunc(userID, title, description, body, tagList)
 }
 
@@ -237,7 +241,11 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 			handler := NewArticleHandler(mockService)
 
 			// Create Request
-			req, _ := http.NewRequest(http.MethodPost, "/api/articles", strings.NewReader(tt.requestBody))
+			req, _ := http.NewRequest(
+				http.MethodPost,
+				"/api/articles",
+				strings.NewReader(tt.requestBody),
+			)
 			req.Header.Set("Content-Type", "application/json")
 
 			// Setup Auth if provided

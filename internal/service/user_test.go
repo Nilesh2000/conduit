@@ -38,7 +38,10 @@ func (m *MockUserRepository) FindByID(id int64) (*repository.User, error) {
 }
 
 // Update updates a user in the repository
-func (m *MockUserRepository) Update(userID int64, username, email, password, bio, image *string) (*repository.User, error) {
+func (m *MockUserRepository) Update(
+	userID int64,
+	username, email, password, bio, image *string,
+) (*repository.User, error) {
 	return m.updateFunc(userID, username, email, password, bio, image)
 }
 
@@ -67,10 +70,19 @@ func Test_userService_Register(t *testing.T) {
 				return &MockUserRepository{
 					createFunc: func(username, email, password string) (*repository.User, error) {
 						if username != "testuser" || email != "test@example.com" {
-							t.Errorf("Expected Create(%q, %q, _), got Create(%q, %q, _)", "testuser", "test@example.com", username, email)
+							t.Errorf(
+								"Expected Create(%q, %q, _), got Create(%q, %q, _)",
+								"testuser",
+								"test@example.com",
+								username,
+								email,
+							)
 						}
 
-						err := bcrypt.CompareHashAndPassword([]byte(password), []byte("password123"))
+						err := bcrypt.CompareHashAndPassword(
+							[]byte(password),
+							[]byte("password123"),
+						)
 						if err != nil {
 							t.Errorf("Password not properly hashed: %v", err)
 						}
@@ -105,9 +117,13 @@ func Test_userService_Register(t *testing.T) {
 				}
 
 				// Verify token
-				token, err := jwt.ParseWithClaims(u.Token, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
-					return []byte(jwtSecret), nil
-				})
+				token, err := jwt.ParseWithClaims(
+					u.Token,
+					&jwt.StandardClaims{},
+					func(token *jwt.Token) (interface{}, error) {
+						return []byte(jwtSecret), nil
+					},
+				)
 				if err != nil {
 					t.Errorf("Failed to parse token: %v", err)
 				}
@@ -119,7 +135,11 @@ func Test_userService_Register(t *testing.T) {
 				if claims, ok := token.Claims.(*jwt.StandardClaims); ok {
 					expectedSubject := "1"
 					if claims.Subject != expectedSubject {
-						t.Errorf("Expected token subject to be %q, got %q", expectedSubject, claims.Subject)
+						t.Errorf(
+							"Expected token subject to be %q, got %q",
+							expectedSubject,
+							claims.Subject,
+						)
 					}
 
 					if claims.Issuer != "conduit-api" {
@@ -240,10 +260,17 @@ func Test_userService_Login(t *testing.T) {
 				return &MockUserRepository{
 					findByEmailFunc: func(email string) (*repository.User, error) {
 						if email != "test@example.com" {
-							t.Errorf("Expected FindByEmail(%q), got FindByEmail(%q)", "test@example.com", email)
+							t.Errorf(
+								"Expected FindByEmail(%q), got FindByEmail(%q)",
+								"test@example.com",
+								email,
+							)
 						}
 
-						hashedPassword, err := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+						hashedPassword, err := bcrypt.GenerateFromPassword(
+							[]byte("password123"),
+							bcrypt.DefaultCost,
+						)
 						if err != nil {
 							t.Errorf("Failed to hash password: %v", err)
 						}
@@ -278,9 +305,13 @@ func Test_userService_Login(t *testing.T) {
 				}
 
 				// Verify token
-				token, err := jwt.ParseWithClaims(u.Token, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
-					return []byte(jwtSecret), nil
-				})
+				token, err := jwt.ParseWithClaims(
+					u.Token,
+					&jwt.StandardClaims{},
+					func(token *jwt.Token) (interface{}, error) {
+						return []byte(jwtSecret), nil
+					},
+				)
 				if err != nil {
 					t.Errorf("Failed to parse token: %v", err)
 				}
@@ -292,7 +323,11 @@ func Test_userService_Login(t *testing.T) {
 				if claims, ok := token.Claims.(*jwt.StandardClaims); ok {
 					expectedSubject := "1"
 					if claims.Subject != expectedSubject {
-						t.Errorf("Expected token subject to be %q, got %q", expectedSubject, claims.Subject)
+						t.Errorf(
+							"Expected token subject to be %q, got %q",
+							expectedSubject,
+							claims.Subject,
+						)
 					}
 
 					if claims.Issuer != "conduit-api" {
@@ -324,7 +359,10 @@ func Test_userService_Login(t *testing.T) {
 			setupMock: func() *MockUserRepository {
 				return &MockUserRepository{
 					findByEmailFunc: func(email string) (*repository.User, error) {
-						hashedPassword, err := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
+						hashedPassword, err := bcrypt.GenerateFromPassword(
+							[]byte("password123"),
+							bcrypt.DefaultCost,
+						)
 						if err != nil {
 							t.Errorf("Failed to hash password: %v", err)
 						}

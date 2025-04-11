@@ -65,7 +65,15 @@ func Load() (*Config, error) {
 
 // GetDSN returns the database connection string.
 func (c *Database) GetDSN() string {
-	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s", c.User, c.Password, c.Host, c.Port, c.Name, c.SSLMode)
+	return fmt.Sprintf(
+		"postgres://%s:%s@%s:%s/%s?sslmode=%s",
+		c.User,
+		c.Password,
+		c.Host,
+		c.Port,
+		c.Name,
+		c.SSLMode,
+	)
 }
 
 // Validate checks if the configuration is valid.

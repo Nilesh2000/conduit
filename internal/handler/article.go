@@ -29,7 +29,11 @@ type ArticleResponse struct {
 
 // ArticleService defines the interface for article service operations
 type ArticleService interface {
-	CreateArticle(userID int64, title, description, body string, tagList []string) (*service.Article, error)
+	CreateArticle(
+		userID int64,
+		title, description, body string,
+		tagList []string,
+	) (*service.Article, error)
 }
 
 // ArticleHandler is a handler for article operations
@@ -74,15 +78,29 @@ func (h *ArticleHandler) CreateArticle() http.HandlerFunc {
 		}
 
 		// Call service to create article
-		article, err := h.articleService.CreateArticle(userID, req.Article.Title, req.Article.Description, req.Article.Body, req.Article.TagList)
+		article, err := h.articleService.CreateArticle(
+			userID,
+			req.Article.Title,
+			req.Article.Description,
+			req.Article.Body,
+			req.Article.TagList,
+		)
 		if err != nil {
 			switch {
 			case errors.Is(err, service.ErrUserNotFound):
 				h.respondWithError(w, http.StatusNotFound, []string{"User not found"})
 			case errors.Is(err, service.ErrArticleAlreadyExists):
-				h.respondWithError(w, http.StatusUnprocessableEntity, []string{"Article with this title already exists"})
+				h.respondWithError(
+					w,
+					http.StatusUnprocessableEntity,
+					[]string{"Article with this title already exists"},
+				)
 			default:
-				h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+				h.respondWithError(
+					w,
+					http.StatusInternalServerError,
+					[]string{"Internal server error"},
+				)
 			}
 			return
 		}
@@ -100,9 +118,15 @@ func (h *ArticleHandler) translateValidationErrors(err error) []string {
 		for _, e := range validationErrs {
 			switch e.Tag() {
 			case "required":
-				validationErrors = append(validationErrors, fmt.Sprintf("%s is required", e.Field()))
+				validationErrors = append(
+					validationErrors,
+					fmt.Sprintf("%s is required", e.Field()),
+				)
 			default:
-				validationErrors = append(validationErrors, fmt.Sprintf("%s is not valid", e.Field()))
+				validationErrors = append(
+					validationErrors,
+					fmt.Sprintf("%s is not valid", e.Field()),
+				)
 			}
 		}
 	} else {
