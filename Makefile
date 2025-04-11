@@ -1,4 +1,4 @@
-.PHONY: all build test lint clean migrate-up migrate-down run dev help fmt
+.PHONY: all build test lint clean migrate-up migrate-down run dev help fmt vet
 
 # Variables
 BINARY_NAME=conduit
@@ -63,6 +63,11 @@ dev:
 	@echo "Starting development server with hot reload..."
 	$(AIR)
 
+# Run vet
+vet:
+	@echo "Running go vet..."
+	$(GO) vet ./...
+
 # Help target
 help:
 	@echo "Available targets:"
@@ -71,6 +76,7 @@ help:
 	@echo "  test          - Run tests"
 	@echo "  test-coverage - Run tests with coverage report"
 	@echo "  fmt           - Format code with gofumpt and golines"
+	@echo "  vet           - Run go vet for static analysis"
 	@echo "  lint          - Run linter"
 	@echo "  clean         - Remove build artifacts"
 	@echo "  migrate-up    - Run database migrations up"
