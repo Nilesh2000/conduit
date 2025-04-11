@@ -9,4 +9,6 @@ var (
 	ErrInternal          = errors.New("internal repository error")
 
 	ErrUserNotFound = errors.New("user not found")
+
+	ErrDuplicateSlug = errors.New("article slug already exists")
 )
