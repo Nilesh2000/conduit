@@ -1,5 +1,7 @@
 package repository
 
+import "time"
+
 // Article represents an article in the repository
 type Article struct {
 	ID          int64
@@ -8,7 +10,7 @@ type Article struct {
 	Description string
 	Body        string
 	Author      *User
-	CreatedAt   string
-	UpdatedAt   string
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 	TagList     []string
 }
