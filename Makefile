@@ -1,4 +1,4 @@
-.PHONY: all build test lint clean migrate-up migrate-down run help
+.PHONY: all build test lint clean migrate-up migrate-down run dev help fmt
 
 # Variables
 BINARY_NAME=conduit
@@ -6,6 +6,8 @@ GO=go
 GOLANGCI_LINT=golangci-lint
 MIGRATE=migrate
 MIGRATION_DIR=migrations
+AIR=air
+GOFUMPT=gofumpt
 
 # Default target
 all: build
@@ -23,6 +25,11 @@ test:
 # Run tests with coverage
 test-coverage: test
 	$(GO) tool cover -html=coverage.out
+
+# Format code
+fmt:
+	@echo "Formatting code with gofumpt..."
+	$(GOFUMPT) -l -w .
 
 # Run linter
 lint:
@@ -49,6 +56,11 @@ run:
 	@echo "Running application..."
 	$(GO) run ./cmd/...
 
+# Run the application with hot reload (using Air)
+dev:
+	@echo "Starting development server with hot reload..."
+	$(AIR)
+
 # Help target
 help:
 	@echo "Available targets:"
@@ -56,9 +68,11 @@ help:
 	@echo "  build         - Build the application"
 	@echo "  test          - Run tests"
 	@echo "  test-coverage - Run tests with coverage report"
+	@echo "  fmt           - Format code with gofumpt"
 	@echo "  lint          - Run linter"
 	@echo "  clean         - Remove build artifacts"
 	@echo "  migrate-up    - Run database migrations up"
 	@echo "  migrate-down  - Run database migrations down"
 	@echo "  run           - Run the application"
+	@echo "  dev           - Run the application with hot reload (using Air)"
 	@echo "  help          - Show this help message"
