@@ -63,14 +63,14 @@ type UserService interface {
 // UserHandler handles user-related HTTP requests
 type UserHandler struct {
 	userService UserService
-	Validate    *validator.Validate
+	validate    *validator.Validate
 }
 
 // NewUserHandler creates a new UserHandler
 func NewUserHandler(userService UserService) *UserHandler {
 	return &UserHandler{
 		userService: userService,
-		Validate:    validator.New(),
+		validate:    validator.New(),
 	}
 }
 
@@ -88,7 +88,7 @@ func (h *UserHandler) Register() http.HandlerFunc {
 		}
 
 		// Validate request body
-		if err := h.Validate.Struct(req); err != nil {
+		if err := h.validate.Struct(req); err != nil {
 			errors := h.translateValidationErrors(err)
 			h.respondWithError(w, http.StatusUnprocessableEntity, errors)
 			return
@@ -132,7 +132,7 @@ func (h *UserHandler) Login() http.HandlerFunc {
 		}
 
 		// Validate request body
-		if err := h.Validate.Struct(req); err != nil {
+		if err := h.validate.Struct(req); err != nil {
 			errors := h.translateValidationErrors(err)
 			h.respondWithError(w, http.StatusUnprocessableEntity, errors)
 			return
@@ -225,7 +225,7 @@ func (h *UserHandler) UpdateCurrentUser() http.HandlerFunc {
 		}
 
 		// Validate request body
-		if err := h.Validate.Struct(req); err != nil {
+		if err := h.validate.Struct(req); err != nil {
 			errors := h.translateValidationErrors(err)
 			h.respondWithError(w, http.StatusUnprocessableEntity, errors)
 			return
