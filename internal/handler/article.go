@@ -4,6 +4,7 @@ import (
 	"conduit/internal/middleware"
 	"conduit/internal/service"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -44,7 +45,7 @@ func NewArticleHandler(articleService ArticleService) *ArticleHandler {
 	}
 }
 
-// CreateArticle is a handler function for creating an article
+// CreateArticle is a handler function for creating a new article
 func (h *ArticleHandler) CreateArticle() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Set the content type to JSON
@@ -75,8 +76,10 @@ func (h *ArticleHandler) CreateArticle() http.HandlerFunc {
 		article, err := h.articleService.CreateArticle(userID, req.Article.Title, req.Article.Description, req.Article.Body, req.Article.TagList)
 		if err != nil {
 			switch {
-			// case errors.Is(err, service.ErrUserNotFound):
-			// 	h.respondWithError(w, http.StatusNotFound, []string{"User not found"})
+			case errors.Is(err, service.ErrUserNotFound):
+				h.respondWithError(w, http.StatusNotFound, []string{"User not found"})
+			case errors.Is(err, service.ErrArticleAlreadyExists):
+				h.respondWithError(w, http.StatusUnprocessableEntity, []string{"Article with this title already exists"})
 			default:
 				h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
 			}
