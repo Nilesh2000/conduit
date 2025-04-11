@@ -2,7 +2,10 @@ package service
 
 import (
 	"conduit/internal/repository"
+	"errors"
 	"time"
+
+	"github.com/gosimple/slug"
 )
 
 // Article represents a article
@@ -46,5 +49,40 @@ func NewArticleService(articleRepository ArticleRepository) *articleService {
 
 // CreateArticle creates a new article
 func (s *articleService) CreateArticle(userID int64, title, description, body string, tagList []string) (*Article, error) {
-	return nil, nil
+	// Generate slug from title
+	slug := generateSlug(title)
+
+	article, err := s.articleRepository.Create(userID, slug, title, description, body, tagList)
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrDuplicateSlug):
+			return nil, ErrArticleAlreadyExists
+		case errors.Is(err, repository.ErrUserNotFound):
+			return nil, ErrUserNotFound
+		default:
+			return nil, ErrInternalServer
+		}
+	}
+
+	return &Article{
+		Slug:           article.Slug,
+		Title:          article.Title,
+		Description:    article.Description,
+		Body:           article.Body,
+		TagList:        article.TagList,
+		CreatedAt:      article.CreatedAt,
+		UpdatedAt:      article.UpdatedAt,
+		Favorited:      false,
+		FavoritesCount: 0,
+		Author: Profile{
+			Username:  article.Author.Username,
+			Bio:       article.Author.Bio,
+			Image:     article.Author.Image,
+			Following: false,
+		},
+	}, nil
+}
+
+func generateSlug(title string) string {
+	return slug.Make(title)
 }
