@@ -38,26 +38,6 @@ type Profile struct {
 	Following bool
 }
 
-type Article struct {
-	Slug           string
-	Title          string
-	Description    string
-	Body           string
-	TagList        []string
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
-	Favorited      bool
-	FavoritesCount int
-	Author         Profile
-}
-
-type NewArticle struct {
-	Title       string
-	Description string
-	Body        string
-	TagList     []string
-}
-
 type UpdateArticle struct {
 	Title       string
 	Description string
@@ -99,12 +79,18 @@ func main() {
 	userService := service.NewUserService(userRepository, cfg.JWT.SecretKey, cfg.JWT.Expiry)
 	userHandler := handler.NewUserHandler(userService)
 
+	articleRepository := postgres.NewArticleRepository(db)
+	articleService := service.NewArticleService(articleRepository)
+	articleHandler := handler.NewArticleHandler(articleService)
+
 	router := http.NewServeMux()
 	router.HandleFunc("POST /api/users", userHandler.Register())
 	router.HandleFunc("POST /api/users/login", userHandler.Login())
 
 	router.HandleFunc("GET /api/user", middleware.RequireAuth([]byte(cfg.JWT.SecretKey))(userHandler.GetCurrentUser()))
 	router.HandleFunc("PUT /api/user", middleware.RequireAuth([]byte(cfg.JWT.SecretKey))(userHandler.UpdateCurrentUser()))
+
+	router.HandleFunc("POST /api/articles", middleware.RequireAuth([]byte(cfg.JWT.SecretKey))(articleHandler.CreateArticle()))
 
 	// Start server
 	server := &http.Server{

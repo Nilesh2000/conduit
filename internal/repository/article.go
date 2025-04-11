@@ -1,14 +1,21 @@
 package repository
 
-// Article represents an article in the system
+// Article represents an article in the repository
 type Article struct {
 	ID          int64
 	Slug        string
 	Title       string
 	Description string
 	Body        string
-	AuthorID    int64
+	Author      *Author
 	CreatedAt   string
 	UpdatedAt   string
 	TagList     []string
+}
+
+type Author struct {
+	ID       int64
+	Username string
+	Bio      string
+	Image    string
 }
