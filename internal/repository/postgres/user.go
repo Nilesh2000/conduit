@@ -8,18 +8,18 @@ import (
 	"github.com/lib/pq"
 )
 
-// UserRepository implements the repository.UserRepository using PostgreSQL
-type UserRepository struct {
+// userRepository implements the repository.userRepository using PostgreSQL
+type userRepository struct {
 	db *sql.DB
 }
 
 // NewUserRepository creates a new UserRepository
-func NewUserRepository(db *sql.DB) *UserRepository {
-	return &UserRepository{db: db}
+func NewUserRepository(db *sql.DB) *userRepository {
+	return &userRepository{db: db}
 }
 
 // Create creates a new user in the database
-func (r *UserRepository) Create(username, email, password string) (*repository.User, error) {
+func (r *userRepository) Create(username, email, password string) (*repository.User, error) {
 	// Begin a transaction
 	tx, err := r.db.Begin()
 	if err != nil {
@@ -72,7 +72,7 @@ func (r *UserRepository) Create(username, email, password string) (*repository.U
 }
 
 // FindByEmail finds a user by email in the database
-func (r *UserRepository) FindByEmail(email string) (*repository.User, error) {
+func (r *userRepository) FindByEmail(email string) (*repository.User, error) {
 	var user repository.User
 	var bio, image sql.NullString
 
@@ -98,7 +98,7 @@ func (r *UserRepository) FindByEmail(email string) (*repository.User, error) {
 }
 
 // FindByID finds a user by ID in the database
-func (r *UserRepository) FindByID(id int64) (*repository.User, error) {
+func (r *userRepository) FindByID(id int64) (*repository.User, error) {
 	var user repository.User
 	var bio, image sql.NullString
 
@@ -124,7 +124,7 @@ func (r *UserRepository) FindByID(id int64) (*repository.User, error) {
 }
 
 // Update updates a user in the database
-func (r *UserRepository) Update(userID int64, username, email, password, bio, image *string) (*repository.User, error) {
+func (r *userRepository) Update(userID int64, username, email, password, bio, image *string) (*repository.User, error) {
 	// Begin a transaction
 	tx, err := r.db.Begin()
 	if err != nil {
