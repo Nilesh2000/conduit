@@ -1,4 +1,11 @@
+# OS specific files
 .DS_Store
-coverage.out
+
+# Project binary
 conduit
+
+# Test coverage output
+coverage.out
+
+# Temporary files
 tmp/
