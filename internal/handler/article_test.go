@@ -111,6 +111,35 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 			},
 		},
 		{
+			name: "Unauthenticated request",
+			requestBody: `{
+				"article": {
+					"title": "Test Article",
+					"description": "Test Description",
+					"body": "Test Body",
+					"tagList": ["tag1", "tag2"]
+				}
+			}`,
+			setupAuth: func(r *http.Request) {
+				// Don't add user ID to context to simulate unauthenticated request
+			},
+			setupMock: func() *MockArticleService {
+				mockService := &MockArticleService{
+					createArticleFunc: func(userID int64, title, description, body string, tagList []string) (*service.Article, error) {
+						t.Errorf("CreateArticle should not be called for unauthenticated request")
+						return nil, nil
+					},
+				}
+				return mockService
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedResponse: GenericErrorModel{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"Unauthorized"}},
+			},
+		},
+		{
 			name: "Invalid JSON",
 			requestBody: `{
 				"article": {
