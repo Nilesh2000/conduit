@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/lib/pq"
@@ -42,9 +43,9 @@ func TestCreate(t *testing.T) {
 				mock.ExpectBegin()
 
 				// Expect insert query with returning id
-				mock.ExpectQuery(`INSERT INTO users \(username, email, password, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5\) RETURNING id, username, email, password`).
+				mock.ExpectQuery(`INSERT INTO users \(username, email, password, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5\) RETURNING id, username, email, password, bio, image, created_at, updated_at`).
 					WithArgs("testuser", "test@example.com", "hashedPassword", sqlmock.AnyArg(), sqlmock.AnyArg()).
-					WillReturnRows(sqlmock.NewRows([]string{"id", "username", "email", "password"}).AddRow(1, "testuser", "test@example.com", "hashedPassword"))
+					WillReturnRows(sqlmock.NewRows([]string{"id", "username", "email", "password", "bio", "image", "created_at", "updated_at"}).AddRow(1, "testuser", "test@example.com", "hashedPassword", nil, nil, time.Now(), time.Now()))
 
 				// Expect commit transaction
 				mock.ExpectCommit()
@@ -68,6 +69,12 @@ func TestCreate(t *testing.T) {
 				}
 				if user.Image != "" {
 					t.Errorf("Expected empty image, got %q", user.Image)
+				}
+				if user.CreatedAt.IsZero() {
+					t.Errorf("Expected non-zero created_at, got %v", user.CreatedAt)
+				}
+				if user.UpdatedAt.IsZero() {
+					t.Errorf("Expected non-zero updated_at, got %v", user.UpdatedAt)
 				}
 			},
 		},
@@ -160,9 +167,9 @@ func TestCreate(t *testing.T) {
 				mock.ExpectBegin()
 
 				// Expect insert query with returning id
-				mock.ExpectQuery(`INSERT INTO users \(username, email, password, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5\) RETURNING id, username, email, password`).
+				mock.ExpectQuery(`INSERT INTO users \(username, email, password, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5\) RETURNING id, username, email, password, bio, image, created_at, updated_at`).
 					WithArgs("testuser", "test@example.com", "hashedPassword", sqlmock.AnyArg(), sqlmock.AnyArg()).
-					WillReturnRows(sqlmock.NewRows([]string{"id", "username", "email", "password"}).AddRow(1, "testuser", "test@example.com", "hashedPassword"))
+					WillReturnRows(sqlmock.NewRows([]string{"id", "username", "email", "password", "bio", "image", "created_at", "updated_at"}).AddRow(1, "testuser", "test@example.com", "hashedPassword", nil, nil, time.Now(), time.Now()))
 
 				// Expect commit transaction to fail
 				mock.ExpectCommit().WillReturnError(errors.New("commit error"))
@@ -223,8 +230,8 @@ func TestFindByEmail(t *testing.T) {
 			name:  "User found",
 			email: "test@example.com",
 			mockSetup: func(mock sqlmock.Sqlmock) {
-				rows := sqlmock.NewRows([]string{"id", "username", "email", "password", "bio", "image"}).AddRow(1, "testuser", "test@example.com", "hashedPassword", "Test bio", "test.jpg")
-				mock.ExpectQuery(`SELECT id, username, email, password, bio, image FROM users WHERE email = \$1`).
+				rows := sqlmock.NewRows([]string{"id", "username", "email", "password", "bio", "image", "created_at", "updated_at"}).AddRow(1, "testuser", "test@example.com", "hashedPassword", "Test bio", "test.jpg", time.Now(), time.Now())
+				mock.ExpectQuery(`SELECT id, username, email, password, bio, image, created_at, updated_at FROM users WHERE email = \$1`).
 					WithArgs("test@example.com").
 					WillReturnRows(rows)
 			},
@@ -251,7 +258,7 @@ func TestFindByEmail(t *testing.T) {
 			name:  "User not found",
 			email: "nonexistent@example.com",
 			mockSetup: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery(`SELECT id, username, email, password, bio, image FROM users WHERE email = \$1`).
+				mock.ExpectQuery(`SELECT id, username, email, password, bio, image, created_at, updated_at FROM users WHERE email = \$1`).
 					WithArgs("nonexistent@example.com").
 					WillReturnError(sql.ErrNoRows)
 			},
@@ -262,7 +269,7 @@ func TestFindByEmail(t *testing.T) {
 			name:  "Database Error",
 			email: "test@example.com",
 			mockSetup: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery(`SELECT id, username, email, password, bio, image FROM users WHERE email = \$1`).
+				mock.ExpectQuery(`SELECT id, username, email, password, bio, image, created_at, updated_at FROM users WHERE email = \$1`).
 					WithArgs("test@example.com").
 					WillReturnError(errors.New("database error"))
 			},
@@ -273,8 +280,8 @@ func TestFindByEmail(t *testing.T) {
 			name:  "Null bio and image",
 			email: "nullfields@example.com",
 			mockSetup: func(mock sqlmock.Sqlmock) {
-				rows := sqlmock.NewRows([]string{"id", "username", "email", "password", "bio", "image"}).AddRow(1, "testuser", "nullfields@example.com", "hashedPassword", nil, nil)
-				mock.ExpectQuery(`SELECT id, username, email, password, bio, image FROM users WHERE email = \$1`).
+				rows := sqlmock.NewRows([]string{"id", "username", "email", "password", "bio", "image", "created_at", "updated_at"}).AddRow(1, "testuser", "nullfields@example.com", "hashedPassword", nil, nil, time.Now(), time.Now())
+				mock.ExpectQuery(`SELECT id, username, email, password, bio, image, created_at, updated_at FROM users WHERE email = \$1`).
 					WithArgs("nullfields@example.com").
 					WillReturnRows(rows)
 			},

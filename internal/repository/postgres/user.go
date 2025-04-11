@@ -30,18 +30,22 @@ func (r *userRepository) Create(username, email, password string) (*repository.U
 	query := `
 		INSERT INTO users (username, email, password, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id, username, email, password
+		RETURNING id, username, email, password, bio, image, created_at, updated_at
 	`
 
 	now := time.Now()
 	var user repository.User
-
+	var bio, image sql.NullString
 	// Insert user
 	err = tx.QueryRow(query, username, email, password, now, now).Scan(
 		&user.ID,
 		&user.Username,
 		&user.Email,
 		&user.Password,
+		&bio,
+		&image,
+		&user.CreatedAt,
+		&user.UpdatedAt,
 	)
 
 	// Handle database errors
@@ -62,6 +66,14 @@ func (r *userRepository) Create(username, email, password string) (*repository.U
 		return nil, repository.ErrInternal
 	}
 
+	// Handle nullable values
+	if bio.Valid {
+		user.Bio = bio.String
+	}
+	if image.Valid {
+		user.Image = image.String
+	}
+
 	// Commit the transaction
 	if err := tx.Commit(); err != nil {
 		return nil, repository.ErrInternal
@@ -76,7 +88,7 @@ func (r *userRepository) FindByEmail(email string) (*repository.User, error) {
 	var user repository.User
 	var bio, image sql.NullString
 
-	err := r.db.QueryRow("SELECT id, username, email, password, bio, image FROM users WHERE email = $1", email).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &bio, &image)
+	err := r.db.QueryRow("SELECT id, username, email, password, bio, image, created_at, updated_at FROM users WHERE email = $1", email).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &bio, &image, &user.CreatedAt, &user.UpdatedAt)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -89,7 +101,6 @@ func (r *userRepository) FindByEmail(email string) (*repository.User, error) {
 	if bio.Valid {
 		user.Bio = bio.String
 	}
-
 	if image.Valid {
 		user.Image = image.String
 	}
@@ -102,7 +113,7 @@ func (r *userRepository) FindByID(id int64) (*repository.User, error) {
 	var user repository.User
 	var bio, image sql.NullString
 
-	err := r.db.QueryRow("SELECT id, username, email, password, bio, image FROM users WHERE id = $1", id).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &bio, &image)
+	err := r.db.QueryRow("SELECT id, username, email, password, bio, image, created_at, updated_at FROM users WHERE id = $1", id).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &bio, &image, &user.CreatedAt, &user.UpdatedAt)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -115,7 +126,6 @@ func (r *userRepository) FindByID(id int64) (*repository.User, error) {
 	if bio.Valid {
 		user.Bio = bio.String
 	}
-
 	if image.Valid {
 		user.Image = image.String
 	}
@@ -142,7 +152,7 @@ func (r *userRepository) Update(userID int64, username, email, password, bio, im
 			image = COALESCE($5, image),
 			updated_at = $6
 		WHERE id = $7
-		RETURNING id, username, email, password, bio, image
+		RETURNING id, username, email, password, bio, image, created_at, updated_at
 	`
 
 	now := time.Now()
@@ -159,7 +169,7 @@ func (r *userRepository) Update(userID int64, username, email, password, bio, im
 		image,
 		now,
 		userID,
-	).Scan(&updatedUser.ID, &updatedUser.Username, &updatedUser.Email, &updatedUser.Password, &nsBio, &nsImage)
+	).Scan(&updatedUser.ID, &updatedUser.Username, &updatedUser.Email, &updatedUser.Password, &nsBio, &nsImage, &updatedUser.CreatedAt, &updatedUser.UpdatedAt)
 
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -184,7 +194,6 @@ func (r *userRepository) Update(userID int64, username, email, password, bio, im
 	if nsBio.Valid {
 		updatedUser.Bio = nsBio.String
 	}
-
 	if nsImage.Valid {
 		updatedUser.Image = nsImage.String
 	}
