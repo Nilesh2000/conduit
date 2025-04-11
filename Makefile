@@ -50,7 +50,7 @@ fmt:
 # Run linter
 lint:
 	@echo "Running linter..."
-	$(GOLANGCI_LINT) run
+	$(GOLANGCI_LINT) run --enable=gosec
 
 # Database migrations
 migrate-up:
