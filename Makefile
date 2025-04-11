@@ -8,6 +8,7 @@ MIGRATE=migrate
 MIGRATION_DIR=migrations
 AIR=air
 GOFUMPT=gofumpt
+GOLINES=golines
 
 # Default target
 all: build
@@ -28,8 +29,9 @@ test-coverage: test
 
 # Format code
 fmt:
-	@echo "Formatting code with gofumpt..."
+	@echo "Formatting code with gofumpt and golines..."
 	$(GOFUMPT) -l -w .
+	$(GOLINES) -w .
 
 # Run linter
 lint:
@@ -68,7 +70,7 @@ help:
 	@echo "  build         - Build the application"
 	@echo "  test          - Run tests"
 	@echo "  test-coverage - Run tests with coverage report"
-	@echo "  fmt           - Format code with gofumpt"
+	@echo "  fmt           - Format code with gofumpt and golines"
 	@echo "  lint          - Run linter"
 	@echo "  clean         - Remove build artifacts"
 	@echo "  migrate-up    - Run database migrations up"
