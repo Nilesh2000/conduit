@@ -92,10 +92,6 @@ func (h *ArticleHandler) translateValidationErrors(err error) []string {
 			switch e.Tag() {
 			case "required":
 				validationErrors = append(validationErrors, fmt.Sprintf("%s is required", e.Field()))
-			case "email":
-				validationErrors = append(validationErrors, fmt.Sprintf("%s is not a valid email", e.Value()))
-			case "min":
-				validationErrors = append(validationErrors, fmt.Sprintf("%s must be at least %s characters long", e.Field(), e.Param()))
 			default:
 				validationErrors = append(validationErrors, fmt.Sprintf("%s is not valid", e.Field()))
 			}
