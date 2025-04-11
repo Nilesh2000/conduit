@@ -53,7 +53,7 @@ func (s *userService) Register(username, email, password string) (*User, error) 
 	}
 
 	// Create the user in the repository
-	repoUser, err := s.userRepository.Create(username, email, string(hashedPassword))
+	user, err := s.userRepository.Create(username, email, string(hashedPassword))
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrDuplicateUsername):
@@ -66,25 +66,25 @@ func (s *userService) Register(username, email, password string) (*User, error) 
 	}
 
 	// Generate a JWT token for the user
-	token, err := s.generateToken(repoUser.ID)
+	token, err := s.generateToken(user.ID)
 	if err != nil {
 		return nil, ErrInternalServer
 	}
 
 	// Return user data
 	return &User{
-		Email:    repoUser.Email,
+		Email:    user.Email,
 		Token:    token,
-		Username: repoUser.Username,
-		Bio:      repoUser.Bio,
-		Image:    repoUser.Image,
+		Username: user.Username,
+		Bio:      user.Bio,
+		Image:    user.Image,
 	}, nil
 }
 
 // Login authenticates a user with email and password
 func (s *userService) Login(email, password string) (*User, error) {
 	// Find the user by email
-	repoUser, err := s.userRepository.FindByEmail(email)
+	user, err := s.userRepository.FindByEmail(email)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrUserNotFound):
@@ -95,29 +95,29 @@ func (s *userService) Login(email, password string) (*User, error) {
 	}
 
 	// Compare password hash
-	if err := bcrypt.CompareHashAndPassword([]byte(repoUser.Password), []byte(password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		return nil, ErrInvalidCredentials
 	}
 
 	// Generate JWT token
-	token, err := s.generateToken(repoUser.ID)
+	token, err := s.generateToken(user.ID)
 	if err != nil {
 		return nil, ErrInternalServer
 	}
 
 	// Return user data
 	return &User{
-		Email:    repoUser.Email,
+		Email:    user.Email,
 		Token:    token,
-		Username: repoUser.Username,
-		Bio:      repoUser.Bio,
-		Image:    repoUser.Image,
+		Username: user.Username,
+		Bio:      user.Bio,
+		Image:    user.Image,
 	}, nil
 }
 
 // GetCurrentUser gets the current user in the system
 func (s *userService) GetCurrentUser(userID int64) (*User, error) {
-	repoUser, err := s.userRepository.FindByID(userID)
+	user, err := s.userRepository.FindByID(userID)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrUserNotFound):
@@ -128,10 +128,10 @@ func (s *userService) GetCurrentUser(userID int64) (*User, error) {
 	}
 
 	return &User{
-		Email:    repoUser.Email,
-		Username: repoUser.Username,
-		Bio:      repoUser.Bio,
-		Image:    repoUser.Image,
+		Email:    user.Email,
+		Username: user.Username,
+		Bio:      user.Bio,
+		Image:    user.Image,
 	}, nil
 }
 
@@ -148,7 +148,7 @@ func (s *userService) UpdateUser(userID int64, username, email, password, bio, i
 		hashedPassword = &h
 	}
 
-	repoUser, err := s.userRepository.Update(userID, username, email, hashedPassword, bio, image)
+	user, err := s.userRepository.Update(userID, username, email, hashedPassword, bio, image)
 
 	switch {
 	case errors.Is(err, repository.ErrDuplicateUsername):
@@ -162,10 +162,10 @@ func (s *userService) UpdateUser(userID int64, username, email, password, bio, i
 	}
 
 	return &User{
-		Email:    repoUser.Email,
-		Username: repoUser.Username,
-		Bio:      repoUser.Bio,
-		Image:    repoUser.Image,
+		Email:    user.Email,
+		Username: user.Username,
+		Bio:      user.Bio,
+		Image:    user.Image,
 	}, nil
 }
 
