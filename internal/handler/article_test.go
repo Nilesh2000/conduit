@@ -13,14 +13,17 @@ import (
 	"time"
 )
 
+// MockArticleService is a mock implementation of the ArticleService interface
 type MockArticleService struct {
 	createArticleFunc func(userID int64, title, description, body string, tagList []string) (*service.Article, error)
 }
 
+// CreateArticle is a mock implementation of the CreateArticle method
 func (m *MockArticleService) CreateArticle(userID int64, title, description, body string, tagList []string) (*service.Article, error) {
 	return m.createArticleFunc(userID, title, description, body, tagList)
 }
 
+// TestArticleHandler_CreateArticle tests the CreateArticle method of the ArticleHandler
 func TestArticleHandler_CreateArticle(t *testing.T) {
 	tests := []struct {
 		name             string
