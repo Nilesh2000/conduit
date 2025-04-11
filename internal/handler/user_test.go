@@ -803,6 +803,78 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 				}{Body: []string{"invalid-email is not a valid email"}},
 			},
 		},
+		{
+			name: "Username already taken",
+			requestBody: `{
+				"user": {
+					"username": "existinguser"
+				}
+			}`,
+			setupMock: func() *MockUserService {
+				mockService := &MockUserService{
+					updateUserFunc: func(userID int64, username, email, password, bio, image *string) (*service.User, error) {
+						return nil, service.ErrUsernameTaken
+					},
+				}
+				return mockService
+			},
+			authToken:      "jwt.token.here",
+			expectedStatus: http.StatusUnprocessableEntity,
+			expectedResponse: GenericErrorModel{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"Username already taken"}},
+			},
+		},
+		{
+			name: "Email already registered",
+			requestBody: `{
+				"user": {
+					"email": "existing@example.com"
+				}
+			}`,
+			setupMock: func() *MockUserService {
+				mockService := &MockUserService{
+					updateUserFunc: func(userID int64, username, email, password, bio, image *string) (*service.User, error) {
+						return nil, service.ErrEmailTaken
+					},
+				}
+				return mockService
+			},
+			authToken:      "jwt.token.here",
+			expectedStatus: http.StatusUnprocessableEntity,
+			expectedResponse: GenericErrorModel{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"Email already registered"}},
+			},
+		},
+		{
+			name: "Internal server error",
+			requestBody: `{
+				"user": {
+					"username": "updateduser",
+					"email": "updated@example.com",
+					"password": "newpassword123",
+					"bio": "Updated bio",
+					"image": "https://example.com/updated.jpg"
+				}
+			}`,
+			setupMock: func() *MockUserService {
+				mockService := &MockUserService{
+					updateUserFunc: func(userID int64, username, email, password, bio, image *string) (*service.User, error) {
+						return nil, service.ErrInternalServer
+					},
+				}
+				return mockService
+			},
+			authToken:      "jwt.token.here",
+			expectedStatus: http.StatusInternalServerError,
+			expectedResponse: GenericErrorModel{Errors: struct {
+				Body []string `json:"body"`
+			}{Body: []string{"Internal server error"}},
+			},
+		},
 	}
 
 	for _, tt := range tests {
