@@ -7,15 +7,8 @@ type Article struct {
 	Title       string
 	Description string
 	Body        string
-	Author      *Author
+	Author      *User
 	CreatedAt   string
 	UpdatedAt   string
 	TagList     []string
-}
-
-type Author struct {
-	ID       int64
-	Username string
-	Bio      string
-	Image    string
 }
