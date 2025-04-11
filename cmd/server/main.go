@@ -13,25 +13,6 @@ import (
 	"conduit/internal/service"
 )
 
-type LoginUser struct {
-	Email    string
-	Password string
-}
-
-type NewUser struct {
-	Username string
-	Email    string
-	Password string
-}
-
-type UpdateUser struct {
-	Email    string
-	Token    string
-	Username string
-	Bio      string
-	Image    string
-}
-
 type Profile struct {
 	Username  string
 	Bio       string
