@@ -195,6 +195,36 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 				}{Body: []string{"Description is required", "Body is required"}},
 			},
 		},
+		{
+			name: "Internal server error",
+			requestBody: `{
+				"article": {
+					"title": "Test Article",
+					"description": "Test Description",
+					"body": "Test Body",
+					"tagList": ["tag1", "tag2"]
+				}
+			}`,
+			setupAuth: func(r *http.Request) {
+				ctx := r.Context()
+				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
+				*r = *r.WithContext(ctx)
+			},
+			setupMock: func() *MockArticleService {
+				mockService := &MockArticleService{
+					createArticleFunc: func(userID int64, title, description, body string, tagList []string) (*service.Article, error) {
+						return nil, service.ErrInternalServer
+					},
+				}
+				return mockService
+			},
+			expectedStatus: http.StatusInternalServerError,
+			expectedResponse: GenericErrorModel{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"Internal server error"}},
+			},
+		},
 	}
 
 	for _, tt := range tests {
