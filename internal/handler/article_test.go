@@ -110,6 +110,34 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Invalid JSON",
+			requestBody: `{
+				"article": {
+					"title": "Test Article",
+				}
+			}`,
+			setupAuth: func(r *http.Request) {
+				ctx := r.Context()
+				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
+				*r = *r.WithContext(ctx)
+			},
+			setupMock: func() *MockArticleService {
+				mockService := &MockArticleService{
+					createArticleFunc: func(userID int64, title, description, body string, tagList []string) (*service.Article, error) {
+						t.Errorf("CreateArticle should not be called for invalid JSON")
+						return nil, nil
+					},
+				}
+				return mockService
+			},
+			expectedStatus: http.StatusUnprocessableEntity,
+			expectedResponse: GenericErrorModel{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"Invalid request body"}},
+			},
+		},
 	}
 
 	for _, tt := range tests {
