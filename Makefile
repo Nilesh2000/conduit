@@ -1,4 +1,4 @@
-.PHONY: all build cleanrun dev test test-coverage fmt vet lint migrate-up migrate-down help
+.PHONY: all build cleanrun dev test test-coverage fmt lint migrate-up migrate-down help
 
 # Variables
 BINARY_NAME=conduit
@@ -47,11 +47,6 @@ fmt:
 	$(GOFUMPT) -l -w .
 	$(GOLINES) -w .
 
-# Run vet
-vet:
-	@echo "Running go vet..."
-	$(GO) vet ./...
-
 # Run linter
 lint:
 	@echo "Running linter..."
@@ -77,7 +72,6 @@ help:
 	@echo "  test          - Run tests"
 	@echo "  test-coverage - Run tests with coverage report"
 	@echo "  fmt           - Format code with gofumpt and golines"
-	@echo "  vet           - Run go vet for static analysis"
 	@echo "  lint          - Run linter"
 	@echo "  migrate-up    - Run database migrations up"
 	@echo "  migrate-down  - Run database migrations down"
