@@ -1,9 +1,10 @@
 package postgres
 
 import (
-	"conduit/internal/repository"
 	"database/sql"
 	"time"
+
+	"conduit/internal/repository"
 
 	"github.com/lib/pq"
 )
@@ -47,7 +48,6 @@ func (r *articleRepository) Create(userID int64, slug, title, description, body 
 	err = tx.QueryRow(query, slug, title, description, body, userID, now, now).
 		Scan(&article.ID, &article.Slug, &article.Title, &article.Description, &article.Body, &article.Author, &article.CreatedAt, &article.UpdatedAt,
 			&article.Author.Username, &article.Author.Email, &article.Author.Password, &authorBio, &authorImage)
-
 	if err != nil {
 		// PostgreSQL specific error handling
 		if pqErr, ok := err.(*pq.Error); ok {

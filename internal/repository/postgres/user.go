@@ -1,9 +1,10 @@
 package postgres
 
 import (
-	"conduit/internal/repository"
 	"database/sql"
 	"time"
+
+	"conduit/internal/repository"
 
 	"github.com/lib/pq"
 )
@@ -47,7 +48,6 @@ func (r *userRepository) Create(username, email, password string) (*repository.U
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
-
 	// Handle database errors
 	if err != nil {
 		// PostgreSQL specific error handling
@@ -89,7 +89,6 @@ func (r *userRepository) FindByEmail(email string) (*repository.User, error) {
 	var bio, image sql.NullString
 
 	err := r.db.QueryRow("SELECT id, username, email, password, bio, image, created_at, updated_at FROM users WHERE email = $1", email).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &bio, &image, &user.CreatedAt, &user.UpdatedAt)
-
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, repository.ErrUserNotFound
@@ -114,7 +113,6 @@ func (r *userRepository) FindByID(id int64) (*repository.User, error) {
 	var bio, image sql.NullString
 
 	err := r.db.QueryRow("SELECT id, username, email, password, bio, image, created_at, updated_at FROM users WHERE id = $1", id).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &bio, &image, &user.CreatedAt, &user.UpdatedAt)
-
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, repository.ErrUserNotFound
@@ -170,7 +168,6 @@ func (r *userRepository) Update(userID int64, username, email, password, bio, im
 		now,
 		userID,
 	).Scan(&updatedUser.ID, &updatedUser.Username, &updatedUser.Email, &updatedUser.Password, &nsBio, &nsImage, &updatedUser.CreatedAt, &updatedUser.UpdatedAt)
-
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, repository.ErrUserNotFound

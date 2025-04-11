@@ -1,11 +1,12 @@
 package service
 
 import (
-	"conduit/internal/repository"
 	"errors"
 	"strings"
 	"testing"
 	"time"
+
+	"conduit/internal/repository"
 
 	"github.com/golang-jwt/jwt"
 	"golang.org/x/crypto/bcrypt"

@@ -1,13 +1,14 @@
 package handler
 
 import (
-	"conduit/internal/middleware"
-	"conduit/internal/service"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"strings"
+
+	"conduit/internal/middleware"
+	"conduit/internal/service"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -96,7 +97,6 @@ func (h *UserHandler) Register() http.HandlerFunc {
 
 		// Call service to register user
 		user, err := h.userService.Register(req.User.Username, req.User.Email, req.User.Password)
-
 		// Handle errors
 		if err != nil {
 			switch {
@@ -140,7 +140,6 @@ func (h *UserHandler) Login() http.HandlerFunc {
 
 		// Call service to login user
 		user, err := h.userService.Login(req.User.Email, req.User.Password)
-
 		// Handle errors
 		if err != nil {
 			switch {
@@ -233,7 +232,6 @@ func (h *UserHandler) UpdateCurrentUser() http.HandlerFunc {
 
 		// Call service to update user
 		user, err := h.userService.UpdateUser(userID, req.User.Username, req.User.Email, req.User.Password, req.User.Bio, req.User.Image)
-
 		// Handle errors
 		if err != nil {
 			switch {

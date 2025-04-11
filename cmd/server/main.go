@@ -1,15 +1,16 @@
 package main
 
 import (
+	"database/sql"
+	"log"
+	"net/http"
+	"time"
+
 	"conduit/internal/config"
 	"conduit/internal/handler"
 	"conduit/internal/middleware"
 	"conduit/internal/repository/postgres"
 	"conduit/internal/service"
-	"database/sql"
-	"log"
-	"net/http"
-	"time"
 )
 
 type LoginUser struct {

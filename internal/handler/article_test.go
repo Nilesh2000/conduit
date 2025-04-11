@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"conduit/internal/middleware"
-	"conduit/internal/service"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -11,6 +9,9 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"conduit/internal/middleware"
+	"conduit/internal/service"
 )
 
 // MockArticleService is a mock implementation of the ArticleService interface

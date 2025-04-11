@@ -1,12 +1,13 @@
 package handler
 
 import (
-	"conduit/internal/middleware"
-	"conduit/internal/service"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+
+	"conduit/internal/middleware"
+	"conduit/internal/service"
 
 	"github.com/go-playground/validator/v10"
 )

@@ -1,11 +1,12 @@
 package postgres
 
 import (
-	"conduit/internal/repository"
 	"database/sql"
 	"errors"
 	"testing"
 	"time"
+
+	"conduit/internal/repository"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/lib/pq"

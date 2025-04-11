@@ -1,8 +1,6 @@
 package handler
 
 import (
-	"conduit/internal/middleware"
-	"conduit/internal/service"
 	"context"
 	"encoding/json"
 	"net/http"
@@ -10,6 +8,9 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+
+	"conduit/internal/middleware"
+	"conduit/internal/service"
 )
 
 // MockUserService is a mock implementation of the UserService interface
@@ -569,9 +570,10 @@ func TestUserHandler_GetCurrentUser(t *testing.T) {
 			},
 			authToken:      "jwt.token.here",
 			expectedStatus: http.StatusNotFound,
-			expectedResponse: GenericErrorModel{Errors: struct {
-				Body []string `json:"body"`
-			}{Body: []string{"User not found"}},
+			expectedResponse: GenericErrorModel{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"User not found"}},
 			},
 		},
 		{
@@ -586,9 +588,10 @@ func TestUserHandler_GetCurrentUser(t *testing.T) {
 			},
 			authToken:      "jwt.token.here",
 			expectedStatus: http.StatusInternalServerError,
-			expectedResponse: GenericErrorModel{Errors: struct {
-				Body []string `json:"body"`
-			}{Body: []string{"Internal server error"}},
+			expectedResponse: GenericErrorModel{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"Internal server error"}},
 			},
 		},
 	}
@@ -870,9 +873,10 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 			},
 			authToken:      "jwt.token.here",
 			expectedStatus: http.StatusInternalServerError,
-			expectedResponse: GenericErrorModel{Errors: struct {
-				Body []string `json:"body"`
-			}{Body: []string{"Internal server error"}},
+			expectedResponse: GenericErrorModel{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"Internal server error"}},
 			},
 		},
 	}

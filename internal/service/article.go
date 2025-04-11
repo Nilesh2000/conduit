@@ -1,9 +1,10 @@
 package service
 
 import (
-	"conduit/internal/repository"
 	"errors"
 	"time"
+
+	"conduit/internal/repository"
 
 	"github.com/gosimple/slug"
 )

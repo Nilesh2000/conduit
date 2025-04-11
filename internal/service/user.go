@@ -1,10 +1,11 @@
 package service
 
 import (
-	"conduit/internal/repository"
 	"errors"
 	"fmt"
 	"time"
+
+	"conduit/internal/repository"
 
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
