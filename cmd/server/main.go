@@ -95,7 +95,7 @@ func main() {
 		log.Fatalf("Failed to ping database: %v", err)
 	}
 
-	userRepository := postgres.New(db)
+	userRepository := postgres.NewUserRepository(db)
 	userService := service.NewUserService(userRepository, cfg.JWT.SecretKey, cfg.JWT.Expiry)
 	userHandler := handler.NewUserHandler(userService)
 

@@ -13,8 +13,8 @@ type UserRepository struct {
 	db *sql.DB
 }
 
-// New creates a new UserRepository
-func New(db *sql.DB) *UserRepository {
+// NewUserRepository creates a new UserRepository
+func NewUserRepository(db *sql.DB) *UserRepository {
 	return &UserRepository{db: db}
 }
 

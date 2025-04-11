@@ -20,7 +20,7 @@ func TestCreate(t *testing.T) {
 	defer db.Close()
 
 	// Create repository with mock database
-	repo := New(db)
+	repo := NewUserRepository(db)
 
 	// Define test cases
 	tests := []struct {
@@ -209,7 +209,7 @@ func TestFindByEmail(t *testing.T) {
 	defer db.Close()
 
 	// Create repository with mock database
-	repo := New(db)
+	repo := NewUserRepository(db)
 
 	// Define test cases
 	tests := []struct {
