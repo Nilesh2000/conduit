@@ -12,17 +12,18 @@ import (
 	"github.com/lib/pq"
 )
 
-// TestCreate tests the Create method of the UserRepository
-func TestCreate(t *testing.T) {
-	// Create a mock database
+// setupTestDB creates a new mock database for testing
+func setupTestDB(t *testing.T) (*sql.DB, sqlmock.Sqlmock) {
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("Error creating mock database: %v", err)
 	}
-	defer db.Close()
+	return db, mock
+}
 
-	// Create repository with mock database
-	repo := NewUserRepository(db)
+// TestCreate tests the Create method of the UserRepository
+func TestCreate(t *testing.T) {
+	t.Parallel()
 
 	// Define test cases
 	tests := []struct {
@@ -48,7 +49,7 @@ func TestCreate(t *testing.T) {
 					WithArgs("testuser", "test@example.com", "hashedPassword", sqlmock.AnyArg(), sqlmock.AnyArg()).
 					WillReturnRows(sqlmock.NewRows([]string{"id", "username", "email", "password", "bio", "image", "created_at", "updated_at"}).AddRow(1, "testuser", "test@example.com", "hashedPassword", nil, nil, time.Now(), time.Now()))
 
-				// Expect commit transaction
+				// Expect commit
 				mock.ExpectCommit()
 			},
 			expectedErr: nil,
@@ -180,28 +181,39 @@ func TestCreate(t *testing.T) {
 		},
 	}
 
-	// Run tests
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			// Setup mock database for this test case
+			db, mock := setupTestDB(t)
+			defer db.Close()
+
 			// Setup mock expectations
-			tt.mockSetup(mock)
+			if tt.mockSetup != nil {
+				tt.mockSetup(mock)
+			}
+
+			// Create repository with mock database
+			repo := NewUserRepository(db)
 
 			// Call Create method
 			user, err := repo.Create(tt.username, tt.email, tt.password)
 
-			// Verify error
+			// Validate error
 			if !errors.Is(err, tt.expectedErr) {
 				t.Errorf("Expected error %v, got %v", tt.expectedErr, err)
 			}
 
-			// Validate user if expected
+			// Validate user if no error
 			if err == nil && tt.validateUser != nil {
 				tt.validateUser(t, user)
 			}
 
 			// Ensure all expectations were met
 			if err := mock.ExpectationsWereMet(); err != nil {
-				t.Errorf("Unfulfilled mock expectations: %v", err)
+				t.Errorf("Unfulfilled expectations: %v", err)
 			}
 		})
 	}
@@ -209,15 +221,7 @@ func TestCreate(t *testing.T) {
 
 // TestFindByEmail tests the FindByEmail method of the UserRepository
 func TestFindByEmail(t *testing.T) {
-	// Create a mock database
-	db, mock, err := sqlmock.New()
-	if err != nil {
-		t.Fatalf("Error creating mock database: %v", err)
-	}
-	defer db.Close()
-
-	// Create repository with mock database
-	repo := NewUserRepository(db)
+	t.Parallel()
 
 	// Define test cases
 	tests := []struct {
@@ -300,27 +304,39 @@ func TestFindByEmail(t *testing.T) {
 		},
 	}
 
-	// Run tests
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			// Setup mock database for this test case
+			db, mock := setupTestDB(t)
+			defer db.Close()
+
 			// Setup mock expectations
-			tt.mockSetup(mock)
+			if tt.mockSetup != nil {
+				tt.mockSetup(mock)
+			}
+
+			// Create repository with mock database
+			repo := NewUserRepository(db)
 
 			// Call FindByEmail method
 			user, err := repo.FindByEmail(tt.email)
 
+			// Validate error
 			if !errors.Is(err, tt.expectedErr) {
 				t.Errorf("Expected error %v, got %v", tt.expectedErr, err)
 			}
 
-			// Validate user if expected
+			// Validate user if no error
 			if err == nil && tt.validateUser != nil {
 				tt.validateUser(t, user)
 			}
 
 			// Ensure all expectations were met
 			if err := mock.ExpectationsWereMet(); err != nil {
-				t.Errorf("Unfulfilled mock expectations: %v", err)
+				t.Errorf("Unfulfilled expectations: %v", err)
 			}
 		})
 	}

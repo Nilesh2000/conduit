@@ -49,6 +49,8 @@ func (m *MockUserService) UpdateUser(
 
 // TestUserHandler_Register tests the Register method of the UserHandler
 func TestUserHandler_Register(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name             string
 		requestBody      string
@@ -275,7 +277,10 @@ func TestUserHandler_Register(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			// Setup mock service
 			mockUserService := tt.setupMock()
 
@@ -327,6 +332,8 @@ func TestUserHandler_Register(t *testing.T) {
 
 // TestUserHandler_Login tests the Login method of the UserHandler
 func TestUserHandler_Login(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name             string
 		requestBody      string
@@ -495,7 +502,10 @@ func TestUserHandler_Login(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			// Setup mock service
 			mockUserService := tt.setupMock()
 
@@ -547,6 +557,8 @@ func TestUserHandler_Login(t *testing.T) {
 
 // TestUserHandler_GetCurrentUser tests the GetCurrentUser method of the UserHandler
 func TestUserHandler_GetCurrentUser(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name             string
 		setupMock        func() *MockUserService
@@ -623,7 +635,10 @@ func TestUserHandler_GetCurrentUser(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			// Setup mock service
 			mockUserService := tt.setupMock()
 
@@ -679,6 +694,7 @@ func TestUserHandler_GetCurrentUser(t *testing.T) {
 }
 
 func TestUserHandler_UpdateCurrentUser(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name             string
 		requestBody      string
@@ -911,7 +927,10 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			// Setup mock service
 			mockUserService := tt.setupMock()
 

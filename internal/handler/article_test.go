@@ -30,6 +30,8 @@ func (m *MockArticleService) CreateArticle(
 
 // TestArticleHandler_CreateArticle tests the CreateArticle method of the ArticleHandler
 func TestArticleHandler_CreateArticle(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name             string
 		requestBody      string
@@ -293,7 +295,10 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			// Setup Mock
 			mockService := tt.setupMock()
 

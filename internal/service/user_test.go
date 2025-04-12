@@ -47,6 +47,8 @@ func (m *MockUserRepository) Update(
 
 // Test_userService_Register tests the Register method of the userService
 func Test_userService_Register(t *testing.T) {
+	t.Parallel()
+
 	const (
 		jwtSecret     = "test-secret"
 		jwtExpiration = time.Hour * 24
@@ -214,7 +216,10 @@ func Test_userService_Register(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			// Setup mock repository
 			mockUserRepository := tt.setupMock()
 
@@ -239,6 +244,8 @@ func Test_userService_Register(t *testing.T) {
 
 // Test_userService_Login tests the Login method of the userService
 func Test_userService_Login(t *testing.T) {
+	t.Parallel()
+
 	const (
 		jwtSecret     = "test-secret"
 		jwtExpiration = time.Hour * 24
@@ -398,7 +405,10 @@ func Test_userService_Login(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			// Setup mock repository
 			mockUserRepository := tt.setupMock()
 
