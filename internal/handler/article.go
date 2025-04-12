@@ -34,6 +34,7 @@ type ArticleService interface {
 		title, description, body string,
 		tagList []string,
 	) (*service.Article, error)
+	GetArticle(slug string) (*service.Article, error)
 }
 
 // ArticleHandler is a handler for article operations
@@ -107,6 +108,38 @@ func (h *ArticleHandler) CreateArticle() http.HandlerFunc {
 
 		// Respond with created article
 		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(ArticleResponse{Article: *article})
+	}
+}
+
+// GetArticle is a handler function for getting an article by slug
+func (h *ArticleHandler) GetArticle() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Set the content type to JSON
+		w.Header().Set("Content-Type", "application/json")
+
+		// Get slug from request path
+		slug := r.URL.Path[len("/api/articles/"):]
+		if slug == "" {
+			h.respondWithError(w, http.StatusNotFound, []string{"Article not found"})
+			return
+		}
+
+		// Call service to get article
+		article, err := h.articleService.GetArticle(slug)
+
+		if err != nil {
+			switch {
+			case errors.Is(err, service.ErrArticleNotFound):
+				h.respondWithError(w, http.StatusNotFound, []string{"Article not found"})
+			default:
+				h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+			}
+			return
+		}
+
+		// Respond with article
+		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(ArticleResponse{Article: *article})
 	}
 }
