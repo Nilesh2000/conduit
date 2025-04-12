@@ -92,6 +92,7 @@ func (s *articleService) CreateArticle(
 	}, nil
 }
 
+// generateSlug generates a slug from a title
 func generateSlug(title string) string {
 	return slug.Make(title)
 }
