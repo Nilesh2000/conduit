@@ -112,3 +112,8 @@ func (r *articleRepository) Create(
 
 	return &article, nil
 }
+
+// GetBySlug gets an article by slug
+func (r *articleRepository) GetBySlug(slug string) (*repository.Article, error) {
+	return nil, nil
+}

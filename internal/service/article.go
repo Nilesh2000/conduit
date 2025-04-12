@@ -38,6 +38,7 @@ type ArticleRepository interface {
 		slug, title, description, body string,
 		tagList []string,
 	) (*repository.Article, error)
+	GetBySlug(slug string) (*repository.Article, error)
 }
 
 // articleService implements the articleService interface
@@ -90,6 +91,11 @@ func (s *articleService) CreateArticle(
 			Following: false,
 		},
 	}, nil
+}
+
+// GetArticle gets an article by slug
+func (s *articleService) GetArticle(slug string) (*Article, error) {
+	return nil, nil
 }
 
 // generateSlug generates a slug from a title
