@@ -1,0 +1,15 @@
+pre-commit:
+  parallel: true
+  commands:
+    fmt:
+      glob: "*.go"
+      run: gofmt -l -w {staged_files}
+
+    lint:
+      glob: "*.go"
+      run: golangci-lint run --enable=gosec {staged_files}
+
+pre-push:
+  commands:
+    test:
+      run: go test -v -race ./...
