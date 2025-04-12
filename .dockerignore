@@ -1,0 +1,29 @@
+# Version control
+.git
+.gitignore
+.github/
+
+# Build Output
+conduit
+
+# Testing
+*_test.go
+**/*_test.go
+coverage.out
+
+# Local Development
+Makefile
+.air.toml
+tmp
+
+# Documentation
+*.md
+LICENSE
+
+# Docker files
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Misc
+.DS_Store
