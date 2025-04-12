@@ -12,4 +12,6 @@ var (
 	ErrInvalidCredentials = errors.New("invalid credentials")
 
 	ErrArticleAlreadyExists = errors.New("article with this title already exists")
+
+	ErrArticleNotFound = errors.New("article not found")
 )
