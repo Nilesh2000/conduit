@@ -7,7 +7,7 @@ pre-commit:
 
     lint:
       glob: "*.go"
-      run: golangci-lint run --enable=gosec {staged_files}
+      run: golangci-lint run --enable=gosec ./...
 
 pre-push:
   commands:
