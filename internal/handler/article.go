@@ -108,7 +108,9 @@ func (h *ArticleHandler) CreateArticle() http.HandlerFunc {
 
 		// Respond with created article
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(ArticleResponse{Article: *article})
+		if err := json.NewEncoder(w).Encode(ArticleResponse{Article: *article}); err != nil {
+			h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+		}
 	}
 }
 
@@ -140,7 +142,9 @@ func (h *ArticleHandler) GetArticle() http.HandlerFunc {
 
 		// Respond with article
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(ArticleResponse{Article: *article})
+		if err := json.NewEncoder(w).Encode(ArticleResponse{Article: *article}); err != nil {
+			h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+		}
 	}
 }
 
@@ -176,5 +180,7 @@ func (h *ArticleHandler) respondWithError(w http.ResponseWriter, status int, err
 	response := GenericErrorModel{}
 	response.Errors.Body = errors
 
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+	}
 }
