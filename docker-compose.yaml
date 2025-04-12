@@ -1,0 +1,54 @@
+services:
+  # API
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: conduit-api
+    restart: unless-stopped
+    depends_on:
+      - db:
+          condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=conduit
+      - DB_SSLMODE=disable
+      - JWT_SECRET_KEY=secret-key
+      - JWT_EXPIRY=24h
+      - SERVER_PORT=8080
+    networks:
+      - conduit-network
+
+  # Database
+  db:
+    image: postgres:latest
+    container_name: conduit-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=conduit
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - conduit-network
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-d", "conduit"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  conduit-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+
