@@ -1,4 +1,4 @@
-.PHONY: all setup init deps build clean run dev test test-coverage fmt lint migrate-up migrate-down help
+.PHONY: all setup init deps build clean run dev docker test test-coverage fmt lint migrate-up migrate-down help
 
 # Variables
 BIN=conduit
@@ -65,6 +65,11 @@ dev:
 	@echo "Starting development server with hot reload..."
 	$(AIR)
 
+# Run with Docker
+docker:
+	@echo "Starting Docker containers..."
+	docker-compose up -d
+
 # Run tests
 test:
 	@echo "Running tests..."
@@ -106,6 +111,7 @@ help:
 	@echo "  clean         - Remove build artifacts"
 	@echo "  run           - Run application"
 	@echo "  dev           - Run with hot reload (Air)"
+	@echo "  docker        - Run with Docker"
 	@echo "  test          - Run tests"
 	@echo "  test-coverage - View test coverage in browser"
 	@echo "  fmt           - Format code (gofumpt + golines)"
