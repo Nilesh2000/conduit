@@ -1,4 +1,4 @@
-.PHONY: all build cleanrun dev test test-coverage fmt lint migrate-up migrate-down help
+.PHONY: all setup build clean run dev test test-coverage fmt lint migrate-up migrate-down help
 
 # Variables
 BINARY_NAME=conduit
@@ -13,6 +13,19 @@ DB_URL=postgres://postgres:postgres@localhost:5432/conduit?sslmode=disable
 
 # Default target
 all: build
+
+# Setup development environment
+setup:
+	@echo "Installing required tools..."
+	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	$(GO) install github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+	$(GO) install github.com/air-verse/air@latest
+	$(GO) install mvdan.cc/gofumpt@latest
+	$(GO) install github.com/segmentio/golines@latest
+	$(GO) install github.com/evilmartians/lefthook@latest
+	@echo "Setting up git hooks..."
+	lefthook install
+	@echo "Setup complete!"
 
 # Build application
 build:
@@ -66,10 +79,11 @@ migrate-down:
 help:
 	@echo "Available targets:"
 	@echo "  all           - Build application (default)"
+	@echo "  setup         - Setup development environment"
 	@echo "  build         - Build application"
+	@echo "  clean         - Remove build artifacts"
 	@echo "  run           - Run application"
 	@echo "  dev           - Run with hot reload (Air)"
-	@echo "  clean         - Remove build artifacts"
 	@echo "  test          - Run tests"
 	@echo "  test-coverage - View test coverage in browser"
 	@echo "  fmt           - Format code (gofumpt + golines)"
