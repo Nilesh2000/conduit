@@ -201,6 +201,66 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 			},
 		},
 		{
+			name: "Article already exists",
+			requestBody: `{
+				"article": {
+					"title": "Existing Article",
+					"description": "Test Description",
+					"body": "Test Body",
+					"tagList": ["tag1", "tag2"]
+				}
+			}`,
+			setupAuth: func(r *http.Request) {
+				ctx := r.Context()
+				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
+				*r = *r.WithContext(ctx)
+			},
+			setupMock: func() *MockArticleService {
+				mockService := &MockArticleService{
+					createArticleFunc: func(userID int64, title, description, body string, tagList []string) (*service.Article, error) {
+						return nil, service.ErrArticleAlreadyExists
+					},
+				}
+				return mockService
+			},
+			expectedStatus: http.StatusUnprocessableEntity,
+			expectedResponse: GenericErrorModel{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"Article with this title already exists"}},
+			},
+		},
+		{
+			name: "User not found",
+			requestBody: `{
+				"article": {
+					"title": "Test Article",
+					"description": "Test Description",
+					"body": "Test Body",
+					"tagList": ["tag1", "tag2"]
+				}
+			}`,
+			setupAuth: func(r *http.Request) {
+				ctx := r.Context()
+				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
+				*r = *r.WithContext(ctx)
+			},
+			setupMock: func() *MockArticleService {
+				mockService := &MockArticleService{
+					createArticleFunc: func(userID int64, title, description, body string, tagList []string) (*service.Article, error) {
+						return nil, service.ErrUserNotFound
+					},
+				}
+				return mockService
+			},
+			expectedStatus: http.StatusNotFound,
+			expectedResponse: GenericErrorModel{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"User not found"}},
+			},
+		},
+		{
 			name: "Internal server error",
 			requestBody: `{
 				"article": {
