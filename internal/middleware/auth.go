@@ -3,6 +3,7 @@ package middleware
 import (
 	"context"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -89,5 +90,7 @@ func respondWithError(w http.ResponseWriter, status int, errors []string) {
 	response := GenericErrorModel{}
 	response.Errors.Body = errors
 
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		log.Printf("Failed to encode response: %v", err)
+	}
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 
 	"conduit/internal/middleware"
@@ -181,6 +182,6 @@ func (h *ArticleHandler) respondWithError(w http.ResponseWriter, status int, err
 	response.Errors.Body = errors
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+		log.Printf("Failed to encode response: %v", err)
 	}
 }
