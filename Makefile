@@ -1,4 +1,4 @@
-.PHONY: all setup build clean run dev test test-coverage fmt lint migrate-up migrate-down help
+.PHONY: all setup init deps build clean run dev test test-coverage fmt lint migrate-up migrate-down help
 
 # Variables
 BIN=conduit
@@ -16,7 +16,7 @@ all: build
 
 # Setup development environment
 setup:
-	@echo "Installing required tools..."
+	@echo "Installing development tools..."
 	$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	$(GO) install github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 	$(GO) install github.com/air-verse/air@latest
@@ -25,16 +25,35 @@ setup:
 	$(GO) install github.com/evilmartians/lefthook@latest
 	@echo "Setting up git hooks..."
 	lefthook install
+	@echo "Installing dependencies..."
+	$(MAKE) deps
 	@echo "Setup complete!"
+
+# Initialize project
+init:
+	@echo "Initializing project..."
+	@echo "Creating .env file..."
+	@test -f .env || cp .env.example .env
+	@echo "Running database migrations..."
+	$(MIGRATE) -path $(MIGRATION_DIR) -database "$(DB_URL)" up
+	@echo "Project initialization complete!"
+
+# Manage dependencies
+deps:
+	@echo "Installing dependencies..."
+	$(GO) mod download
+	$(GO) mod tidy
 
 # Build application
 build:
 	@echo "Building application..."
 	$(GO) build -o $(BIN) ./cmd/...
 
+# Clean build artifacts and test files
 clean:
 	@echo "Cleaning..."
-	rm -f $(BIN) coverage.out
+	rm -f $(BIN)
+	rm -f coverage.out
 
 # Run application
 run:
@@ -51,7 +70,7 @@ test:
 	@echo "Running tests..."
 	$(GO) test -v -race -coverprofile=coverage.out ./...
 
-# View test coverage in browser
+# View test coverage report in browser
 test-coverage: test
 	$(GO) tool cover -html=coverage.out
 
@@ -61,16 +80,17 @@ fmt:
 	$(GOFUMPT) -l -w .
 	$(GOLINES) -w .
 
-# Run linter with gosec
+# Run linter with gosec security checks
 lint:
 	@echo "Running linter..."
 	$(GOLANGCI_LINT) run --enable=gosec
 
-# Database migrations
+# Run database migrations up
 migrate-up:
 	@echo "Running database migrations up..."
 	$(MIGRATE) -path $(MIGRATION_DIR) -database "$(DB_URL)" up
 
+# Run database migrations down
 migrate-down:
 	@echo "Running database migrations down..."
 	$(MIGRATE) -path $(MIGRATION_DIR) -database "$(DB_URL)" down
@@ -79,7 +99,9 @@ migrate-down:
 help:
 	@echo "Available targets:"
 	@echo "  all           - Build application (default)"
-	@echo "  setup         - Setup development environment"
+	@echo "  setup         - Install development tools"
+	@echo "  init          - Initialize project (env, db)"
+	@echo "  deps          - Install and tidy dependencies"
 	@echo "  build         - Build application"
 	@echo "  clean         - Remove build artifacts"
 	@echo "  run           - Run application"
