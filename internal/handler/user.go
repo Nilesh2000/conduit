@@ -124,9 +124,11 @@ func (h *UserHandler) Register() http.HandlerFunc {
 
 		// Respond with created user
 		w.WriteHeader(http.StatusCreated)
-		json.NewEncoder(w).Encode(UserResponse{
+		if err := json.NewEncoder(w).Encode(UserResponse{
 			User: *user,
-		})
+		}); err != nil {
+			h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+		}
 	}
 }
 
@@ -169,9 +171,11 @@ func (h *UserHandler) Login() http.HandlerFunc {
 
 		// Respond with user data
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(UserResponse{
+		if err := json.NewEncoder(w).Encode(UserResponse{
 			User: *user,
-		})
+		}); err != nil {
+			h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+		}
 	}
 }
 
@@ -213,9 +217,11 @@ func (h *UserHandler) GetCurrentUser() http.HandlerFunc {
 
 		// Respond with user data
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(UserResponse{
+		if err := json.NewEncoder(w).Encode(UserResponse{
 			User: *user,
-		})
+		}); err != nil {
+			h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+		}
 	}
 }
 
@@ -291,9 +297,11 @@ func (h *UserHandler) UpdateCurrentUser() http.HandlerFunc {
 
 		// Respond with updated user
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(UserResponse{
+		if err := json.NewEncoder(w).Encode(UserResponse{
 			User: *user,
-		})
+		}); err != nil {
+			h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+		}
 	}
 }
 
@@ -340,5 +348,7 @@ func (h *UserHandler) respondWithError(w http.ResponseWriter, status int, errors
 	response := GenericErrorModel{}
 	response.Errors.Body = errors
 
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+	}
 }
