@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"database/sql"
+	"log"
 	"time"
 
 	"conduit/internal/repository"
@@ -30,7 +31,11 @@ func (r *articleRepository) Create(
 	if err != nil {
 		return nil, repository.ErrInternal
 	}
-	defer tx.Rollback()
+	defer func() {
+		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+			log.Printf("transaction rollback error: %v", err)
+		}
+	}()
 
 	query := `
 		WITH inserted_article AS (

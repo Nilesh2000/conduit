@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"database/sql"
+	"log"
 	"time"
 
 	"conduit/internal/repository"
@@ -26,7 +27,11 @@ func (r *userRepository) Create(username, email, password string) (*repository.U
 	if err != nil {
 		return nil, repository.ErrInternal
 	}
-	defer tx.Rollback()
+	defer func() {
+		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+			log.Printf("transaction rollback error: %v", err)
+		}
+	}()
 
 	query := `
 		INSERT INTO users (username, email, password, created_at, updated_at)
@@ -143,7 +148,11 @@ func (r *userRepository) Update(
 	if err != nil {
 		return nil, repository.ErrInternal
 	}
-	defer tx.Rollback()
+	defer func() {
+		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+			log.Printf("transaction rollback error: %v", err)
+		}
+	}()
 
 	query := `
 		UPDATE users
