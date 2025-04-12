@@ -85,8 +85,12 @@ func main() {
 
 	// Start server
 	server := &http.Server{
-		Addr:    ":" + cfg.Server.Port,
-		Handler: router,
+		Addr:              ":" + cfg.Server.Port,
+		Handler:           router,
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       120 * time.Second,
 	}
 
 	log.Printf("Starting server on :%s", cfg.Server.Port)
