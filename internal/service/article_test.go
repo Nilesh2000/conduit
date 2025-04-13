@@ -1,10 +1,11 @@
 package service
 
 import (
-	"conduit/internal/repository"
 	"errors"
 	"testing"
 	"time"
+
+	"conduit/internal/repository"
 
 	"github.com/gosimple/slug"
 )
@@ -61,7 +62,11 @@ func Test_articleService_CreateArticle(t *testing.T) {
 							t.Errorf("Expected title %q, got %q", "Test Article", title)
 						}
 						if description != "Test Description" {
-							t.Errorf("Expected description %q, got %q", "Test Description", description)
+							t.Errorf(
+								"Expected description %q, got %q",
+								"Test Description",
+								description,
+							)
 						}
 						if body != "Test Body" {
 							t.Errorf("Expected body %q, got %q", "Test Body", body)
@@ -102,12 +107,17 @@ func Test_articleService_CreateArticle(t *testing.T) {
 					t.Errorf("Expected title %q, got %q", "Test Article", article.Title)
 				}
 				if article.Description != "Test Description" {
-					t.Errorf("Expected description %q, got %q", "Test Description", article.Description)
+					t.Errorf(
+						"Expected description %q, got %q",
+						"Test Description",
+						article.Description,
+					)
 				}
 				if article.Body != "Test Body" {
 					t.Errorf("Expected body %q, got %q", "Test Body", article.Body)
 				}
-				if len(article.TagList) != 2 || article.TagList[0] != "tag1" || article.TagList[1] != "tag2" {
+				if len(article.TagList) != 2 || article.TagList[0] != "tag1" ||
+					article.TagList[1] != "tag2" {
 					t.Errorf("Expected tags %v, got %v", []string{"tag1", "tag2"}, article.TagList)
 				}
 				if article.Favorited {
@@ -117,13 +127,21 @@ func Test_articleService_CreateArticle(t *testing.T) {
 					t.Errorf("Expected favorites count to be 0, got %d", article.FavoritesCount)
 				}
 				if article.Author.Username != "testuser" {
-					t.Errorf("Expected author username %q, got %q", "testuser", article.Author.Username)
+					t.Errorf(
+						"Expected author username %q, got %q",
+						"testuser",
+						article.Author.Username,
+					)
 				}
 				if article.Author.Bio != "Test Bio" {
 					t.Errorf("Expected author bio to be %q, got %q", "Test Bio", article.Author.Bio)
 				}
 				if article.Author.Image != "https://example.com/image.jpg" {
-					t.Errorf("Expected author image to be %q, got %q", "https://example.com/image.jpg", article.Author.Image)
+					t.Errorf(
+						"Expected author image to be %q, got %q",
+						"https://example.com/image.jpg",
+						article.Author.Image,
+					)
 				}
 				if article.Author.Following {
 					t.Errorf("Expected author following to be false, got true")
@@ -178,7 +196,13 @@ func Test_articleService_CreateArticle(t *testing.T) {
 			articleService := NewArticleService(mockArticleRepository)
 
 			// Call method
-			article, err := articleService.CreateArticle(tt.userID, tt.title, tt.description, tt.body, tt.tagList)
+			article, err := articleService.CreateArticle(
+				tt.userID,
+				tt.title,
+				tt.description,
+				tt.body,
+				tt.tagList,
+			)
 
 			// Validate error
 			if !errors.Is(err, tt.expectedErr) {

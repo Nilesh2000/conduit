@@ -130,13 +130,16 @@ func (h *ArticleHandler) GetArticle() http.HandlerFunc {
 
 		// Call service to get article
 		article, err := h.articleService.GetArticle(slug)
-
 		if err != nil {
 			switch {
 			case errors.Is(err, service.ErrArticleNotFound):
 				h.respondWithError(w, http.StatusNotFound, []string{"Article not found"})
 			default:
-				h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+				h.respondWithError(
+					w,
+					http.StatusInternalServerError,
+					[]string{"Internal server error"},
+				)
 			}
 			return
 		}
