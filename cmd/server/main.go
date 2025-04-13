@@ -70,8 +70,11 @@ func main() {
 	articleHandler := handler.NewArticleHandler(articleService)
 
 	router := http.NewServeMux()
+
+	// Public routes
 	router.HandleFunc("POST /api/users", userHandler.Register())
 	router.HandleFunc("POST /api/users/login", userHandler.Login())
+	router.HandleFunc("GET /api/articles/{slug}", articleHandler.GetArticle())
 
 	router.HandleFunc(
 		"GET /api/user",
