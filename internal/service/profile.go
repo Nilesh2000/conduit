@@ -7,7 +7,7 @@ import (
 
 // ProfileRepository is an interface for the profile repository
 type ProfileRepository interface {
-	GetByUsername(username string) (repository.Profile, error)
+	GetByUsername(username string, currentUserID int64) (*repository.Profile, error)
 }
 
 // profileService implements the profileService interface
@@ -24,7 +24,7 @@ func NewProfileService(profileRepository ProfileRepository) *profileService {
 
 // GetProfile gets a profile by username
 func (s *profileService) GetProfile(username string, currentUserID int64) (*Profile, error) {
-	profile, err := s.profileRepository.GetByUsername(username)
+	profile, err := s.profileRepository.GetByUsername(username, currentUserID)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrUserNotFound):
