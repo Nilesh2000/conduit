@@ -95,7 +95,33 @@ func (s *articleService) CreateArticle(
 
 // GetArticle gets an article by slug
 func (s *articleService) GetArticle(slug string) (*Article, error) {
-	return nil, nil
+	article, err := s.articleRepository.GetBySlug(slug)
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrArticleNotFound):
+			return nil, ErrArticleNotFound
+		default:
+			return nil, ErrInternalServer
+		}
+	}
+
+	return &Article{
+		Slug:           article.Slug,
+		Title:          article.Title,
+		Description:    article.Description,
+		Body:           article.Body,
+		TagList:        article.TagList,
+		CreatedAt:      article.CreatedAt,
+		UpdatedAt:      article.UpdatedAt,
+		Favorited:      false,
+		FavoritesCount: 0,
+		Author: Profile{
+			Username:  article.Author.Username,
+			Bio:       article.Author.Bio,
+			Image:     article.Author.Image,
+			Following: false,
+		},
+	}, nil
 }
 
 // generateSlug generates a slug from a title

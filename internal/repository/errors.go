@@ -11,4 +11,6 @@ var (
 	ErrUserNotFound = errors.New("user not found")
 
 	ErrDuplicateSlug = errors.New("article slug already exists")
+
+	ErrArticleNotFound = errors.New("article not found")
 )
