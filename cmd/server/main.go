@@ -1,9 +1,13 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"conduit/internal/config"
@@ -83,7 +87,7 @@ func main() {
 		middleware.RequireAuth([]byte(cfg.JWT.SecretKey))(articleHandler.CreateArticle()),
 	)
 
-	// Start server
+	// Create HTTP server
 	server := &http.Server{
 		Addr:              ":" + cfg.Server.Port,
 		Handler:           router,
@@ -93,6 +97,29 @@ func main() {
 		IdleTimeout:       120 * time.Second,
 	}
 
-	log.Printf("Starting server on :%s", cfg.Server.Port)
-	log.Fatal(server.ListenAndServe())
+	// Handle graceful shutdown
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+
+	// Start server in goroutine
+	go func() {
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("listen: %s\n", err)
+		}
+	}()
+
+	// Block until signal is received
+	<-done
+	log.Printf("Server stopping...")
+
+	// Create context with timeout for shutdown
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Attempt graceful shutdown
+	if err := server.Shutdown(ctx); err != nil {
+		log.Fatalf("Server shutdown failed: %v", err)
+	}
+
+	log.Printf("Server exited properly")
 }
