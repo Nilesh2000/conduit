@@ -14,4 +14,6 @@ var (
 	ErrArticleAlreadyExists = errors.New("article with this title already exists")
 
 	ErrArticleNotFound = errors.New("article not found")
+
+	ErrCannotFollowSelf = errors.New("cannot follow yourself")
 )

@@ -1,13 +1,14 @@
 package handler
 
 import (
-	"conduit/internal/middleware"
-	"conduit/internal/service"
 	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
 	"strings"
+
+	"conduit/internal/middleware"
+	"conduit/internal/service"
 )
 
 // ProfileResponse is the response body for a profile
@@ -55,7 +56,11 @@ func (h *ProfileHandler) GetProfile() http.HandlerFunc {
 			case errors.Is(err, service.ErrUserNotFound):
 				h.respondWithError(w, http.StatusNotFound, []string{"User not found"})
 			default:
-				h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+				h.respondWithError(
+					w,
+					http.StatusInternalServerError,
+					[]string{"Internal server error"},
+				)
 			}
 			return
 		}
@@ -99,7 +104,11 @@ func (h *ProfileHandler) Follow() http.HandlerFunc {
 			case errors.Is(err, service.ErrCannotFollowSelf):
 				h.respondWithError(w, http.StatusForbidden, []string{"Cannot follow yourself"})
 			default:
-				h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+				h.respondWithError(
+					w,
+					http.StatusInternalServerError,
+					[]string{"Internal server error"},
+				)
 			}
 			return
 		}

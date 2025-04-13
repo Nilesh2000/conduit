@@ -13,4 +13,6 @@ var (
 	ErrDuplicateSlug = errors.New("article slug already exists")
 
 	ErrArticleNotFound = errors.New("article not found")
+
+	ErrCannotFollowSelf = errors.New("cannot follow yourself")
 )
