@@ -9,6 +9,7 @@ type Article struct {
 	Title       string
 	Description string
 	Body        string
+	AuthorID    int64
 	Author      *User
 	CreatedAt   time.Time
 	UpdatedAt   time.Time

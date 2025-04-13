@@ -45,7 +45,7 @@ func (r *articleRepository) Create(
 		)
 		SELECT
 			a.id, a.slug, a.title, a.description, a.body, a.author_id, a.created_at, a.updated_at,
-			u.username, u.email, u.password, u.bio, u.image
+			u.id, u.username, u.bio, u.image
 		FROM inserted_article a
 		JOIN users u ON u.id = a.author_id
 	`
@@ -55,8 +55,20 @@ func (r *articleRepository) Create(
 	var authorBio, authorImage sql.NullString
 
 	err = tx.QueryRow(query, slug, title, description, body, userID, now, now).
-		Scan(&article.ID, &article.Slug, &article.Title, &article.Description, &article.Body, &article.Author, &article.CreatedAt, &article.UpdatedAt,
-			&article.Author.Username, &article.Author.Email, &article.Author.Password, &authorBio, &authorImage)
+		Scan(
+			&article.ID,
+			&article.Slug,
+			&article.Title,
+			&article.Description,
+			&article.Body,
+			&article.AuthorID,
+			&article.CreatedAt,
+			&article.UpdatedAt,
+			&article.Author.ID,
+			&article.Author.Username,
+			&authorBio,
+			&authorImage,
+		)
 	if err != nil {
 		// PostgreSQL specific error handling
 		if pqErr, ok := err.(*pq.Error); ok {
