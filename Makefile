@@ -1,4 +1,4 @@
-.PHONY: all setup init deps build clean run dev docker test test-coverage fmt lint migrate-up migrate-down help
+.PHONY: all setup init deps build clean run dev docker test test-coverage fmt lint create-migration migrate-up migrate-down help
 
 # Variables
 BIN=conduit
@@ -90,6 +90,15 @@ lint:
 	@echo "Running linter..."
 	$(GOLANGCI_LINT) run --enable=gosec
 
+# Create new migration files
+create-migration:
+	@if [ -z "$(name)" ]; then \
+		echo "Error: Migration name is required. Usage: make create-migration name=migration_name"; \
+		exit 1; \
+	fi
+	@echo "Creating migration files..."
+	$(MIGRATE) create -ext sql -dir $(MIGRATION_DIR) -seq $(name)
+
 # Run database migrations up
 migrate-up:
 	@echo "Running database migrations up..."
@@ -103,19 +112,20 @@ migrate-down:
 # Help target
 help:
 	@echo "Available targets:"
-	@echo "  all           - Build application (default)"
-	@echo "  setup         - Install development tools"
-	@echo "  init          - Initialize project (env, db)"
-	@echo "  deps          - Install and tidy dependencies"
-	@echo "  build         - Build application"
-	@echo "  clean         - Remove build artifacts"
-	@echo "  run           - Run application"
-	@echo "  dev           - Run with hot reload (Air)"
-	@echo "  docker        - Run with Docker"
-	@echo "  test          - Run tests"
-	@echo "  test-coverage - View test coverage in browser"
-	@echo "  fmt           - Format code (gofumpt + golines)"
-	@echo "  lint          - Run linter with gosec"
-	@echo "  migrate-up    - Run database migrations up"
-	@echo "  migrate-down  - Run database migrations down"
-	@echo "  help          - Show this help message"
+	@echo "  all              - Build application (default)"
+	@echo "  setup            - Install development tools"
+	@echo "  init             - Initialize project (env, db)"
+	@echo "  deps             - Install and tidy dependencies"
+	@echo "  build            - Build application"
+	@echo "  clean            - Remove build artifacts"
+	@echo "  run              - Run application"
+	@echo "  dev              - Run with hot reload (Air)"
+	@echo "  docker           - Run with Docker"
+	@echo "  test             - Run tests"
+	@echo "  test-coverage    - View test coverage in browser"
+	@echo "  fmt              - Format code (gofumpt + golines)"
+	@echo "  lint             - Run linter with gosec"
+	@echo "  create-migration - Create new migration files (requires name parameter)"
+	@echo "  migrate-up       - Run database migrations up"
+	@echo "  migrate-down     - Run database migrations down"
+	@echo "  help             - Show this help message"
