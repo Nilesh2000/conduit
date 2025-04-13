@@ -69,12 +69,19 @@ func main() {
 	articleService := service.NewArticleService(articleRepository)
 	articleHandler := handler.NewArticleHandler(articleService)
 
+	profileRepository := postgres.NewProfileRepository(db)
+	profileService := service.NewProfileService(profileRepository)
+	profileHandler := handler.NewProfileHandler(profileService)
+
+	// Setup router
 	router := http.NewServeMux()
 
 	// Public routes
 	router.HandleFunc("POST /api/users", userHandler.Register())
 	router.HandleFunc("POST /api/users/login", userHandler.Login())
 	router.HandleFunc("GET /api/articles/{slug}", articleHandler.GetArticle())
+
+	router.HandleFunc("GET /api/profiles/{username}", profileHandler.GetProfile())
 
 	router.HandleFunc(
 		"GET /api/user",
