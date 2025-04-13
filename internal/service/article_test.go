@@ -30,6 +30,8 @@ func (m *MockArticleRepository) GetBySlug(slug string) (*repository.Article, err
 }
 
 func Test_articleService_CreateArticle(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name        string
 		userID      int64
@@ -127,6 +129,40 @@ func Test_articleService_CreateArticle(t *testing.T) {
 					t.Errorf("Expected author following to be false, got true")
 				}
 			},
+		},
+		{
+			name:        "User not found",
+			userID:      999,
+			title:       "Test Article",
+			description: "Test Description",
+			body:        "Test Body",
+			tagList:     []string{"tag1", "tag2"},
+			setupMock: func() *MockArticleRepository {
+				return &MockArticleRepository{
+					createFunc: func(userID int64, articleSlug, title, description, body string, tagList []string) (*repository.Article, error) {
+						return nil, repository.ErrUserNotFound
+					},
+				}
+			},
+			expectedErr: ErrUserNotFound,
+			validate:    nil,
+		},
+		{
+			name:        "Duplicate slug",
+			userID:      1,
+			title:       "Duplicate Article",
+			description: "Test Description",
+			body:        "Test Body",
+			tagList:     []string{"tag1", "tag2"},
+			setupMock: func() *MockArticleRepository {
+				return &MockArticleRepository{
+					createFunc: func(userID int64, articleSlug, title, description, body string, tagList []string) (*repository.Article, error) {
+						return nil, repository.ErrDuplicateSlug
+					},
+				}
+			},
+			expectedErr: ErrArticleAlreadyExists,
+			validate:    nil,
 		},
 	}
 

@@ -65,10 +65,10 @@ func (s *articleService) CreateArticle(
 	article, err := s.articleRepository.Create(userID, slug, title, description, body, tagList)
 	if err != nil {
 		switch {
-		case errors.Is(err, repository.ErrDuplicateSlug):
-			return nil, ErrArticleAlreadyExists
 		case errors.Is(err, repository.ErrUserNotFound):
 			return nil, ErrUserNotFound
+		case errors.Is(err, repository.ErrDuplicateSlug):
+			return nil, ErrArticleAlreadyExists
 		default:
 			return nil, ErrInternalServer
 		}
