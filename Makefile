@@ -1,4 +1,4 @@
-.PHONY: all setup init deps build clean run dev docker test test-coverage fmt lint create-migration migrate-up migrate-down help
+.PHONY: all setup init deps build clean run dev docker test test-coverage fmt lint create-migration migrate-up migrate-down godoc help
 
 # Variables
 BIN=conduit
@@ -109,6 +109,11 @@ migrate-down:
 	@echo "Running database migrations down..."
 	$(MIGRATE) -path $(MIGRATION_DIR) -database "$(DB_URL)" down
 
+# View Go documentation
+godoc:
+	@echo "Starting godoc server at http://localhost:6060"
+	godoc -http=:6060
+
 # Help target
 help:
 	@echo "Available targets:"
@@ -128,4 +133,5 @@ help:
 	@echo "  create-migration - Create new migration files (requires name parameter)"
 	@echo "  migrate-up       - Run database migrations up"
 	@echo "  migrate-down     - Run database migrations down"
+	@echo "  godoc            - View Go documentation"
 	@echo "  help             - Show this help message"
