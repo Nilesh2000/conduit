@@ -83,23 +83,15 @@ func main() {
 
 	router.HandleFunc("GET /api/profiles/{username}", profileHandler.GetProfile())
 
-	router.HandleFunc(
-		"GET /api/user",
-		middleware.RequireAuth([]byte(cfg.JWT.SecretKey))(userHandler.GetCurrentUser()),
-	)
-	router.HandleFunc(
-		"PUT /api/user",
-		middleware.RequireAuth([]byte(cfg.JWT.SecretKey))(userHandler.UpdateCurrentUser()),
-	)
+	// Protected routes
+	authMiddleware := middleware.RequireAuth([]byte(cfg.JWT.SecretKey))
+	router.HandleFunc("GET /api/user", authMiddleware(userHandler.GetCurrentUser()))
+	router.HandleFunc("PUT /api/user", authMiddleware(userHandler.UpdateCurrentUser()))
 	router.HandleFunc(
 		"POST /api/profiles/{username}/follow",
-		middleware.RequireAuth([]byte(cfg.JWT.SecretKey))(profileHandler.Follow()),
+		authMiddleware(profileHandler.Follow()),
 	)
-
-	router.HandleFunc(
-		"POST /api/articles",
-		middleware.RequireAuth([]byte(cfg.JWT.SecretKey))(articleHandler.CreateArticle()),
-	)
+	router.HandleFunc("POST /api/articles", authMiddleware(articleHandler.CreateArticle()))
 
 	// Create HTTP server
 	server := &http.Server{
