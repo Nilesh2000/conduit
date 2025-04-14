@@ -3,7 +3,7 @@ pre-commit:
   commands:
     fmt:
       glob: "*.go"
-      run: gofmt -l -w {staged_files}
+      run: gofumpt -l -w {staged_files} && golines -w {staged_files}
 
     lint:
       glob: "*.go"
