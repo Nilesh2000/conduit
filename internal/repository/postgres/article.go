@@ -127,5 +127,72 @@ func (r *articleRepository) Create(
 
 // GetBySlug gets an article by slug
 func (r *articleRepository) GetBySlug(slug string) (*repository.Article, error) {
-	return nil, nil
+	var article repository.Article
+	article.Author = &repository.User{}
+	var authorBio, authorImage sql.NullString
+
+	query := `
+		SELECT a.id, a.slug, a.title, a.description, a.body, a.author_id, a.created_at, a.updated_at,
+		u.id, u.username, u.bio, u.image
+		FROM articles a
+		JOIN users u ON a.author_id = u.id
+		WHERE a.slug = $1
+	`
+
+	err := r.db.QueryRow(query, slug).
+		Scan(
+			&article.ID,
+			&article.Slug,
+			&article.Title,
+			&article.Description,
+			&article.Body,
+			&article.AuthorID,
+			&article.CreatedAt,
+			&article.UpdatedAt,
+			&article.Author.ID,
+			&article.Author.Username,
+			&authorBio,
+			&authorImage,
+		)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, repository.ErrArticleNotFound
+		}
+		return nil, repository.ErrInternal
+	}
+
+	// Handle nullable values
+	if authorBio.Valid {
+		article.Author.Bio = authorBio.String
+	}
+	if authorImage.Valid {
+		article.Author.Image = authorImage.String
+	}
+
+	// Get tags for the article
+	rows, err := r.db.Query(
+		"SELECT t.name FROM tags t JOIN article_tags at ON t.id = at.tag_id WHERE at.article_id = $1",
+		article.ID,
+	)
+	if err != nil {
+		return nil, repository.ErrInternal
+	}
+	defer rows.Close()
+
+	var tagList []string
+	for rows.Next() {
+		var tag string
+		if err := rows.Scan(&tag); err != nil {
+			return nil, repository.ErrInternal
+		}
+		tagList = append(tagList, tag)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, repository.ErrInternal
+	}
+
+	article.TagList = tagList
+
+	return &article, nil
 }
