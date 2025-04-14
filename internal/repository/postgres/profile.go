@@ -27,7 +27,7 @@ func (r *profileRepository) GetByUsername(
 ) (*repository.Profile, error) {
 	query := `
 		SELECT id, username, bio, image, following
-		FROM profiles
+		FROM users
 		WHERE username = $1
 	`
 
