@@ -22,7 +22,7 @@ func setupTestDB(t *testing.T) (*sql.DB, sqlmock.Sqlmock) {
 }
 
 // TestCreate tests the Create method of the UserRepository
-func TestCreate(t *testing.T) {
+func Test_userRepository_Create(t *testing.T) {
 	t.Parallel()
 
 	// Define test cases
