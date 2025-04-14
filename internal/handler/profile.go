@@ -20,6 +20,7 @@ type ProfileResponse struct {
 type ProfileService interface {
 	GetProfile(username string, currentUserID int64) (*service.Profile, error)
 	FollowUser(followerID int64, followingName string) (*service.Profile, error)
+	UnfollowUser(followerID int64, followingName string) (*service.Profile, error)
 }
 
 // profileHandler is a handler for profile requests
@@ -103,6 +104,56 @@ func (h *profileHandler) Follow() http.HandlerFunc {
 				h.respondWithError(w, http.StatusNotFound, []string{"User not found"})
 			case errors.Is(err, service.ErrCannotFollowSelf):
 				h.respondWithError(w, http.StatusForbidden, []string{"Cannot follow yourself"})
+			default:
+				h.respondWithError(
+					w,
+					http.StatusInternalServerError,
+					[]string{"Internal server error"},
+				)
+			}
+			return
+		}
+
+		// Respond with updated profile
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(ProfileResponse{Profile: *profile}); err != nil {
+			h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+		}
+	}
+}
+
+// Unfollow unfollows a user
+func (h *profileHandler) Unfollow() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Set the content type to JSON
+		w.Header().Set("Content-Type", "application/json")
+
+		// Get user ID from context
+		followerID, ok := middleware.GetUserIDFromContext(r.Context())
+		if !ok {
+			h.respondWithError(w, http.StatusUnauthorized, []string{"Unauthorized"})
+			return
+		}
+
+		// Get username from URL path
+		pathParams := strings.Split(r.URL.Path, "/")
+		if len(pathParams) < 4 {
+			h.respondWithError(w, http.StatusBadRequest, []string{"User not found"})
+			return
+		}
+
+		// Get second to last path parameter (username in /profiles/:username/follow)
+		username := pathParams[len(pathParams)-2]
+
+		// Call service to unfollow user
+		profile, err := h.profileService.UnfollowUser(followerID, username)
+		// Handle errors
+		if err != nil {
+			switch {
+			case errors.Is(err, service.ErrUserNotFound):
+				h.respondWithError(w, http.StatusNotFound, []string{"User not found"})
+			case errors.Is(err, service.ErrCannotFollowSelf):
+				h.respondWithError(w, http.StatusForbidden, []string{"Cannot unfollow yourself"})
 			default:
 				h.respondWithError(
 					w,
