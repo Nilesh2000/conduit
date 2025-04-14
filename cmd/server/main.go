@@ -56,21 +56,25 @@ func main() {
 	}
 	defer db.Close()
 
+	// Ping database to check connection
 	err = db.Ping()
 	if err != nil {
 		log.Fatalf("Failed to ping database: %v", err)
 	}
 
+	// Initialize repositories
 	userRepository := postgres.NewUserRepository(db)
-	userService := service.NewUserService(userRepository, cfg.JWT.SecretKey, cfg.JWT.Expiry)
-	userHandler := handler.NewUserHandler(userService)
-
 	articleRepository := postgres.NewArticleRepository(db)
-	articleService := service.NewArticleService(articleRepository)
-	articleHandler := handler.NewArticleHandler(articleService)
-
 	profileRepository := postgres.NewProfileRepository(db)
+
+	// Initialize services
+	userService := service.NewUserService(userRepository, cfg.JWT.SecretKey, cfg.JWT.Expiry)
+	articleService := service.NewArticleService(articleRepository)
 	profileService := service.NewProfileService(profileRepository)
+
+	// Initialize handlers
+	userHandler := handler.NewUserHandler(userService)
+	articleHandler := handler.NewArticleHandler(articleService)
 	profileHandler := handler.NewProfileHandler(profileService)
 
 	// Setup router
