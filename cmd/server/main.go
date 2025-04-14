@@ -91,6 +91,10 @@ func main() {
 		"POST /api/profiles/{username}/follow",
 		authMiddleware(profileHandler.Follow()),
 	)
+	router.HandleFunc(
+		"DELETE /api/profiles/{username}/follow",
+		authMiddleware(profileHandler.Unfollow()),
+	)
 	router.HandleFunc("POST /api/articles", authMiddleware(articleHandler.CreateArticle()))
 
 	// Create HTTP server
