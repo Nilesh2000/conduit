@@ -62,22 +62,22 @@ type UserService interface {
 	UpdateUser(userID int64, username, email, password, bio, image *string) (*service.User, error)
 }
 
-// UserHandler handles user-related HTTP requests
-type UserHandler struct {
+// userHandler handles user-related HTTP requests
+type userHandler struct {
 	userService UserService
 	validate    *validator.Validate
 }
 
 // NewUserHandler creates a new UserHandler
-func NewUserHandler(userService UserService) *UserHandler {
-	return &UserHandler{
+func NewUserHandler(userService UserService) *userHandler {
+	return &userHandler{
 		userService: userService,
 		validate:    validator.New(),
 	}
 }
 
 // Register returns a handler function for user registration
-func (h *UserHandler) Register() http.HandlerFunc {
+func (h *userHandler) Register() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Set the content type to JSON
 		w.Header().Set("Content-Type", "application/json")
@@ -134,7 +134,7 @@ func (h *UserHandler) Register() http.HandlerFunc {
 }
 
 // Login returns a handler function for user login
-func (h *UserHandler) Login() http.HandlerFunc {
+func (h *userHandler) Login() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Set the content type to JSON
 		w.Header().Set("Content-Type", "application/json")
@@ -181,7 +181,7 @@ func (h *UserHandler) Login() http.HandlerFunc {
 }
 
 // GetCurrentUser returns a handler function for getting the current user
-func (h *UserHandler) GetCurrentUser() http.HandlerFunc {
+func (h *userHandler) GetCurrentUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Set the content type to JSON
 		w.Header().Set("Content-Type", "application/json")
@@ -227,7 +227,7 @@ func (h *UserHandler) GetCurrentUser() http.HandlerFunc {
 }
 
 // UpdateCurrentUser returns a handler function for updating the current user
-func (h *UserHandler) UpdateCurrentUser() http.HandlerFunc {
+func (h *userHandler) UpdateCurrentUser() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Set the content type to JSON
 		w.Header().Set("Content-Type", "application/json")
@@ -307,7 +307,7 @@ func (h *UserHandler) UpdateCurrentUser() http.HandlerFunc {
 }
 
 // translateValidationErrors translates validation errors into a list of error messages
-func (h *UserHandler) translateValidationErrors(err error) []string {
+func (h *userHandler) translateValidationErrors(err error) []string {
 	var validationErrors []string
 
 	if validationErrs, ok := err.(validator.ValidationErrors); ok {
@@ -343,7 +343,7 @@ func (h *UserHandler) translateValidationErrors(err error) []string {
 }
 
 // respondWithError sends an error response with the given status code and errors
-func (h *UserHandler) respondWithError(w http.ResponseWriter, status int, errors []string) {
+func (h *userHandler) respondWithError(w http.ResponseWriter, status int, errors []string) {
 	w.WriteHeader(status)
 
 	response := GenericErrorModel{}

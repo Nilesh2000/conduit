@@ -38,22 +38,22 @@ type ArticleService interface {
 	GetArticle(slug string) (*service.Article, error)
 }
 
-// ArticleHandler is a handler for article operations
-type ArticleHandler struct {
+// articleHandler is a handler for article operations
+type articleHandler struct {
 	articleService ArticleService
 	validate       *validator.Validate
 }
 
 // NewArticleHandler creates a new ArticleHandler
-func NewArticleHandler(articleService ArticleService) *ArticleHandler {
-	return &ArticleHandler{
+func NewArticleHandler(articleService ArticleService) *articleHandler {
+	return &articleHandler{
 		articleService: articleService,
 		validate:       validator.New(),
 	}
 }
 
 // CreateArticle is a handler function for creating a new article
-func (h *ArticleHandler) CreateArticle() http.HandlerFunc {
+func (h *articleHandler) CreateArticle() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Set the content type to JSON
 		w.Header().Set("Content-Type", "application/json")
@@ -116,7 +116,7 @@ func (h *ArticleHandler) CreateArticle() http.HandlerFunc {
 }
 
 // GetArticle is a handler function for getting an article by slug
-func (h *ArticleHandler) GetArticle() http.HandlerFunc {
+func (h *articleHandler) GetArticle() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Set the content type to JSON
 		w.Header().Set("Content-Type", "application/json")
@@ -152,7 +152,7 @@ func (h *ArticleHandler) GetArticle() http.HandlerFunc {
 	}
 }
 
-func (h *ArticleHandler) translateValidationErrors(err error) []string {
+func (h *articleHandler) translateValidationErrors(err error) []string {
 	var validationErrors []string
 
 	if validationErrs, ok := err.(validator.ValidationErrors); ok {
@@ -178,7 +178,7 @@ func (h *ArticleHandler) translateValidationErrors(err error) []string {
 }
 
 // respondWithError sends an error response with the given status code and errors
-func (h *ArticleHandler) respondWithError(w http.ResponseWriter, status int, errors []string) {
+func (h *articleHandler) respondWithError(w http.ResponseWriter, status int, errors []string) {
 	w.WriteHeader(status)
 
 	response := GenericErrorModel{}

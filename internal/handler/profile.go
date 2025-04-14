@@ -22,20 +22,20 @@ type ProfileService interface {
 	FollowUser(followerID int64, followingName string) (*service.Profile, error)
 }
 
-// ProfileHandler is a handler for profile requests
-type ProfileHandler struct {
+// profileHandler is a handler for profile requests
+type profileHandler struct {
 	profileService ProfileService
 }
 
 // NewProfileHandler creates a new profile handler
-func NewProfileHandler(profileService ProfileService) *ProfileHandler {
-	return &ProfileHandler{
+func NewProfileHandler(profileService ProfileService) *profileHandler {
+	return &profileHandler{
 		profileService: profileService,
 	}
 }
 
 // GetProfile gets a profile by username
-func (h *ProfileHandler) GetProfile() http.HandlerFunc {
+func (h *profileHandler) GetProfile() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Set the content type to JSON
 		w.Header().Set("Content-Type", "application/json")
@@ -74,7 +74,7 @@ func (h *ProfileHandler) GetProfile() http.HandlerFunc {
 }
 
 // Follow follows a user
-func (h *ProfileHandler) Follow() http.HandlerFunc {
+func (h *profileHandler) Follow() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Set the content type to JSON
 		w.Header().Set("Content-Type", "application/json")
@@ -122,7 +122,7 @@ func (h *ProfileHandler) Follow() http.HandlerFunc {
 }
 
 // respondWithError sends an error response with the given status code and errors
-func (h *ProfileHandler) respondWithError(w http.ResponseWriter, status int, errors []string) {
+func (h *profileHandler) respondWithError(w http.ResponseWriter, status int, errors []string) {
 	w.WriteHeader(status)
 
 	response := GenericErrorModel{}
