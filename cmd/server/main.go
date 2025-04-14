@@ -91,6 +91,10 @@ func main() {
 		"PUT /api/user",
 		middleware.RequireAuth([]byte(cfg.JWT.SecretKey))(userHandler.UpdateCurrentUser()),
 	)
+	router.HandleFunc(
+		"POST /api/profiles/{username}/follow",
+		middleware.RequireAuth([]byte(cfg.JWT.SecretKey))(profileHandler.Follow()),
+	)
 
 	router.HandleFunc(
 		"POST /api/articles",
