@@ -29,18 +29,21 @@ type GenericErrorModel struct {
 func RequireAuth(jwtSecret []byte) func(http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Get the Authorization header
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" || !strings.HasPrefix(authHeader, "Token ") {
 				respondWithError(w, http.StatusUnauthorized, []string{"Unauthorized"})
 				return
 			}
 
+			// Extract the token from the Authorization header
 			tokenString := strings.TrimPrefix(authHeader, "Token ")
 			if tokenString == "" {
 				respondWithError(w, http.StatusUnauthorized, []string{"Unauthorized"})
 				return
 			}
 
+			// Parse the token
 			token, err := jwt.ParseWithClaims(
 				tokenString,
 				&jwt.StandardClaims{},
@@ -53,25 +56,30 @@ func RequireAuth(jwtSecret []byte) func(http.HandlerFunc) http.HandlerFunc {
 				return
 			}
 
+			// Extract the claims from the token
 			claims, ok := token.Claims.(*jwt.StandardClaims)
 			if !ok || claims.Subject == "" {
 				respondWithError(w, http.StatusUnauthorized, []string{"Unauthorized"})
 				return
 			}
 
+			// Check if the token has expired
 			if claims.ExpiresAt < time.Now().Unix() {
 				respondWithError(w, http.StatusUnauthorized, []string{"Unauthorized"})
 				return
 			}
 
+			// Parse the user ID from the claims
 			userID, err := strconv.ParseInt(claims.Subject, 10, 64)
 			if err != nil {
 				respondWithError(w, http.StatusUnauthorized, []string{"Unauthorized"})
 				return
 			}
 
+			// Add the user ID to the request context
 			ctx := context.WithValue(r.Context(), UserIDContextKey, userID)
 
+			// Serve the next handler
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
