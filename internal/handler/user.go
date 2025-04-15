@@ -301,6 +301,8 @@ func (h *userHandler) UpdateCurrentUser() http.HandlerFunc {
 		// Handle errors
 		if err != nil {
 			switch {
+			case errors.Is(err, service.ErrUserNotFound):
+				response.RespondWithError(w, http.StatusNotFound, []string{"User not found"})
 			case errors.Is(err, service.ErrUsernameTaken):
 				response.RespondWithError(
 					w,
@@ -313,8 +315,6 @@ func (h *userHandler) UpdateCurrentUser() http.HandlerFunc {
 					http.StatusUnprocessableEntity,
 					[]string{"Email already registered"},
 				)
-			case errors.Is(err, service.ErrUserNotFound):
-				response.RespondWithError(w, http.StatusNotFound, []string{"User not found"})
 			default:
 				response.RespondWithError(
 					w,

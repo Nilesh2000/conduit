@@ -168,12 +168,12 @@ func (s *userService) UpdateUser(
 	user, err := s.userRepository.Update(ctx, userID, username, email, hashedPassword, bio, image)
 
 	switch {
+	case errors.Is(err, repository.ErrUserNotFound):
+		return nil, ErrUserNotFound
 	case errors.Is(err, repository.ErrDuplicateUsername):
 		return nil, ErrUsernameTaken
 	case errors.Is(err, repository.ErrDuplicateEmail):
 		return nil, ErrEmailTaken
-	case errors.Is(err, repository.ErrUserNotFound):
-		return nil, ErrUserNotFound
 	case errors.Is(err, repository.ErrInternal):
 		return nil, ErrInternalServer
 	}

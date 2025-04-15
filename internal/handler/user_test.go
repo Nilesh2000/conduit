@@ -570,12 +570,18 @@ func TestUserHandler_GetCurrentUser(t *testing.T) {
 	tests := []struct {
 		name             string
 		setupMock        func() *MockUserService
-		authToken        string
+		setupAuth        func(r *http.Request)
 		expectedStatus   int
 		expectedResponse interface{}
 	}{
 		{
 			name: "Valid current user",
+			setupAuth: func(r *http.Request) {
+				ctx := r.Context()
+				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
+				*r = *r.WithContext(ctx)
+				r.Header.Set("Authorization", "Token jwt.token.here")
+			},
 			setupMock: func() *MockUserService {
 				mockService := &MockUserService{
 					getCurrentUserFunc: func(ctx context.Context, userID int64) (*service.User, error) {
@@ -592,7 +598,6 @@ func TestUserHandler_GetCurrentUser(t *testing.T) {
 				}
 				return mockService
 			},
-			authToken:      "jwt.token.here",
 			expectedStatus: http.StatusOK,
 			expectedResponse: UserResponse{
 				User: service.User{
@@ -605,7 +610,34 @@ func TestUserHandler_GetCurrentUser(t *testing.T) {
 			},
 		},
 		{
+			name: "Unauthenticated request",
+			setupAuth: func(r *http.Request) {
+				// Don't add user ID to context to simulate unauthenticated request
+			},
+			setupMock: func() *MockUserService {
+				mockService := &MockUserService{
+					getCurrentUserFunc: func(ctx context.Context, userID int64) (*service.User, error) {
+						t.Errorf("Service should not be called for unauthenticated request")
+						return nil, nil
+					},
+				}
+				return mockService
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedResponse: response.GenericErrorModel{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"Unauthorized"}},
+			},
+		},
+		{
 			name: "User not found",
+			setupAuth: func(r *http.Request) {
+				ctx := r.Context()
+				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
+				*r = *r.WithContext(ctx)
+				r.Header.Set("Authorization", "Token jwt.token.here")
+			},
 			setupMock: func() *MockUserService {
 				mockService := &MockUserService{
 					getCurrentUserFunc: func(ctx context.Context, userID int64) (*service.User, error) {
@@ -614,7 +646,6 @@ func TestUserHandler_GetCurrentUser(t *testing.T) {
 				}
 				return mockService
 			},
-			authToken:      "jwt.token.here",
 			expectedStatus: http.StatusNotFound,
 			expectedResponse: response.GenericErrorModel{
 				Errors: struct {
@@ -624,6 +655,12 @@ func TestUserHandler_GetCurrentUser(t *testing.T) {
 		},
 		{
 			name: "Internal server error",
+			setupAuth: func(r *http.Request) {
+				ctx := r.Context()
+				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
+				*r = *r.WithContext(ctx)
+				r.Header.Set("Authorization", "Token jwt.token.here")
+			},
 			setupMock: func() *MockUserService {
 				mockService := &MockUserService{
 					getCurrentUserFunc: func(ctx context.Context, userID int64) (*service.User, error) {
@@ -632,7 +669,6 @@ func TestUserHandler_GetCurrentUser(t *testing.T) {
 				}
 				return mockService
 			},
-			authToken:      "jwt.token.here",
 			expectedStatus: http.StatusInternalServerError,
 			expectedResponse: response.GenericErrorModel{
 				Errors: struct {
@@ -656,15 +692,10 @@ func TestUserHandler_GetCurrentUser(t *testing.T) {
 			// Create request
 			req := httptest.NewRequest(http.MethodGet, "/api/user", nil)
 
-			// Add authorization token
-			if tt.authToken != "" {
-				req.Header.Set("Authorization", "Token "+tt.authToken)
+			// Add authorization and setup context
+			if tt.setupAuth != nil {
+				tt.setupAuth(req)
 			}
-
-			// Setup context with user ID
-			ctx := req.Context()
-			ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-			req = req.WithContext(ctx)
 
 			// Create response recorder
 			rr := httptest.NewRecorder()
@@ -903,6 +934,34 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 				Errors: struct {
 					Body []string `json:"body"`
 				}{Body: []string{"invalid-email is not a valid email"}},
+			},
+		},
+		{
+			name: "User not found",
+			requestBody: `{
+				"user": {
+					"username": "updateduser"
+				}
+			}`,
+			setupAuth: func(r *http.Request) {
+				ctx := r.Context()
+				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
+				*r = *r.WithContext(ctx)
+				r.Header.Set("Authorization", "Token jwt.token.here")
+			},
+			setupMock: func() *MockUserService {
+				mockService := &MockUserService{
+					updateUserFunc: func(ctx context.Context, userID int64, username, email, password, bio, image *string) (*service.User, error) {
+						return nil, service.ErrUserNotFound
+					},
+				}
+				return mockService
+			},
+			expectedStatus: http.StatusNotFound,
+			expectedResponse: response.GenericErrorModel{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"User not found"}},
 			},
 		},
 		{
