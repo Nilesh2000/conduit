@@ -29,7 +29,7 @@ func (r *articleRepository) Create(
 	tagList []string,
 ) (*repository.Article, error) {
 	// Begin a transaction
-	tx, err := r.db.Begin()
+	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, repository.ErrInternal
 	}
@@ -56,7 +56,7 @@ func (r *articleRepository) Create(
 	var article repository.Article
 	var authorBio, authorImage sql.NullString
 
-	err = tx.QueryRow(query, slug, title, description, body, userID, now, now).
+	err = tx.QueryRowContext(ctx, query, slug, title, description, body, userID, now, now).
 		Scan(
 			&article.ID,
 			&article.Slug,
@@ -101,14 +101,15 @@ func (r *articleRepository) Create(
 		for _, tag := range article.TagList {
 			var tagID int64
 			// Insert or update tag and get its ID
-			err := tx.QueryRow("INSERT INTO tags (name) VALUES ($1) ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name RETURNING id", tag).
+			err := tx.QueryRowContext(ctx, "INSERT INTO tags (name) VALUES ($1) ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name RETURNING id", tag).
 				Scan(&tagID)
 			if err != nil {
 				return nil, repository.ErrInternal
 			}
 
 			// Link tag to article
-			_, err = tx.Exec(
+			_, err = tx.ExecContext(
+				ctx,
 				"INSERT INTO article_tags (article_id, tag_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
 				article.ID,
 				tagID,
@@ -144,7 +145,7 @@ func (r *articleRepository) GetBySlug(
 		WHERE a.slug = $1
 	`
 
-	err := r.db.QueryRow(query, slug).
+	err := r.db.QueryRowContext(ctx, query, slug).
 		Scan(
 			&article.ID,
 			&article.Slug,
@@ -175,7 +176,8 @@ func (r *articleRepository) GetBySlug(
 	}
 
 	// Get tags for the article
-	rows, err := r.db.Query(
+	rows, err := r.db.QueryContext(
+		ctx,
 		"SELECT t.name FROM tags t JOIN article_tags at ON t.id = at.tag_id WHERE at.article_id = $1",
 		article.ID,
 	)
