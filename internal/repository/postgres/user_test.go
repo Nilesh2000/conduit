@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"testing"
@@ -198,8 +199,11 @@ func Test_userRepository_Create(t *testing.T) {
 			// Create repository with mock database
 			repo := NewUserRepository(db)
 
+			// Create context
+			ctx := context.Background()
+
 			// Call Create method
-			user, err := repo.Create(tt.username, tt.email, tt.password)
+			user, err := repo.Create(ctx, tt.username, tt.email, tt.password)
 
 			// Validate error
 			if !errors.Is(err, tt.expectedErr) {
@@ -321,8 +325,11 @@ func TestFindByEmail(t *testing.T) {
 			// Create repository with mock database
 			repo := NewUserRepository(db)
 
+			// Create context
+			ctx := context.Background()
+
 			// Call FindByEmail method
-			user, err := repo.FindByEmail(tt.email)
+			user, err := repo.FindByEmail(ctx, tt.email)
 
 			// Validate error
 			if !errors.Is(err, tt.expectedErr) {

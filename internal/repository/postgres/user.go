@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"time"
@@ -21,9 +22,12 @@ func NewUserRepository(db *sql.DB) *userRepository {
 }
 
 // Create creates a new user in the database
-func (r *userRepository) Create(username, email, password string) (*repository.User, error) {
+func (r *userRepository) Create(
+	ctx context.Context,
+	username, email, password string,
+) (*repository.User, error) {
 	// Begin a transaction
-	tx, err := r.db.Begin()
+	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, repository.ErrInternal
 	}
@@ -43,7 +47,7 @@ func (r *userRepository) Create(username, email, password string) (*repository.U
 	var user repository.User
 	var bio, image sql.NullString
 	// Insert user
-	err = tx.QueryRow(query, username, email, password, now, now).Scan(
+	err = tx.QueryRowContext(ctx, query, username, email, password, now, now).Scan(
 		&user.ID,
 		&user.Username,
 		&user.Email,
@@ -89,12 +93,15 @@ func (r *userRepository) Create(username, email, password string) (*repository.U
 }
 
 // FindByEmail finds a user by email in the database
-func (r *userRepository) FindByEmail(email string) (*repository.User, error) {
+func (r *userRepository) FindByEmail(ctx context.Context, email string) (*repository.User, error) {
 	var user repository.User
 	var bio, image sql.NullString
 
-	err := r.db.QueryRow("SELECT id, username, email, password, bio, image, created_at, updated_at FROM users WHERE email = $1", email).
-		Scan(&user.ID, &user.Username, &user.Email, &user.Password, &bio, &image, &user.CreatedAt, &user.UpdatedAt)
+	err := r.db.QueryRowContext(
+		ctx,
+		"SELECT id, username, email, password, bio, image, created_at, updated_at FROM users WHERE email = $1",
+		email,
+	).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &bio, &image, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, repository.ErrUserNotFound
@@ -114,12 +121,15 @@ func (r *userRepository) FindByEmail(email string) (*repository.User, error) {
 }
 
 // FindByID finds a user by ID in the database
-func (r *userRepository) FindByID(id int64) (*repository.User, error) {
+func (r *userRepository) FindByID(ctx context.Context, id int64) (*repository.User, error) {
 	var user repository.User
 	var bio, image sql.NullString
 
-	err := r.db.QueryRow("SELECT id, username, email, password, bio, image, created_at, updated_at FROM users WHERE id = $1", id).
-		Scan(&user.ID, &user.Username, &user.Email, &user.Password, &bio, &image, &user.CreatedAt, &user.UpdatedAt)
+	err := r.db.QueryRowContext(
+		ctx,
+		"SELECT id, username, email, password, bio, image, created_at, updated_at FROM users WHERE id = $1",
+		id,
+	).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &bio, &image, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, repository.ErrUserNotFound
@@ -140,11 +150,12 @@ func (r *userRepository) FindByID(id int64) (*repository.User, error) {
 
 // Update updates a user in the database
 func (r *userRepository) Update(
+	ctx context.Context,
 	userID int64,
 	username, email, password, bio, image *string,
 ) (*repository.User, error) {
 	// Begin a transaction
-	tx, err := r.db.Begin()
+	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, repository.ErrInternal
 	}
@@ -172,7 +183,8 @@ func (r *userRepository) Update(
 	var nsBio, nsImage sql.NullString
 
 	// Update user
-	err = tx.QueryRow(
+	err = tx.QueryRowContext(
+		ctx,
 		query,
 		username,
 		email,

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -56,10 +57,14 @@ type UserResponse struct {
 
 // UserService defines the interface for user service operations
 type UserService interface {
-	Register(username, email, password string) (*service.User, error)
-	Login(email, password string) (*service.User, error)
-	GetCurrentUser(userID int64) (*service.User, error)
-	UpdateUser(userID int64, username, email, password, bio, image *string) (*service.User, error)
+	Register(ctx context.Context, username, email, password string) (*service.User, error)
+	Login(ctx context.Context, email, password string) (*service.User, error)
+	GetCurrentUser(ctx context.Context, userID int64) (*service.User, error)
+	UpdateUser(
+		ctx context.Context,
+		userID int64,
+		username, email, password, bio, image *string,
+	) (*service.User, error)
 }
 
 // userHandler handles user-related HTTP requests
@@ -97,7 +102,12 @@ func (h *userHandler) Register() http.HandlerFunc {
 		}
 
 		// Call service to register user
-		user, err := h.userService.Register(req.User.Username, req.User.Email, req.User.Password)
+		user, err := h.userService.Register(
+			r.Context(),
+			req.User.Username,
+			req.User.Email,
+			req.User.Password,
+		)
 		// Handle errors
 		if err != nil {
 			switch {
@@ -154,7 +164,7 @@ func (h *userHandler) Login() http.HandlerFunc {
 		}
 
 		// Call service to login user
-		user, err := h.userService.Login(req.User.Email, req.User.Password)
+		user, err := h.userService.Login(r.Context(), req.User.Email, req.User.Password)
 		// Handle errors
 		if err != nil {
 			switch {
@@ -198,7 +208,7 @@ func (h *userHandler) GetCurrentUser() http.HandlerFunc {
 		token := strings.TrimPrefix(authHeader, "Token ")
 
 		// Call service to get current user
-		user, err := h.userService.GetCurrentUser(userID)
+		user, err := h.userService.GetCurrentUser(r.Context(), userID)
 		if err != nil {
 			switch {
 			case errors.Is(err, service.ErrUserNotFound):
@@ -259,6 +269,7 @@ func (h *userHandler) UpdateCurrentUser() http.HandlerFunc {
 
 		// Call service to update user
 		user, err := h.userService.UpdateUser(
+			r.Context(),
 			userID,
 			req.User.Username,
 			req.User.Email,

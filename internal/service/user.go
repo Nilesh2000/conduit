@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"time"
@@ -23,10 +24,14 @@ type User struct {
 
 // UserRepository defines the interface for user repository operations
 type UserRepository interface {
-	Create(username, email, password string) (*repository.User, error)
-	FindByEmail(email string) (*repository.User, error)
-	FindByID(id int64) (*repository.User, error)
-	Update(userID int64, username, email, password, bio, image *string) (*repository.User, error)
+	Create(ctx context.Context, username, email, password string) (*repository.User, error)
+	FindByEmail(ctx context.Context, email string) (*repository.User, error)
+	FindByID(ctx context.Context, id int64) (*repository.User, error)
+	Update(
+		ctx context.Context,
+		userID int64,
+		username, email, password, bio, image *string,
+	) (*repository.User, error)
 }
 
 // userService implements the UserService interface
@@ -50,7 +55,10 @@ func NewUserService(
 }
 
 // Register creates a new user in the system
-func (s *userService) Register(username, email, password string) (*User, error) {
+func (s *userService) Register(
+	ctx context.Context,
+	username, email, password string,
+) (*User, error) {
 	// Hash the password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
@@ -58,7 +66,7 @@ func (s *userService) Register(username, email, password string) (*User, error) 
 	}
 
 	// Create the user in the repository
-	user, err := s.userRepository.Create(username, email, string(hashedPassword))
+	user, err := s.userRepository.Create(ctx, username, email, string(hashedPassword))
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrDuplicateUsername):
@@ -87,9 +95,9 @@ func (s *userService) Register(username, email, password string) (*User, error) 
 }
 
 // Login authenticates a user with email and password
-func (s *userService) Login(email, password string) (*User, error) {
+func (s *userService) Login(ctx context.Context, email, password string) (*User, error) {
 	// Find the user by email
-	user, err := s.userRepository.FindByEmail(email)
+	user, err := s.userRepository.FindByEmail(ctx, email)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrUserNotFound):
@@ -121,8 +129,8 @@ func (s *userService) Login(email, password string) (*User, error) {
 }
 
 // GetCurrentUser gets the current user in the system
-func (s *userService) GetCurrentUser(userID int64) (*User, error) {
-	user, err := s.userRepository.FindByID(userID)
+func (s *userService) GetCurrentUser(ctx context.Context, userID int64) (*User, error) {
+	user, err := s.userRepository.FindByID(ctx, userID)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrUserNotFound):
@@ -142,6 +150,7 @@ func (s *userService) GetCurrentUser(userID int64) (*User, error) {
 
 // UpdateUser updates a user in the system
 func (s *userService) UpdateUser(
+	ctx context.Context,
 	userID int64,
 	username, email, password, bio, image *string,
 ) (*User, error) {
@@ -156,7 +165,7 @@ func (s *userService) UpdateUser(
 		hashedPassword = &h
 	}
 
-	user, err := s.userRepository.Update(userID, username, email, hashedPassword, bio, image)
+	user, err := s.userRepository.Update(ctx, userID, username, email, hashedPassword, bio, image)
 
 	switch {
 	case errors.Is(err, repository.ErrDuplicateUsername):

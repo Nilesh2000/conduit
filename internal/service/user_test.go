@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"strings"
 	"testing"
@@ -14,35 +15,42 @@ import (
 
 // MockUserRepository is a mock implementation of the UserRepository interface
 type MockUserRepository struct {
-	createFunc      func(username, email, password string) (*repository.User, error)
-	findByEmailFunc func(email string) (*repository.User, error)
-	findByIDFunc    func(id int64) (*repository.User, error)
-	updateFunc      func(userID int64, username, email, password, bio, image *string) (*repository.User, error)
+	createFunc      func(ctx context.Context, username, email, password string) (*repository.User, error)
+	findByEmailFunc func(ctx context.Context, email string) (*repository.User, error)
+	findByIDFunc    func(ctx context.Context, id int64) (*repository.User, error)
+	updateFunc      func(ctx context.Context, userID int64, username, email, password, bio, image *string) (*repository.User, error)
 }
 
 var _ UserRepository = (*MockUserRepository)(nil)
 
 // Create creates a new user in the repository
-func (m *MockUserRepository) Create(username, email, password string) (*repository.User, error) {
-	return m.createFunc(username, email, password)
+func (m *MockUserRepository) Create(
+	ctx context.Context,
+	username, email, password string,
+) (*repository.User, error) {
+	return m.createFunc(ctx, username, email, password)
 }
 
 // FindByEmail finds a user by email in the repository
-func (m *MockUserRepository) FindByEmail(email string) (*repository.User, error) {
-	return m.findByEmailFunc(email)
+func (m *MockUserRepository) FindByEmail(
+	ctx context.Context,
+	email string,
+) (*repository.User, error) {
+	return m.findByEmailFunc(ctx, email)
 }
 
 // FindByID finds a user by ID in the repository
-func (m *MockUserRepository) FindByID(id int64) (*repository.User, error) {
-	return m.findByIDFunc(id)
+func (m *MockUserRepository) FindByID(ctx context.Context, id int64) (*repository.User, error) {
+	return m.findByIDFunc(ctx, id)
 }
 
 // Update updates a user in the repository
 func (m *MockUserRepository) Update(
+	ctx context.Context,
 	userID int64,
 	username, email, password, bio, image *string,
 ) (*repository.User, error) {
-	return m.updateFunc(userID, username, email, password, bio, image)
+	return m.updateFunc(ctx, userID, username, email, password, bio, image)
 }
 
 // Test_userService_Register tests the Register method of the userService
@@ -70,7 +78,7 @@ func Test_userService_Register(t *testing.T) {
 			password: "password123",
 			setupMock: func() *MockUserRepository {
 				return &MockUserRepository{
-					createFunc: func(username, email, password string) (*repository.User, error) {
+					createFunc: func(ctx context.Context, username, email, password string) (*repository.User, error) {
 						if username != "testuser" || email != "test@example.com" {
 							t.Errorf(
 								"Expected Create(%q, %q, _), got Create(%q, %q, _)",
@@ -159,7 +167,7 @@ func Test_userService_Register(t *testing.T) {
 			password: "password123",
 			setupMock: func() *MockUserRepository {
 				return &MockUserRepository{
-					createFunc: func(username, email, password string) (*repository.User, error) {
+					createFunc: func(ctx context.Context, username, email, password string) (*repository.User, error) {
 						return nil, repository.ErrDuplicateUsername
 					},
 				}
@@ -174,7 +182,7 @@ func Test_userService_Register(t *testing.T) {
 			password: "password123",
 			setupMock: func() *MockUserRepository {
 				return &MockUserRepository{
-					createFunc: func(username, email, password string) (*repository.User, error) {
+					createFunc: func(ctx context.Context, username, email, password string) (*repository.User, error) {
 						return nil, repository.ErrDuplicateEmail
 					},
 				}
@@ -189,7 +197,7 @@ func Test_userService_Register(t *testing.T) {
 			password: strings.Repeat("a", 73), // 73 bytes will exceed bcrypt's limit
 			setupMock: func() *MockUserRepository {
 				return &MockUserRepository{
-					createFunc: func(username, email, password string) (*repository.User, error) {
+					createFunc: func(ctx context.Context, username, email, password string) (*repository.User, error) {
 						t.Errorf("Create should not be called when password hashing fails")
 						return nil, nil
 					},
@@ -205,7 +213,7 @@ func Test_userService_Register(t *testing.T) {
 			password: "password123",
 			setupMock: func() *MockUserRepository {
 				return &MockUserRepository{
-					createFunc: func(username, email, password string) (*repository.User, error) {
+					createFunc: func(ctx context.Context, username, email, password string) (*repository.User, error) {
 						return nil, repository.ErrInternal
 					},
 				}
@@ -226,8 +234,11 @@ func Test_userService_Register(t *testing.T) {
 			// Create service with mock repository
 			userService := NewUserService(mockUserRepository, jwtSecret, jwtExpiration)
 
+			// Create context
+			ctx := context.Background()
+
 			// Call Register
-			user, err := userService.Register(tt.username, tt.email, tt.password)
+			user, err := userService.Register(ctx, tt.username, tt.email, tt.password)
 
 			// Validate error
 			if !errors.Is(err, tt.expectedError) {
@@ -265,7 +276,7 @@ func Test_userService_Login(t *testing.T) {
 			password: "password123",
 			setupMock: func() *MockUserRepository {
 				return &MockUserRepository{
-					findByEmailFunc: func(email string) (*repository.User, error) {
+					findByEmailFunc: func(ctx context.Context, email string) (*repository.User, error) {
 						if email != "test@example.com" {
 							t.Errorf(
 								"Expected FindByEmail(%q), got FindByEmail(%q)",
@@ -351,7 +362,7 @@ func Test_userService_Login(t *testing.T) {
 			password: "password123",
 			setupMock: func() *MockUserRepository {
 				return &MockUserRepository{
-					findByEmailFunc: func(email string) (*repository.User, error) {
+					findByEmailFunc: func(ctx context.Context, email string) (*repository.User, error) {
 						return nil, repository.ErrUserNotFound
 					},
 				}
@@ -365,7 +376,7 @@ func Test_userService_Login(t *testing.T) {
 			password: "wrongpassword",
 			setupMock: func() *MockUserRepository {
 				return &MockUserRepository{
-					findByEmailFunc: func(email string) (*repository.User, error) {
+					findByEmailFunc: func(ctx context.Context, email string) (*repository.User, error) {
 						hashedPassword, err := bcrypt.GenerateFromPassword(
 							[]byte("password123"),
 							bcrypt.DefaultCost,
@@ -394,7 +405,7 @@ func Test_userService_Login(t *testing.T) {
 			password: "password123",
 			setupMock: func() *MockUserRepository {
 				return &MockUserRepository{
-					findByEmailFunc: func(email string) (*repository.User, error) {
+					findByEmailFunc: func(ctx context.Context, email string) (*repository.User, error) {
 						return nil, repository.ErrInternal
 					},
 				}
@@ -415,8 +426,11 @@ func Test_userService_Login(t *testing.T) {
 			// Create service with mock repository
 			userService := NewUserService(mockUserRepository, jwtSecret, jwtExpiration)
 
+			// Create context
+			ctx := context.Background()
+
 			// Call Login
-			user, err := userService.Login(tt.email, tt.password)
+			user, err := userService.Login(ctx, tt.email, tt.password)
 
 			// Validate error
 			if !errors.Is(err, tt.expectedError) {
