@@ -315,7 +315,7 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 			handler := NewArticleHandler(mockService)
 
 			// Create Request
-			req, _ := http.NewRequest(
+			req := httptest.NewRequest(
 				http.MethodPost,
 				"/api/articles",
 				strings.NewReader(tt.requestBody),
@@ -478,7 +478,7 @@ func TestArticleHandler_GetArticle(t *testing.T) {
 			handler := NewArticleHandler(mockService)
 
 			// Create Request
-			req, _ := http.NewRequest(
+			req := httptest.NewRequest(
 				http.MethodGet,
 				"/api/articles/"+tt.slug,
 				nil,
