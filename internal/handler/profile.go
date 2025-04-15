@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"conduit/internal/middleware"
+	"conduit/internal/response"
 	"conduit/internal/service"
 )
 
@@ -185,7 +186,7 @@ func (h *profileHandler) Unfollow() http.HandlerFunc {
 func (h *profileHandler) respondWithError(w http.ResponseWriter, status int, errors []string) {
 	w.WriteHeader(status)
 
-	response := GenericErrorModel{}
+	response := response.GenericErrorModel{}
 	response.Errors.Body = errors
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {

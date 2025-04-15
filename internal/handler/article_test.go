@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"conduit/internal/middleware"
+	"conduit/internal/response"
 	"conduit/internal/service"
 )
 
@@ -149,7 +150,7 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 				return mockService
 			},
 			expectedStatus: http.StatusUnauthorized,
-			expectedResponse: GenericErrorModel{
+			expectedResponse: response.GenericErrorModel{
 				Errors: struct {
 					Body []string `json:"body"`
 				}{Body: []string{"Unauthorized"}},
@@ -177,7 +178,7 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 				return mockService
 			},
 			expectedStatus: http.StatusUnprocessableEntity,
-			expectedResponse: GenericErrorModel{
+			expectedResponse: response.GenericErrorModel{
 				Errors: struct {
 					Body []string `json:"body"`
 				}{Body: []string{"Invalid request body"}},
@@ -205,7 +206,7 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 				return mockService
 			},
 			expectedStatus: http.StatusUnprocessableEntity,
-			expectedResponse: GenericErrorModel{
+			expectedResponse: response.GenericErrorModel{
 				Errors: struct {
 					Body []string `json:"body"`
 				}{Body: []string{"Description is required", "Body is required"}},
@@ -235,7 +236,7 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 				return mockService
 			},
 			expectedStatus: http.StatusUnprocessableEntity,
-			expectedResponse: GenericErrorModel{
+			expectedResponse: response.GenericErrorModel{
 				Errors: struct {
 					Body []string `json:"body"`
 				}{Body: []string{"Article with this title already exists"}},
@@ -265,7 +266,7 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 				return mockService
 			},
 			expectedStatus: http.StatusNotFound,
-			expectedResponse: GenericErrorModel{
+			expectedResponse: response.GenericErrorModel{
 				Errors: struct {
 					Body []string `json:"body"`
 				}{Body: []string{"User not found"}},
@@ -295,7 +296,7 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 				return mockService
 			},
 			expectedStatus: http.StatusInternalServerError,
-			expectedResponse: GenericErrorModel{
+			expectedResponse: response.GenericErrorModel{
 				Errors: struct {
 					Body []string `json:"body"`
 				}{Body: []string{"Internal server error"}},
@@ -350,7 +351,7 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 				resp.Article.UpdatedAt = time.Time{}
 				got = resp
 			} else {
-				var resp GenericErrorModel
+				var resp response.GenericErrorModel
 				if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
 					t.Errorf("Failed to unmarshal response: %v", err)
 				}
@@ -440,7 +441,7 @@ func TestArticleHandler_GetArticle(t *testing.T) {
 				return mockService
 			},
 			expectedStatus: http.StatusNotFound,
-			expectedResponse: GenericErrorModel{
+			expectedResponse: response.GenericErrorModel{
 				Errors: struct {
 					Body []string `json:"body"`
 				}{Body: []string{"Article not found"}},
@@ -458,7 +459,7 @@ func TestArticleHandler_GetArticle(t *testing.T) {
 				return mockService
 			},
 			expectedStatus: http.StatusInternalServerError,
-			expectedResponse: GenericErrorModel{
+			expectedResponse: response.GenericErrorModel{
 				Errors: struct {
 					Body []string `json:"body"`
 				}{Body: []string{"Internal server error"}},
@@ -507,7 +508,7 @@ func TestArticleHandler_GetArticle(t *testing.T) {
 				resp.Article.UpdatedAt = time.Time{}
 				got = resp
 			} else {
-				var resp GenericErrorModel
+				var resp response.GenericErrorModel
 				if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
 					t.Errorf("Failed to unmarshal response: %v", err)
 				}

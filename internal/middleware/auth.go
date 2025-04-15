@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"conduit/internal/response"
 	"context"
 	"encoding/json"
 	"log"
@@ -18,19 +19,13 @@ type contextKey string
 // UserIDContextKey is the context key for the user ID
 const UserIDContextKey = contextKey("userID")
 
-// GenericErrorModel represents the API error response body
-type GenericErrorModel struct {
-	Errors struct {
-		Body []string `json:"body"`
-	} `json:"errors"`
-}
-
 // RequireAuth middleware validates the JWT token and adds the user ID to the request context
 func RequireAuth(jwtSecret []byte) func(http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Get the request context
 			ctx := r.Context()
+
 			// Get the Authorization header
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" || !strings.HasPrefix(authHeader, "Token ") {
@@ -97,7 +92,7 @@ func GetUserIDFromContext(ctx context.Context) (int64, bool) {
 func respondWithError(w http.ResponseWriter, status int, errors []string) {
 	w.WriteHeader(status)
 
-	response := GenericErrorModel{}
+	response := response.GenericErrorModel{}
 	response.Errors.Body = errors
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {

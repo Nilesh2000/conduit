@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"conduit/internal/middleware"
+	"conduit/internal/response"
 	"conduit/internal/service"
 
 	"github.com/go-playground/validator/v10"
@@ -187,7 +188,7 @@ func (h *articleHandler) translateValidationErrors(err error) []string {
 func (h *articleHandler) respondWithError(w http.ResponseWriter, status int, errors []string) {
 	w.WriteHeader(status)
 
-	response := GenericErrorModel{}
+	response := response.GenericErrorModel{}
 	response.Errors.Body = errors
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
