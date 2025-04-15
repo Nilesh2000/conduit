@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"conduit/internal/response"
 	"context"
 	"encoding/json"
 	"log"
@@ -9,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"conduit/internal/response"
 
 	"github.com/golang-jwt/jwt"
 )
