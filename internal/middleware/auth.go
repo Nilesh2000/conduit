@@ -29,6 +29,8 @@ type GenericErrorModel struct {
 func RequireAuth(jwtSecret []byte) func(http.HandlerFunc) http.HandlerFunc {
 	return func(next http.HandlerFunc) http.HandlerFunc {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Get the request context
+			ctx := r.Context()
 			// Get the Authorization header
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" || !strings.HasPrefix(authHeader, "Token ") {
@@ -77,7 +79,7 @@ func RequireAuth(jwtSecret []byte) func(http.HandlerFunc) http.HandlerFunc {
 			}
 
 			// Add the user ID to the request context
-			ctx := context.WithValue(r.Context(), UserIDContextKey, userID)
+			ctx = context.WithValue(ctx, UserIDContextKey, userID)
 
 			// Serve the next handler
 			next.ServeHTTP(w, r.WithContext(ctx))
