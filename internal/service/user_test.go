@@ -444,3 +444,296 @@ func Test_userService_Login(t *testing.T) {
 		})
 	}
 }
+
+func Test_userService_GetCurrentUser(t *testing.T) {
+}
+
+func Test_userService_UpdateUser(t *testing.T) {
+	t.Parallel()
+
+	const (
+		jwtSecret     = "test-secret"
+		jwtExpiration = time.Hour * 24
+	)
+
+	// Helper functions to create pointers to strings
+	strPtr := func(s string) *string {
+		return &s
+	}
+
+	// Helper function to create a nil pointer to a string
+	nilStrPtr := func() *string {
+		return nil
+	}
+
+	tests := []struct {
+		name          string
+		userID        int64
+		username      *string
+		email         *string
+		password      *string
+		bio           *string
+		image         *string
+		setupMock     func() *MockUserRepository
+		expectedError error
+		validateFunc  func(t *testing.T, u *User)
+	}{
+		{
+			name:     "Update all fields",
+			userID:   1,
+			username: strPtr("updateduser"),
+			email:    strPtr("updated@example.com"),
+			password: strPtr("newpassword123"),
+			bio:      strPtr("Updated bio"),
+			image:    strPtr("https://example.com/updated-image.jpg"),
+			setupMock: func() *MockUserRepository {
+				return &MockUserRepository{
+					updateFunc: func(ctx context.Context, userID int64, username, email, password, bio, image *string) (*repository.User, error) {
+						if userID != 1 {
+							t.Errorf("Expected UserID 1, got %d", userID)
+						}
+						if *username != "updateduser" {
+							t.Errorf("Expected Username 'updateduser', got %q", *username)
+						}
+						if *email != "updated@example.com" {
+							t.Errorf("Expected Email 'updated@example.com', got %q", *email)
+						}
+						if !strings.HasPrefix(*password, "$2a$") {
+							t.Errorf("Expected password to be bcrypt hashed, got %q", *password)
+						}
+						if *bio != "Updated bio" {
+							t.Errorf("Expected Bio 'Updated bio', got %q", *bio)
+						}
+						if *image != "https://example.com/updated-image.jpg" {
+							t.Errorf(
+								"Expected Image 'https://example.com/updated-image.jpg', got %q",
+								*image,
+							)
+						}
+
+						return &repository.User{
+							ID:       1,
+							Username: "updateduser",
+							Email:    "updated@example.com",
+							Password: "newpassword123",
+							Bio:      "Updated bio",
+							Image:    "https://example.com/updated-image.jpg",
+						}, nil
+					},
+				}
+			},
+			expectedError: nil,
+			validateFunc: func(t *testing.T, u *User) {
+				if u.Username != "updateduser" {
+					t.Errorf("Expected Username 'updateduser', got %q", u.Username)
+				}
+				if u.Email != "updated@example.com" {
+					t.Errorf("Expected Email 'updated@example.com', got %q", u.Email)
+				}
+				if u.Bio != "Updated bio" {
+					t.Errorf("Expected bio 'Updated bio', got %q", u.Bio)
+				}
+				if u.Image != "https://example.com/updated-image.jpg" {
+					t.Errorf(
+						"Expected image 'https://example.com/updated-image.jpg', got %q",
+						u.Image,
+					)
+				}
+
+				// Token should not be set by UpdateUser
+				if u.Token != "" {
+					t.Errorf("Expected token to be empty, got %q", u.Token)
+				}
+			},
+		},
+		{
+			name:     "Partial update - bio and image only",
+			userID:   1,
+			username: nilStrPtr(),
+			email:    nilStrPtr(),
+			password: nilStrPtr(),
+			bio:      strPtr("Updated bio"),
+			image:    strPtr("https://example.com/updated-image.jpg"),
+			setupMock: func() *MockUserRepository {
+				return &MockUserRepository{
+					updateFunc: func(ctx context.Context, userID int64, username, email, password, bio, image *string) (*repository.User, error) {
+						if userID != 1 {
+							t.Errorf("Expected UserID 1, got %d", userID)
+						}
+						if username != nil {
+							t.Errorf("Expected Username to be nil, got %q", *username)
+						}
+						if email != nil {
+							t.Errorf("Expected Email to be nil, got %q", *email)
+						}
+						if password != nil {
+							t.Errorf("Expected Password to be nil, got %q", *password)
+						}
+						if *bio != "Updated bio" {
+							t.Errorf("Expected Bio 'Updated bio', got %q", *bio)
+						}
+						if *image != "https://example.com/updated-image.jpg" {
+							t.Errorf(
+								"Expected Image 'https://example.com/updated-image.jpg', got %q",
+								*image,
+							)
+						}
+
+						return &repository.User{
+							ID:       1,
+							Username: "existinguser",
+							Email:    "existing@example.com",
+							Password: "existingpasswordhash",
+							Bio:      *bio,
+							Image:    *image,
+						}, nil
+					},
+				}
+			},
+			expectedError: nil,
+			validateFunc: func(t *testing.T, u *User) {
+				if u.Username != "existinguser" {
+					t.Errorf("Expected Username 'existinguser', got %q", u.Username)
+				}
+				if u.Email != "existing@example.com" {
+					t.Errorf("Expected Email 'existing@example.com', got %q", u.Email)
+				}
+				if u.Bio != "Updated bio" {
+					t.Errorf("Expected Bio 'Updated bio', got %q", u.Bio)
+				}
+				if u.Image != "https://example.com/updated-image.jpg" {
+					t.Errorf(
+						"Expected Image 'https://example.com/updated-image.jpg', got %q",
+						u.Image,
+					)
+				}
+			},
+		},
+		{
+			name:     "User not found",
+			userID:   999,
+			username: strPtr("updateduser"),
+			email:    strPtr("updated@example.com"),
+			password: strPtr("newpassword123"),
+			bio:      strPtr("Updated bio"),
+			image:    strPtr("https://example.com/updated-image.jpg"),
+			setupMock: func() *MockUserRepository {
+				return &MockUserRepository{
+					updateFunc: func(ctx context.Context, userID int64, username, email, password, bio, image *string) (*repository.User, error) {
+						return nil, repository.ErrUserNotFound
+					},
+				}
+			},
+			expectedError: ErrUserNotFound,
+			validateFunc:  nil,
+		},
+		{
+			name:     "Username already taken",
+			userID:   1,
+			username: strPtr("existinguser"),
+			email:    strPtr("updated@example.com"),
+			password: strPtr("newpassword123"),
+			bio:      strPtr("Updated bio"),
+			image:    strPtr("https://example.com/updated-image.jpg"),
+			setupMock: func() *MockUserRepository {
+				return &MockUserRepository{
+					updateFunc: func(ctx context.Context, userID int64, username, email, password, bio, image *string) (*repository.User, error) {
+						return nil, repository.ErrDuplicateUsername
+					},
+				}
+			},
+			expectedError: ErrUsernameTaken,
+			validateFunc:  nil,
+		},
+		{
+			name:     "Email already taken",
+			userID:   1,
+			username: strPtr("updateduser"),
+			email:    strPtr("existing@example.com"),
+			password: strPtr("newpassword123"),
+			bio:      strPtr("Updated bio"),
+			image:    strPtr("https://example.com/updated-image.jpg"),
+			setupMock: func() *MockUserRepository {
+				return &MockUserRepository{
+					updateFunc: func(ctx context.Context, userID int64, username, email, password, bio, image *string) (*repository.User, error) {
+						return nil, repository.ErrDuplicateEmail
+					},
+				}
+			},
+			expectedError: ErrEmailTaken,
+			validateFunc:  nil,
+		},
+		{
+			name:     "Repository error",
+			userID:   1,
+			username: strPtr("updateduser"),
+			email:    strPtr("updated@example.com"),
+			password: strPtr("newpassword123"),
+			bio:      strPtr("Updated bio"),
+			image:    strPtr("https://example.com/updated-image.jpg"),
+			setupMock: func() *MockUserRepository {
+				return &MockUserRepository{
+					updateFunc: func(ctx context.Context, userID int64, username, email, password, bio, image *string) (*repository.User, error) {
+						return nil, repository.ErrInternal
+					},
+				}
+			},
+			expectedError: ErrInternalServer,
+			validateFunc:  nil,
+		},
+		{
+			name:     "Password hashing error",
+			userID:   1,
+			username: strPtr("updateduser"),
+			email:    strPtr("updated@example.com"),
+			password: strPtr(strings.Repeat("a", 73)),
+			setupMock: func() *MockUserRepository {
+				return &MockUserRepository{
+					updateFunc: func(ctx context.Context, userID int64, username, email, password, bio, image *string) (*repository.User, error) {
+						t.Errorf("Update should not be called when password hashing fails")
+						return nil, nil
+					},
+				}
+			},
+			expectedError: ErrInternalServer,
+			validateFunc:  nil,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			// Setup mock repository
+			mockUserRepository := tt.setupMock()
+
+			// Create service with mock repository
+			userService := NewUserService(mockUserRepository, jwtSecret, jwtExpiration)
+
+			// Create context
+			ctx := context.Background()
+
+			// Call UpdateUser
+			user, err := userService.UpdateUser(
+				ctx,
+				tt.userID,
+				tt.username,
+				tt.email,
+				tt.password,
+				tt.bio,
+				tt.image,
+			)
+
+			// Validate error
+			if !errors.Is(err, tt.expectedError) {
+				t.Errorf("Expected error %v, got %v", tt.expectedError, err)
+			}
+
+			// Validate user if expected
+			if err == nil && tt.validateFunc != nil {
+				tt.validateFunc(t, user)
+			}
+		})
+	}
+}
