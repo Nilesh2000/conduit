@@ -16,21 +16,25 @@ import (
 
 // MockArticleService is a mock implementation of the ArticleService interface
 type MockArticleService struct {
-	createArticleFunc func(userID int64, title, description, body string, tagList []string) (*service.Article, error)
-	getArticleFunc    func(slug string) (*service.Article, error)
+	createArticleFunc func(ctx context.Context, userID int64, title, description, body string, tagList []string) (*service.Article, error)
+	getArticleFunc    func(ctx context.Context, slug string) (*service.Article, error)
 }
 
 // CreateArticle is a mock implementation of the CreateArticle method
 func (m *MockArticleService) CreateArticle(
+	ctx context.Context,
 	userID int64,
 	title, description, body string,
 	tagList []string,
 ) (*service.Article, error) {
-	return m.createArticleFunc(userID, title, description, body, tagList)
+	return m.createArticleFunc(ctx, userID, title, description, body, tagList)
 }
 
-func (m *MockArticleService) GetArticle(slug string) (*service.Article, error) {
-	return m.getArticleFunc(slug)
+func (m *MockArticleService) GetArticle(
+	ctx context.Context,
+	slug string,
+) (*service.Article, error) {
+	return m.getArticleFunc(ctx, slug)
 }
 
 // TestArticleHandler_CreateArticle tests the CreateArticle method of the ArticleHandler
@@ -62,7 +66,7 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 			},
 			setupMock: func() *MockArticleService {
 				mockService := &MockArticleService{
-					createArticleFunc: func(userID int64, title, description, body string, tagList []string) (*service.Article, error) {
+					createArticleFunc: func(ctx context.Context, userID int64, title, description, body string, tagList []string) (*service.Article, error) {
 						if userID != 1 {
 							t.Errorf("Expected userID 1, got %d", userID)
 						}
@@ -137,7 +141,7 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 			},
 			setupMock: func() *MockArticleService {
 				mockService := &MockArticleService{
-					createArticleFunc: func(userID int64, title, description, body string, tagList []string) (*service.Article, error) {
+					createArticleFunc: func(ctx context.Context, userID int64, title, description, body string, tagList []string) (*service.Article, error) {
 						t.Errorf("CreateArticle should not be called for unauthenticated request")
 						return nil, nil
 					},
@@ -165,7 +169,7 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 			},
 			setupMock: func() *MockArticleService {
 				mockService := &MockArticleService{
-					createArticleFunc: func(userID int64, title, description, body string, tagList []string) (*service.Article, error) {
+					createArticleFunc: func(ctx context.Context, userID int64, title, description, body string, tagList []string) (*service.Article, error) {
 						t.Errorf("CreateArticle should not be called for invalid JSON")
 						return nil, nil
 					},
@@ -193,7 +197,7 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 			},
 			setupMock: func() *MockArticleService {
 				mockService := &MockArticleService{
-					createArticleFunc: func(userID int64, title, description, body string, tagList []string) (*service.Article, error) {
+					createArticleFunc: func(ctx context.Context, userID int64, title, description, body string, tagList []string) (*service.Article, error) {
 						t.Errorf("CreateArticle should not be called for missing required fields")
 						return nil, nil
 					},
@@ -224,7 +228,7 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 			},
 			setupMock: func() *MockArticleService {
 				mockService := &MockArticleService{
-					createArticleFunc: func(userID int64, title, description, body string, tagList []string) (*service.Article, error) {
+					createArticleFunc: func(ctx context.Context, userID int64, title, description, body string, tagList []string) (*service.Article, error) {
 						return nil, service.ErrArticleAlreadyExists
 					},
 				}
@@ -254,7 +258,7 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 			},
 			setupMock: func() *MockArticleService {
 				mockService := &MockArticleService{
-					createArticleFunc: func(userID int64, title, description, body string, tagList []string) (*service.Article, error) {
+					createArticleFunc: func(ctx context.Context, userID int64, title, description, body string, tagList []string) (*service.Article, error) {
 						return nil, service.ErrUserNotFound
 					},
 				}
@@ -284,7 +288,7 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 			},
 			setupMock: func() *MockArticleService {
 				mockService := &MockArticleService{
-					createArticleFunc: func(userID int64, title, description, body string, tagList []string) (*service.Article, error) {
+					createArticleFunc: func(ctx context.Context, userID int64, title, description, body string, tagList []string) (*service.Article, error) {
 						return nil, service.ErrInternalServer
 					},
 				}
@@ -376,7 +380,7 @@ func TestArticleHandler_GetArticle(t *testing.T) {
 			slug: "test-article",
 			setupMock: func() *MockArticleService {
 				mockService := &MockArticleService{
-					getArticleFunc: func(slug string) (*service.Article, error) {
+					getArticleFunc: func(ctx context.Context, slug string) (*service.Article, error) {
 						if slug != "test-article" {
 							t.Errorf("Expected slug 'test-article', got %q", slug)
 						}
@@ -429,7 +433,7 @@ func TestArticleHandler_GetArticle(t *testing.T) {
 			slug: "non-existent-article",
 			setupMock: func() *MockArticleService {
 				mockService := &MockArticleService{
-					getArticleFunc: func(slug string) (*service.Article, error) {
+					getArticleFunc: func(ctx context.Context, slug string) (*service.Article, error) {
 						return nil, service.ErrArticleNotFound
 					},
 				}
@@ -447,7 +451,7 @@ func TestArticleHandler_GetArticle(t *testing.T) {
 			slug: "test-article",
 			setupMock: func() *MockArticleService {
 				mockService := &MockArticleService{
-					getArticleFunc: func(slug string) (*service.Article, error) {
+					getArticleFunc: func(ctx context.Context, slug string) (*service.Article, error) {
 						return nil, service.ErrInternalServer
 					},
 				}

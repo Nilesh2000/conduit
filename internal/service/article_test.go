@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -12,22 +13,26 @@ import (
 
 // MockArticleRepository is a mock implementation of the ArticleRepository interface
 type MockArticleRepository struct {
-	createFunc    func(userID int64, articleSlug, title, description, body string, tagList []string) (*repository.Article, error)
-	getBySlugFunc func(slug string) (*repository.Article, error)
+	createFunc    func(ctx context.Context, userID int64, articleSlug, title, description, body string, tagList []string) (*repository.Article, error)
+	getBySlugFunc func(ctx context.Context, slug string) (*repository.Article, error)
 }
 
 // Create is a mock implementation of the Create method
 func (m *MockArticleRepository) Create(
+	ctx context.Context,
 	userID int64,
 	articleSlug, title, description, body string,
 	tagList []string,
 ) (*repository.Article, error) {
-	return m.createFunc(userID, articleSlug, title, description, body, tagList)
+	return m.createFunc(ctx, userID, articleSlug, title, description, body, tagList)
 }
 
 // GetBySlug is a mock implementation of the GetBySlug method
-func (m *MockArticleRepository) GetBySlug(slug string) (*repository.Article, error) {
-	return m.getBySlugFunc(slug)
+func (m *MockArticleRepository) GetBySlug(
+	ctx context.Context,
+	slug string,
+) (*repository.Article, error) {
+	return m.getBySlugFunc(ctx, slug)
 }
 
 func Test_articleService_CreateArticle(t *testing.T) {
@@ -53,7 +58,7 @@ func Test_articleService_CreateArticle(t *testing.T) {
 			tagList:     []string{"tag1", "tag2"},
 			setupMock: func() *MockArticleRepository {
 				mockRepo := &MockArticleRepository{
-					createFunc: func(userID int64, articleSlug, title, description, body string, tagList []string) (*repository.Article, error) {
+					createFunc: func(ctx context.Context, userID int64, articleSlug, title, description, body string, tagList []string) (*repository.Article, error) {
 						expectedSlug := slug.Make("Test Article")
 						if articleSlug != expectedSlug {
 							t.Errorf("Expected slug %q, got %q", expectedSlug, articleSlug)
@@ -157,7 +162,7 @@ func Test_articleService_CreateArticle(t *testing.T) {
 			tagList:     []string{"tag1", "tag2"},
 			setupMock: func() *MockArticleRepository {
 				return &MockArticleRepository{
-					createFunc: func(userID int64, articleSlug, title, description, body string, tagList []string) (*repository.Article, error) {
+					createFunc: func(ctx context.Context, userID int64, articleSlug, title, description, body string, tagList []string) (*repository.Article, error) {
 						return nil, repository.ErrUserNotFound
 					},
 				}
@@ -174,7 +179,7 @@ func Test_articleService_CreateArticle(t *testing.T) {
 			tagList:     []string{"tag1", "tag2"},
 			setupMock: func() *MockArticleRepository {
 				return &MockArticleRepository{
-					createFunc: func(userID int64, articleSlug, title, description, body string, tagList []string) (*repository.Article, error) {
+					createFunc: func(ctx context.Context, userID int64, articleSlug, title, description, body string, tagList []string) (*repository.Article, error) {
 						return nil, repository.ErrDuplicateSlug
 					},
 				}
@@ -195,8 +200,12 @@ func Test_articleService_CreateArticle(t *testing.T) {
 			// Create service with mock repository
 			articleService := NewArticleService(mockArticleRepository)
 
+			// Create context
+			ctx := context.Background()
+
 			// Call method
 			article, err := articleService.CreateArticle(
+				ctx,
 				tt.userID,
 				tt.title,
 				tt.description,

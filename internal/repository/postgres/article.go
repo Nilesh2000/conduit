@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"time"
@@ -22,6 +23,7 @@ func NewArticleRepository(db *sql.DB) *articleRepository {
 
 // Create creates a new article in the database
 func (r *articleRepository) Create(
+	ctx context.Context,
 	userID int64,
 	slug, title, description, body string,
 	tagList []string,
@@ -126,7 +128,10 @@ func (r *articleRepository) Create(
 }
 
 // GetBySlug gets an article by slug
-func (r *articleRepository) GetBySlug(slug string) (*repository.Article, error) {
+func (r *articleRepository) GetBySlug(
+	ctx context.Context,
+	slug string,
+) (*repository.Article, error) {
 	var article repository.Article
 	article.Author = &repository.User{}
 	var authorBio, authorImage sql.NullString

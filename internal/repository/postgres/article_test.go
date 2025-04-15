@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -137,8 +138,11 @@ func Test_articleRepository_GetBySlug(t *testing.T) {
 			// Create repository with mock database
 			repo := NewArticleRepository(db)
 
+			// Create context
+			ctx := context.Background()
+
 			// Call GetBySlug method
-			article, err := repo.GetBySlug(tt.slug)
+			article, err := repo.GetBySlug(ctx, tt.slug)
 
 			// Validate error
 			if !errors.Is(err, tt.expectedErr) {

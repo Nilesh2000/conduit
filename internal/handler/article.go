@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -31,11 +32,12 @@ type ArticleResponse struct {
 // ArticleService defines the interface for article service operations
 type ArticleService interface {
 	CreateArticle(
+		ctx context.Context,
 		userID int64,
 		title, description, body string,
 		tagList []string,
 	) (*service.Article, error)
-	GetArticle(slug string) (*service.Article, error)
+	GetArticle(ctx context.Context, slug string) (*service.Article, error)
 }
 
 // articleHandler is a handler for article operations
@@ -81,6 +83,7 @@ func (h *articleHandler) CreateArticle() http.HandlerFunc {
 
 		// Call service to create article
 		article, err := h.articleService.CreateArticle(
+			r.Context(),
 			userID,
 			req.Article.Title,
 			req.Article.Description,
@@ -129,7 +132,10 @@ func (h *articleHandler) GetArticle() http.HandlerFunc {
 		}
 
 		// Call service to get article
-		article, err := h.articleService.GetArticle(slug)
+		article, err := h.articleService.GetArticle(
+			r.Context(),
+			slug,
+		)
 		if err != nil {
 			switch {
 			case errors.Is(err, service.ErrArticleNotFound):

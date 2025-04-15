@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -34,11 +35,15 @@ type Profile struct {
 // ArticleRepository is an interface for the article repository
 type ArticleRepository interface {
 	Create(
+		ctx context.Context,
 		userID int64,
 		slug, title, description, body string,
 		tagList []string,
 	) (*repository.Article, error)
-	GetBySlug(slug string) (*repository.Article, error)
+	GetBySlug(
+		ctx context.Context,
+		slug string,
+	) (*repository.Article, error)
 }
 
 // articleService implements the articleService interface
@@ -55,6 +60,7 @@ func NewArticleService(articleRepository ArticleRepository) *articleService {
 
 // CreateArticle creates a new article
 func (s *articleService) CreateArticle(
+	ctx context.Context,
 	userID int64,
 	title, description, body string,
 	tagList []string,
@@ -62,7 +68,15 @@ func (s *articleService) CreateArticle(
 	// Generate slug from title
 	slug := generateSlug(title)
 
-	article, err := s.articleRepository.Create(userID, slug, title, description, body, tagList)
+	article, err := s.articleRepository.Create(
+		ctx,
+		userID,
+		slug,
+		title,
+		description,
+		body,
+		tagList,
+	)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrUserNotFound):
@@ -94,8 +108,14 @@ func (s *articleService) CreateArticle(
 }
 
 // GetArticle gets an article by slug
-func (s *articleService) GetArticle(slug string) (*Article, error) {
-	article, err := s.articleRepository.GetBySlug(slug)
+func (s *articleService) GetArticle(
+	ctx context.Context,
+	slug string,
+) (*Article, error) {
+	article, err := s.articleRepository.GetBySlug(
+		ctx,
+		slug,
+	)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrArticleNotFound):
