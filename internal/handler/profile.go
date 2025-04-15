@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"log"
@@ -18,9 +19,17 @@ type ProfileResponse struct {
 
 // ProfileService is an interface for the profile service
 type ProfileService interface {
-	GetProfile(username string, currentUserID int64) (*service.Profile, error)
-	FollowUser(followerID int64, followingName string) (*service.Profile, error)
-	UnfollowUser(followerID int64, followingName string) (*service.Profile, error)
+	GetProfile(ctx context.Context, username string, currentUserID int64) (*service.Profile, error)
+	FollowUser(
+		ctx context.Context,
+		followerID int64,
+		followingName string,
+	) (*service.Profile, error)
+	UnfollowUser(
+		ctx context.Context,
+		followerID int64,
+		followingName string,
+	) (*service.Profile, error)
 }
 
 // profileHandler is a handler for profile requests
@@ -51,7 +60,7 @@ func (h *profileHandler) GetProfile() http.HandlerFunc {
 		}
 
 		// Get profile
-		profile, err := h.profileService.GetProfile(username, currentUserID)
+		profile, err := h.profileService.GetProfile(r.Context(), username, currentUserID)
 		if err != nil {
 			switch {
 			case errors.Is(err, service.ErrUserNotFound):
@@ -97,7 +106,7 @@ func (h *profileHandler) Follow() http.HandlerFunc {
 		username := pathParams[len(pathParams)-2]
 
 		// Call service to follow user
-		profile, err := h.profileService.FollowUser(followerID, username)
+		profile, err := h.profileService.FollowUser(r.Context(), followerID, username)
 		if err != nil {
 			switch {
 			case errors.Is(err, service.ErrUserNotFound):
@@ -146,7 +155,7 @@ func (h *profileHandler) Unfollow() http.HandlerFunc {
 		username := pathParams[len(pathParams)-2]
 
 		// Call service to unfollow user
-		profile, err := h.profileService.UnfollowUser(followerID, username)
+		profile, err := h.profileService.UnfollowUser(r.Context(), followerID, username)
 		// Handle errors
 		if err != nil {
 			switch {

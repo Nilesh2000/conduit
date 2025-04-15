@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 
 	"conduit/internal/repository"
@@ -8,9 +9,21 @@ import (
 
 // ProfileRepository is an interface for the profile repository
 type ProfileRepository interface {
-	GetByUsername(username string, currentUserID int64) (*repository.Profile, error)
-	FollowUser(followerID int64, followingName string) (*repository.Profile, error)
-	UnfollowUser(followerID int64, followingName string) (*repository.Profile, error)
+	GetByUsername(
+		ctx context.Context,
+		username string,
+		currentUserID int64,
+	) (*repository.Profile, error)
+	FollowUser(
+		ctx context.Context,
+		followerID int64,
+		followingName string,
+	) (*repository.Profile, error)
+	UnfollowUser(
+		ctx context.Context,
+		followerID int64,
+		followingName string,
+	) (*repository.Profile, error)
 }
 
 // profileService implements the profileService interface
@@ -26,8 +39,12 @@ func NewProfileService(profileRepository ProfileRepository) *profileService {
 }
 
 // GetProfile gets a profile by username
-func (s *profileService) GetProfile(username string, currentUserID int64) (*Profile, error) {
-	profile, err := s.profileRepository.GetByUsername(username, currentUserID)
+func (s *profileService) GetProfile(
+	ctx context.Context,
+	username string,
+	currentUserID int64,
+) (*Profile, error) {
+	profile, err := s.profileRepository.GetByUsername(ctx, username, currentUserID)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrUserNotFound):
@@ -46,8 +63,12 @@ func (s *profileService) GetProfile(username string, currentUserID int64) (*Prof
 }
 
 // FollowUser follows a user
-func (s *profileService) FollowUser(followerID int64, followingName string) (*Profile, error) {
-	profile, err := s.profileRepository.FollowUser(followerID, followingName)
+func (s *profileService) FollowUser(
+	ctx context.Context,
+	followerID int64,
+	followingName string,
+) (*Profile, error) {
+	profile, err := s.profileRepository.FollowUser(ctx, followerID, followingName)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrUserNotFound):
@@ -68,8 +89,12 @@ func (s *profileService) FollowUser(followerID int64, followingName string) (*Pr
 }
 
 // UnfollowUser unfollows a user
-func (s *profileService) UnfollowUser(followerID int64, followingName string) (*Profile, error) {
-	profile, err := s.profileRepository.UnfollowUser(followerID, followingName)
+func (s *profileService) UnfollowUser(
+	ctx context.Context,
+	followerID int64,
+	followingName string,
+) (*Profile, error) {
+	profile, err := s.profileRepository.UnfollowUser(ctx, followerID, followingName)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrUserNotFound):

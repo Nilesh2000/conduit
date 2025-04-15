@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"log"
@@ -22,6 +23,7 @@ func NewProfileRepository(db *sql.DB) *profileRepository {
 
 // GetByUsername gets a profile by username
 func (r *profileRepository) GetByUsername(
+	ctx context.Context,
 	username string,
 	currentUserID int64,
 ) (*repository.Profile, error) {
@@ -32,7 +34,7 @@ func (r *profileRepository) GetByUsername(
 	`
 
 	var profile repository.Profile
-	err := r.db.QueryRow(query, username).
+	err := r.db.QueryRowContext(ctx, query, username).
 		Scan(&profile.ID, &profile.Username, &profile.Bio, &profile.Image, &profile.Following)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -43,7 +45,7 @@ func (r *profileRepository) GetByUsername(
 
 	if currentUserID != 0 {
 		var following bool
-		err := r.db.QueryRow(
+		err := r.db.QueryRowContext(ctx,
 			`SELECT EXISTS (
 				SELECT 1
 				FROM follows
@@ -61,11 +63,12 @@ func (r *profileRepository) GetByUsername(
 
 // FollowUser follows a user
 func (r *profileRepository) FollowUser(
+	ctx context.Context,
 	followerID int64,
 	followingName string,
 ) (*repository.Profile, error) {
 	// Begin a transaction
-	tx, err := r.db.Begin()
+	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, repository.ErrInternal
 	}
@@ -94,7 +97,7 @@ func (r *profileRepository) FollowUser(
 	var profile repository.Profile
 	var bio, image sql.NullString
 
-	err = tx.QueryRow(query, followingName, followerID).
+	err = tx.QueryRowContext(ctx, query, followingName, followerID).
 		Scan(&profile.ID, &profile.Username, &bio, &image, &profile.Following)
 	if err != nil {
 		// following_user does not exist
@@ -139,11 +142,12 @@ func (r *profileRepository) FollowUser(
 
 // UnfollowUser unfollows a user
 func (r *profileRepository) UnfollowUser(
+	ctx context.Context,
 	followerID int64,
 	followingName string,
 ) (*repository.Profile, error) {
 	// Begin a transaction
-	tx, err := r.db.Begin()
+	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, repository.ErrInternal
 	}
@@ -171,7 +175,7 @@ func (r *profileRepository) UnfollowUser(
 	var profile repository.Profile
 	var bio, image sql.NullString
 
-	err = tx.QueryRow(query, followingName, followerID).
+	err = tx.QueryRowContext(ctx, query, followingName, followerID).
 		Scan(&profile.ID, &profile.Username, &bio, &image, &profile.Following)
 	if err != nil {
 		// following_user does not exist
