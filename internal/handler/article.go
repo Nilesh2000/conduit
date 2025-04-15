@@ -4,13 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"log"
 	"net/http"
 
 	"conduit/internal/middleware"
 	"conduit/internal/response"
 	"conduit/internal/service"
+	"conduit/internal/validation"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -64,21 +63,25 @@ func (h *articleHandler) CreateArticle() http.HandlerFunc {
 		// Get user ID from context
 		userID, ok := middleware.GetUserIDFromContext(r.Context())
 		if !ok {
-			h.respondWithError(w, http.StatusUnauthorized, []string{"Unauthorized"})
+			response.RespondWithError(w, http.StatusUnauthorized, []string{"Unauthorized"})
 			return
 		}
 
 		// Parse request body
 		var req CreateArticleRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			h.respondWithError(w, http.StatusUnprocessableEntity, []string{"Invalid request body"})
+			response.RespondWithError(
+				w,
+				http.StatusUnprocessableEntity,
+				[]string{"Invalid request body"},
+			)
 			return
 		}
 
 		// Validate request body
 		if err := h.validate.Struct(req); err != nil {
-			errors := h.translateValidationErrors(err)
-			h.respondWithError(w, http.StatusUnprocessableEntity, errors)
+			errors := validation.TranslateValidationErrors(err)
+			response.RespondWithError(w, http.StatusUnprocessableEntity, errors)
 			return
 		}
 
@@ -94,15 +97,15 @@ func (h *articleHandler) CreateArticle() http.HandlerFunc {
 		if err != nil {
 			switch {
 			case errors.Is(err, service.ErrUserNotFound):
-				h.respondWithError(w, http.StatusNotFound, []string{"User not found"})
+				response.RespondWithError(w, http.StatusNotFound, []string{"User not found"})
 			case errors.Is(err, service.ErrArticleAlreadyExists):
-				h.respondWithError(
+				response.RespondWithError(
 					w,
 					http.StatusUnprocessableEntity,
 					[]string{"Article with this title already exists"},
 				)
 			default:
-				h.respondWithError(
+				response.RespondWithError(
 					w,
 					http.StatusInternalServerError,
 					[]string{"Internal server error"},
@@ -114,7 +117,11 @@ func (h *articleHandler) CreateArticle() http.HandlerFunc {
 		// Respond with created article
 		w.WriteHeader(http.StatusCreated)
 		if err := json.NewEncoder(w).Encode(ArticleResponse{Article: *article}); err != nil {
-			h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+			response.RespondWithError(
+				w,
+				http.StatusInternalServerError,
+				[]string{"Internal server error"},
+			)
 		}
 	}
 }
@@ -128,7 +135,7 @@ func (h *articleHandler) GetArticle() http.HandlerFunc {
 		// Get slug from request path
 		slug := r.URL.Path[len("/api/articles/"):]
 		if slug == "" {
-			h.respondWithError(w, http.StatusNotFound, []string{"Article not found"})
+			response.RespondWithError(w, http.StatusNotFound, []string{"Article not found"})
 			return
 		}
 
@@ -140,9 +147,9 @@ func (h *articleHandler) GetArticle() http.HandlerFunc {
 		if err != nil {
 			switch {
 			case errors.Is(err, service.ErrArticleNotFound):
-				h.respondWithError(w, http.StatusNotFound, []string{"Article not found"})
+				response.RespondWithError(w, http.StatusNotFound, []string{"Article not found"})
 			default:
-				h.respondWithError(
+				response.RespondWithError(
 					w,
 					http.StatusInternalServerError,
 					[]string{"Internal server error"},
@@ -154,44 +161,11 @@ func (h *articleHandler) GetArticle() http.HandlerFunc {
 		// Respond with article
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(ArticleResponse{Article: *article}); err != nil {
-			h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+			response.RespondWithError(
+				w,
+				http.StatusInternalServerError,
+				[]string{"Internal server error"},
+			)
 		}
-	}
-}
-
-func (h *articleHandler) translateValidationErrors(err error) []string {
-	var validationErrors []string
-
-	if validationErrs, ok := err.(validator.ValidationErrors); ok {
-		for _, e := range validationErrs {
-			switch e.Tag() {
-			case "required":
-				validationErrors = append(
-					validationErrors,
-					fmt.Sprintf("%s is required", e.Field()),
-				)
-			default:
-				validationErrors = append(
-					validationErrors,
-					fmt.Sprintf("%s is not valid", e.Field()),
-				)
-			}
-		}
-	} else {
-		validationErrors = append(validationErrors, "Invalid request body")
-	}
-
-	return validationErrors
-}
-
-// respondWithError sends an error response with the given status code and errors
-func (h *articleHandler) respondWithError(w http.ResponseWriter, status int, errors []string) {
-	w.WriteHeader(status)
-
-	response := response.GenericErrorModel{}
-	response.Errors.Body = errors
-
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		log.Printf("Failed to encode response: %v", err)
 	}
 }

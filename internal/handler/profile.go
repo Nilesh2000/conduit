@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 	"strings"
 
@@ -65,9 +64,9 @@ func (h *profileHandler) GetProfile() http.HandlerFunc {
 		if err != nil {
 			switch {
 			case errors.Is(err, service.ErrUserNotFound):
-				h.respondWithError(w, http.StatusNotFound, []string{"User not found"})
+				response.RespondWithError(w, http.StatusNotFound, []string{"User not found"})
 			default:
-				h.respondWithError(
+				response.RespondWithError(
 					w,
 					http.StatusInternalServerError,
 					[]string{"Internal server error"},
@@ -79,7 +78,11 @@ func (h *profileHandler) GetProfile() http.HandlerFunc {
 		// Respond with profile
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(ProfileResponse{Profile: *profile}); err != nil {
-			h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+			response.RespondWithError(
+				w,
+				http.StatusInternalServerError,
+				[]string{"Internal server error"},
+			)
 		}
 	}
 }
@@ -93,14 +96,14 @@ func (h *profileHandler) Follow() http.HandlerFunc {
 		// Get user ID from context
 		followerID, ok := middleware.GetUserIDFromContext(r.Context())
 		if !ok {
-			h.respondWithError(w, http.StatusUnauthorized, []string{"Unauthorized"})
+			response.RespondWithError(w, http.StatusUnauthorized, []string{"Unauthorized"})
 			return
 		}
 
 		// Get username from URL path
 		pathParams := strings.Split(r.URL.Path, "/")
 		if len(pathParams) < 4 {
-			h.respondWithError(w, http.StatusBadRequest, []string{"User not found"})
+			response.RespondWithError(w, http.StatusBadRequest, []string{"User not found"})
 			return
 		}
 		// Get second to last path parameter (username in /profiles/:username/follow)
@@ -111,11 +114,15 @@ func (h *profileHandler) Follow() http.HandlerFunc {
 		if err != nil {
 			switch {
 			case errors.Is(err, service.ErrUserNotFound):
-				h.respondWithError(w, http.StatusNotFound, []string{"User not found"})
+				response.RespondWithError(w, http.StatusNotFound, []string{"User not found"})
 			case errors.Is(err, service.ErrCannotFollowSelf):
-				h.respondWithError(w, http.StatusForbidden, []string{"Cannot follow yourself"})
+				response.RespondWithError(
+					w,
+					http.StatusForbidden,
+					[]string{"Cannot follow yourself"},
+				)
 			default:
-				h.respondWithError(
+				response.RespondWithError(
 					w,
 					http.StatusInternalServerError,
 					[]string{"Internal server error"},
@@ -127,7 +134,11 @@ func (h *profileHandler) Follow() http.HandlerFunc {
 		// Respond with updated profile
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(ProfileResponse{Profile: *profile}); err != nil {
-			h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+			response.RespondWithError(
+				w,
+				http.StatusInternalServerError,
+				[]string{"Internal server error"},
+			)
 		}
 	}
 }
@@ -141,14 +152,14 @@ func (h *profileHandler) Unfollow() http.HandlerFunc {
 		// Get user ID from context
 		followerID, ok := middleware.GetUserIDFromContext(r.Context())
 		if !ok {
-			h.respondWithError(w, http.StatusUnauthorized, []string{"Unauthorized"})
+			response.RespondWithError(w, http.StatusUnauthorized, []string{"Unauthorized"})
 			return
 		}
 
 		// Get username from URL path
 		pathParams := strings.Split(r.URL.Path, "/")
 		if len(pathParams) < 4 {
-			h.respondWithError(w, http.StatusBadRequest, []string{"User not found"})
+			response.RespondWithError(w, http.StatusBadRequest, []string{"User not found"})
 			return
 		}
 
@@ -161,11 +172,15 @@ func (h *profileHandler) Unfollow() http.HandlerFunc {
 		if err != nil {
 			switch {
 			case errors.Is(err, service.ErrUserNotFound):
-				h.respondWithError(w, http.StatusNotFound, []string{"User not found"})
+				response.RespondWithError(w, http.StatusNotFound, []string{"User not found"})
 			case errors.Is(err, service.ErrCannotFollowSelf):
-				h.respondWithError(w, http.StatusForbidden, []string{"Cannot unfollow yourself"})
+				response.RespondWithError(
+					w,
+					http.StatusForbidden,
+					[]string{"Cannot unfollow yourself"},
+				)
 			default:
-				h.respondWithError(
+				response.RespondWithError(
 					w,
 					http.StatusInternalServerError,
 					[]string{"Internal server error"},
@@ -177,19 +192,11 @@ func (h *profileHandler) Unfollow() http.HandlerFunc {
 		// Respond with updated profile
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(ProfileResponse{Profile: *profile}); err != nil {
-			h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+			response.RespondWithError(
+				w,
+				http.StatusInternalServerError,
+				[]string{"Internal server error"},
+			)
 		}
-	}
-}
-
-// respondWithError sends an error response with the given status code and errors
-func (h *profileHandler) respondWithError(w http.ResponseWriter, status int, errors []string) {
-	w.WriteHeader(status)
-
-	response := response.GenericErrorModel{}
-	response.Errors.Body = errors
-
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		log.Printf("Failed to encode response: %v", err)
 	}
 }

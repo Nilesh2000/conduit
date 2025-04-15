@@ -4,14 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"log"
 	"net/http"
 	"strings"
 
 	"conduit/internal/middleware"
 	"conduit/internal/response"
 	"conduit/internal/service"
+	"conduit/internal/validation"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -84,14 +83,18 @@ func (h *userHandler) Register() http.HandlerFunc {
 		// Parse request body
 		var req RegisterRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			h.respondWithError(w, http.StatusUnprocessableEntity, []string{"Invalid request body"})
+			response.RespondWithError(
+				w,
+				http.StatusUnprocessableEntity,
+				[]string{"Invalid request body"},
+			)
 			return
 		}
 
 		// Validate request body
 		if err := h.validate.Struct(req); err != nil {
-			errors := h.translateValidationErrors(err)
-			h.respondWithError(w, http.StatusUnprocessableEntity, errors)
+			errors := validation.TranslateValidationErrors(err)
+			response.RespondWithError(w, http.StatusUnprocessableEntity, errors)
 			return
 		}
 
@@ -106,19 +109,19 @@ func (h *userHandler) Register() http.HandlerFunc {
 		if err != nil {
 			switch {
 			case errors.Is(err, service.ErrUsernameTaken):
-				h.respondWithError(
+				response.RespondWithError(
 					w,
 					http.StatusUnprocessableEntity,
 					[]string{"Username already taken"},
 				)
 			case errors.Is(err, service.ErrEmailTaken):
-				h.respondWithError(
+				response.RespondWithError(
 					w,
 					http.StatusUnprocessableEntity,
 					[]string{"Email already registered"},
 				)
 			default:
-				h.respondWithError(
+				response.RespondWithError(
 					w,
 					http.StatusInternalServerError,
 					[]string{"Internal server error"},
@@ -132,7 +135,11 @@ func (h *userHandler) Register() http.HandlerFunc {
 		if err := json.NewEncoder(w).Encode(UserResponse{
 			User: *user,
 		}); err != nil {
-			h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+			response.RespondWithError(
+				w,
+				http.StatusInternalServerError,
+				[]string{"Internal server error"},
+			)
 		}
 	}
 }
@@ -146,14 +153,18 @@ func (h *userHandler) Login() http.HandlerFunc {
 		// Parse request body
 		var req LoginRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			h.respondWithError(w, http.StatusUnprocessableEntity, []string{"Invalid request body"})
+			response.RespondWithError(
+				w,
+				http.StatusUnprocessableEntity,
+				[]string{"Invalid request body"},
+			)
 			return
 		}
 
 		// Validate request body
 		if err := h.validate.Struct(req); err != nil {
-			errors := h.translateValidationErrors(err)
-			h.respondWithError(w, http.StatusUnprocessableEntity, errors)
+			errors := validation.TranslateValidationErrors(err)
+			response.RespondWithError(w, http.StatusUnprocessableEntity, errors)
 			return
 		}
 
@@ -163,9 +174,13 @@ func (h *userHandler) Login() http.HandlerFunc {
 		if err != nil {
 			switch {
 			case errors.Is(err, service.ErrInvalidCredentials) || errors.Is(err, service.ErrUserNotFound):
-				h.respondWithError(w, http.StatusUnauthorized, []string{"Invalid credentials"})
+				response.RespondWithError(
+					w,
+					http.StatusUnauthorized,
+					[]string{"Invalid credentials"},
+				)
 			default:
-				h.respondWithError(
+				response.RespondWithError(
 					w,
 					http.StatusInternalServerError,
 					[]string{"Internal server error"},
@@ -179,7 +194,11 @@ func (h *userHandler) Login() http.HandlerFunc {
 		if err := json.NewEncoder(w).Encode(UserResponse{
 			User: *user,
 		}); err != nil {
-			h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+			response.RespondWithError(
+				w,
+				http.StatusInternalServerError,
+				[]string{"Internal server error"},
+			)
 		}
 	}
 }
@@ -193,7 +212,7 @@ func (h *userHandler) GetCurrentUser() http.HandlerFunc {
 		// Get user ID from context
 		userID, ok := middleware.GetUserIDFromContext(r.Context())
 		if !ok {
-			h.respondWithError(w, http.StatusUnauthorized, []string{"Unauthorized"})
+			response.RespondWithError(w, http.StatusUnauthorized, []string{"Unauthorized"})
 			return
 		}
 
@@ -206,9 +225,9 @@ func (h *userHandler) GetCurrentUser() http.HandlerFunc {
 		if err != nil {
 			switch {
 			case errors.Is(err, service.ErrUserNotFound):
-				h.respondWithError(w, http.StatusNotFound, []string{"User not found"})
+				response.RespondWithError(w, http.StatusNotFound, []string{"User not found"})
 			default:
-				h.respondWithError(
+				response.RespondWithError(
 					w,
 					http.StatusInternalServerError,
 					[]string{"Internal server error"},
@@ -225,7 +244,11 @@ func (h *userHandler) GetCurrentUser() http.HandlerFunc {
 		if err := json.NewEncoder(w).Encode(UserResponse{
 			User: *user,
 		}); err != nil {
-			h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+			response.RespondWithError(
+				w,
+				http.StatusInternalServerError,
+				[]string{"Internal server error"},
+			)
 		}
 	}
 }
@@ -239,7 +262,7 @@ func (h *userHandler) UpdateCurrentUser() http.HandlerFunc {
 		// Get user ID from context
 		userID, ok := middleware.GetUserIDFromContext(r.Context())
 		if !ok {
-			h.respondWithError(w, http.StatusUnauthorized, []string{"Unauthorized"})
+			response.RespondWithError(w, http.StatusUnauthorized, []string{"Unauthorized"})
 			return
 		}
 
@@ -250,14 +273,18 @@ func (h *userHandler) UpdateCurrentUser() http.HandlerFunc {
 		// Parse request body
 		var req UpdateUserRequest
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			h.respondWithError(w, http.StatusUnprocessableEntity, []string{"Invalid request body"})
+			response.RespondWithError(
+				w,
+				http.StatusUnprocessableEntity,
+				[]string{"Invalid request body"},
+			)
 			return
 		}
 
 		// Validate request body
 		if err := h.validate.Struct(req); err != nil {
-			errors := h.translateValidationErrors(err)
-			h.respondWithError(w, http.StatusUnprocessableEntity, errors)
+			errors := validation.TranslateValidationErrors(err)
+			response.RespondWithError(w, http.StatusUnprocessableEntity, errors)
 			return
 		}
 
@@ -275,21 +302,21 @@ func (h *userHandler) UpdateCurrentUser() http.HandlerFunc {
 		if err != nil {
 			switch {
 			case errors.Is(err, service.ErrUsernameTaken):
-				h.respondWithError(
+				response.RespondWithError(
 					w,
 					http.StatusUnprocessableEntity,
 					[]string{"Username already taken"},
 				)
 			case errors.Is(err, service.ErrEmailTaken):
-				h.respondWithError(
+				response.RespondWithError(
 					w,
 					http.StatusUnprocessableEntity,
 					[]string{"Email already registered"},
 				)
 			case errors.Is(err, service.ErrUserNotFound):
-				h.respondWithError(w, http.StatusNotFound, []string{"User not found"})
+				response.RespondWithError(w, http.StatusNotFound, []string{"User not found"})
 			default:
-				h.respondWithError(
+				response.RespondWithError(
 					w,
 					http.StatusInternalServerError,
 					[]string{"Internal server error"},
@@ -306,55 +333,11 @@ func (h *userHandler) UpdateCurrentUser() http.HandlerFunc {
 		if err := json.NewEncoder(w).Encode(UserResponse{
 			User: *user,
 		}); err != nil {
-			h.respondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+			response.RespondWithError(
+				w,
+				http.StatusInternalServerError,
+				[]string{"Internal server error"},
+			)
 		}
-	}
-}
-
-// translateValidationErrors translates validation errors into a list of error messages
-func (h *userHandler) translateValidationErrors(err error) []string {
-	var validationErrors []string
-
-	if validationErrs, ok := err.(validator.ValidationErrors); ok {
-		for _, e := range validationErrs {
-			switch e.Tag() {
-			case "required":
-				validationErrors = append(
-					validationErrors,
-					fmt.Sprintf("%s is required", e.Field()),
-				)
-			case "email":
-				validationErrors = append(
-					validationErrors,
-					fmt.Sprintf("%s is not a valid email", e.Value()),
-				)
-			case "min":
-				validationErrors = append(
-					validationErrors,
-					fmt.Sprintf("%s must be at least %s characters long", e.Field(), e.Param()),
-				)
-			default:
-				validationErrors = append(
-					validationErrors,
-					fmt.Sprintf("%s is not valid", e.Field()),
-				)
-			}
-		}
-	} else {
-		validationErrors = append(validationErrors, "Invalid request body")
-	}
-
-	return validationErrors
-}
-
-// respondWithError sends an error response with the given status code and errors
-func (h *userHandler) respondWithError(w http.ResponseWriter, status int, errors []string) {
-	w.WriteHeader(status)
-
-	response := response.GenericErrorModel{}
-	response.Errors.Body = errors
-
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		log.Printf("Failed to encode response: %v", err)
 	}
 }
