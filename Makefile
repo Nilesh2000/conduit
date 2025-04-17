@@ -45,7 +45,7 @@ deps:
 	$(GO) mod tidy
 
 # Build application
-build:
+build: fmt lint
 	@echo "Building application..."
 	$(GO) build -o $(BIN) ./cmd/...
 
