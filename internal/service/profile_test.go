@@ -44,6 +44,163 @@ func (m *MockProfileRepository) UnfollowUser(
 	return m.unfollowUserFunc(ctx, followerID, followingName)
 }
 
+// Test_profileService_GetByUsername tests the GetByUsername method of the profileService
+func Test_profileService_GetProfile(t *testing.T) {
+	tests := []struct {
+		name          string
+		username      string
+		currentUserID int64
+		setupMock     func() *MockProfileRepository
+		expectedError error
+		validate      func(*testing.T, *Profile)
+	}{
+		{
+			name:          "Profile found (not following)",
+			username:      "testuser",
+			currentUserID: 2,
+			setupMock: func() *MockProfileRepository {
+				return &MockProfileRepository{
+					getByUsernameFunc: func(ctx context.Context, username string, currentUserID int64) (*repository.Profile, error) {
+						if username != "testuser" {
+							t.Errorf("Expected username to be testuser, got %q", username)
+						}
+						if currentUserID != 2 {
+							t.Errorf("Expected currentUserID to be 1, got %d", currentUserID)
+						}
+
+						return &repository.Profile{
+							ID:        1,
+							Username:  "testuser",
+							Bio:       "Test bio",
+							Image:     "https://example.com/testuser.jpg",
+							Following: false,
+						}, nil
+					},
+				}
+			},
+			expectedError: nil,
+			validate: func(t *testing.T, profile *Profile) {
+				if profile.Username != "testuser" {
+					t.Errorf("Expected username to be testuser, got %q", profile.Username)
+				}
+				if profile.Bio != "Test bio" {
+					t.Errorf("Expected bio to be Test bio, got %q", profile.Bio)
+				}
+				if profile.Image != "https://example.com/testuser.jpg" {
+					t.Errorf(
+						"Expected image to be https://example.com/testuser.jpg, got %q",
+						profile.Image,
+					)
+				}
+				if profile.Following {
+					t.Errorf("Expected following to be false, got true")
+				}
+			},
+		},
+		{
+			name:          "Profile found (following)",
+			username:      "followeduser",
+			currentUserID: 1,
+			setupMock: func() *MockProfileRepository {
+				return &MockProfileRepository{
+					getByUsernameFunc: func(ctx context.Context, username string, currentUserID int64) (*repository.Profile, error) {
+						if username != "followeduser" {
+							t.Errorf("Expected username to be followeduser, got %q", username)
+						}
+						if currentUserID != 1 {
+							t.Errorf("Expected currentUserID to be 1, got %d", currentUserID)
+						}
+
+						return &repository.Profile{
+							ID:        2,
+							Username:  "followeduser",
+							Bio:       "Another bio",
+							Image:     "https://example.com/another.jpg",
+							Following: true,
+						}, nil
+					},
+				}
+			},
+			expectedError: nil,
+			validate: func(t *testing.T, profile *Profile) {
+				if profile.Username != "followeduser" {
+					t.Errorf("Expected username to be followeduser, got %q", profile.Username)
+				}
+				if profile.Bio != "Another bio" {
+					t.Errorf("Expected bio to be Another bio, got %q", profile.Bio)
+				}
+				if profile.Image != "https://example.com/another.jpg" {
+					t.Errorf(
+						"Expected image to be https://example.com/another.jpg, got %q",
+						profile.Image,
+					)
+				}
+				if !profile.Following {
+					t.Errorf("Expected following to be true, got false")
+				}
+			},
+		},
+		{
+			name:          "User not found",
+			username:      "nonexistentuser",
+			currentUserID: 1,
+			setupMock: func() *MockProfileRepository {
+				return &MockProfileRepository{
+					getByUsernameFunc: func(ctx context.Context, username string, currentUserID int64) (*repository.Profile, error) {
+						return nil, repository.ErrUserNotFound
+					},
+				}
+			},
+			expectedError: ErrUserNotFound,
+			validate:      nil,
+		},
+		{
+			name:          "Repository error",
+			username:      "testuser",
+			currentUserID: 1,
+			setupMock: func() *MockProfileRepository {
+				return &MockProfileRepository{
+					getByUsernameFunc: func(ctx context.Context, username string, currentUserID int64) (*repository.Profile, error) {
+						return nil, repository.ErrInternal
+					},
+				}
+			},
+			expectedError: ErrInternalServer,
+			validate:      nil,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			// Setup mock repository
+			mockRepo := tt.setupMock()
+
+			// Create service
+			service := NewProfileService(mockRepo)
+
+			// Call GetProfile
+			profile, err := service.GetProfile(
+				context.Background(),
+				tt.username,
+				tt.currentUserID,
+			)
+
+			// Validate results
+			if !errors.Is(err, tt.expectedError) {
+				t.Errorf("Expected error %v, got %v", tt.expectedError, err)
+			}
+
+			// Validate profile if expected
+			if err == nil && tt.validate != nil {
+				tt.validate(t, profile)
+			}
+		})
+	}
+}
+
 // Test_profileService_FollowUser tests the FollowUser method of the profileService
 func Test_profileService_FollowUser(t *testing.T) {
 	tests := []struct {
