@@ -234,3 +234,193 @@ func Test_profileHandler_GetProfile(t *testing.T) {
 		})
 	}
 }
+
+// Test_profileHandler_Follow tests the Follow method of the profileHandler
+func Test_profileHandler_Follow(t *testing.T) {
+	tests := []struct {
+		name             string
+		username         string
+		setupAuth        func(r *http.Request)
+		setupMock        func() *MockProfileService
+		expectedStatus   int
+		expectedResponse interface{}
+	}{
+		{
+			name:     "Successfully follow user",
+			username: "usertofollow",
+			setupAuth: func(r *http.Request) {
+				ctx := r.Context()
+				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
+				*r = *r.WithContext(ctx)
+			},
+			setupMock: func() *MockProfileService {
+				return &MockProfileService{
+					followUserFunc: func(ctx context.Context, followerID int64, followingName string) (*service.Profile, error) {
+						if followerID != 1 {
+							t.Errorf("Expected followerID 1, got %d", followerID)
+						}
+						if followingName != "usertofollow" {
+							t.Errorf("Expected followingName 'usertofollow', got %q", followingName)
+						}
+
+						return &service.Profile{
+							Username:  "usertofollow",
+							Bio:       "Their bio",
+							Image:     "https://example.com/their-image.jpg",
+							Following: true,
+						}, nil
+					},
+				}
+			},
+			expectedStatus: http.StatusOK,
+			expectedResponse: ProfileResponse{
+				Profile: service.Profile{
+					Username:  "usertofollow",
+					Bio:       "Their bio",
+					Image:     "https://example.com/their-image.jpg",
+					Following: true,
+				},
+			},
+		},
+		{
+			name:     "Unauthenticated User",
+			username: "usertofollow",
+			setupAuth: func(r *http.Request) {
+				// Do not add user ID to context
+			},
+			setupMock: func() *MockProfileService {
+				return &MockProfileService{
+					followUserFunc: func(ctx context.Context, followerID int64, followingName string) (*service.Profile, error) {
+						t.Error("Service should not be called for unauthenticated request")
+						return nil, nil
+					},
+				}
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedResponse: response.GenericErrorModel{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"Unauthorized"}},
+			},
+		},
+		{
+			name:     "User not found",
+			username: "nonexistentuser",
+			setupAuth: func(r *http.Request) {
+				ctx := r.Context()
+				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
+				*r = *r.WithContext(ctx)
+			},
+			setupMock: func() *MockProfileService {
+				return &MockProfileService{
+					followUserFunc: func(ctx context.Context, followerID int64, followingName string) (*service.Profile, error) {
+						return nil, service.ErrUserNotFound
+					},
+				}
+			},
+			expectedStatus: http.StatusNotFound,
+			expectedResponse: response.GenericErrorModel{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"User not found"}},
+			},
+		},
+		{
+			name:     "Cannot follow self",
+			username: "currentuser",
+			setupAuth: func(r *http.Request) {
+				ctx := r.Context()
+				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
+				*r = *r.WithContext(ctx)
+			},
+			setupMock: func() *MockProfileService {
+				return &MockProfileService{
+					followUserFunc: func(ctx context.Context, followerID int64, followingName string) (*service.Profile, error) {
+						return nil, service.ErrCannotFollowSelf
+					},
+				}
+			},
+			expectedStatus: http.StatusBadRequest,
+			expectedResponse: response.GenericErrorModel{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"Cannot follow yourself"}},
+			},
+		},
+		{
+			name:     "Internal server error",
+			username: "usertofollow",
+			setupAuth: func(r *http.Request) {
+				ctx := r.Context()
+				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
+				*r = *r.WithContext(ctx)
+			},
+			setupMock: func() *MockProfileService {
+				return &MockProfileService{
+					followUserFunc: func(ctx context.Context, followerID int64, followingName string) (*service.Profile, error) {
+						return nil, service.ErrInternalServer
+					},
+				}
+			},
+			expectedStatus: http.StatusInternalServerError,
+			expectedResponse: response.GenericErrorModel{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"Internal server error"}},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			// Setup mock service
+			mockService := tt.setupMock()
+
+			// Create handler
+			profileHandler := NewProfileHandler(mockService)
+
+			// Create request
+			req := httptest.NewRequest(http.MethodPost, "/api/profiles/"+tt.username+"/follow", nil)
+
+			// Add authorization token and setup context
+			if tt.setupAuth != nil {
+				tt.setupAuth(req)
+			}
+
+			// Create response recorder
+			rr := httptest.NewRecorder()
+
+			// Serve request
+			handler := profileHandler.Follow()
+			handler.ServeHTTP(rr, req)
+
+			// Check status code
+			if got, want := rr.Code, tt.expectedStatus; got != want {
+				t.Errorf("Status code: got %v, want %v", got, want)
+			}
+
+			// Check response body
+			var got interface{}
+			if tt.expectedStatus == http.StatusOK {
+				var resp ProfileResponse
+				if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
+					t.Errorf("Failed to unmarshal response: %v", err)
+				}
+				got = resp
+			} else {
+				var resp response.GenericErrorModel
+				if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
+					t.Errorf("Failed to unmarshal response: %v", err)
+				}
+				got = resp
+			}
+
+			if !reflect.DeepEqual(got, tt.expectedResponse) {
+				t.Errorf("Response body: got %v, want %v", got, tt.expectedResponse)
+			}
+		})
+	}
+}
