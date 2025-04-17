@@ -176,7 +176,7 @@ func (h *profileHandler) Unfollow() http.HandlerFunc {
 			case errors.Is(err, service.ErrCannotFollowSelf):
 				response.RespondWithError(
 					w,
-					http.StatusForbidden,
+					http.StatusBadRequest,
 					[]string{"Cannot unfollow yourself"},
 				)
 			default:
