@@ -445,9 +445,121 @@ func Test_userService_Login(t *testing.T) {
 	}
 }
 
+// Test_userService_GetCurrentUser tests the GetCurrentUser method of the userService
 func Test_userService_GetCurrentUser(t *testing.T) {
+	t.Parallel()
+
+	const (
+		jwtSecret     = "test-secret"
+		jwtExpiration = time.Hour * 24
+	)
+
+	tests := []struct {
+		name          string
+		userID        int64
+		setupMock     func() *MockUserRepository
+		expectedError error
+		validateFunc  func(t *testing.T, u *User)
+	}{
+		{
+			name:   "Valid User ID",
+			userID: 1,
+			setupMock: func() *MockUserRepository {
+				return &MockUserRepository{
+					findByIDFunc: func(ctx context.Context, id int64) (*repository.User, error) {
+						if id != 1 {
+							t.Errorf("Expected UserID 1, got %d", id)
+						}
+
+						return &repository.User{
+							ID:       1,
+							Username: "testuser",
+							Email:    "test@example.com",
+							Password: "password123",
+							Bio:      "I'm a test user",
+							Image:    "https://example.com/image.jpg",
+						}, nil
+					},
+				}
+			},
+			expectedError: nil,
+			validateFunc: func(t *testing.T, u *User) {
+				if u.Email != "test@example.com" {
+					t.Errorf("Expected Email 'test@example.com', got %q", u.Email)
+				}
+				if u.Username != "testuser" {
+					t.Errorf("Expected Username 'testuser', got %q", u.Username)
+				}
+				if u.Bio != "I'm a test user" {
+					t.Errorf("Expected bio 'I'm a test user', got %q", u.Bio)
+				}
+				if u.Image != "https://example.com/image.jpg" {
+					t.Errorf("Expected image 'https://example.com/image.jpg', got %q", u.Image)
+				}
+				if u.Token != "" {
+					t.Errorf("Expected token to be empty, got %q", u.Token)
+				}
+			},
+		},
+		{
+			name:   "User not found",
+			userID: 999,
+			setupMock: func() *MockUserRepository {
+				return &MockUserRepository{
+					findByIDFunc: func(ctx context.Context, id int64) (*repository.User, error) {
+						return nil, repository.ErrUserNotFound
+					},
+				}
+			},
+			expectedError: ErrUserNotFound,
+			validateFunc:  nil,
+		},
+		{
+			name:   "Repository error",
+			userID: 1,
+			setupMock: func() *MockUserRepository {
+				return &MockUserRepository{
+					findByIDFunc: func(ctx context.Context, id int64) (*repository.User, error) {
+						return nil, repository.ErrInternal
+					},
+				}
+			},
+			expectedError: ErrInternalServer,
+			validateFunc:  nil,
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			// Setup mock repository
+			mockUserRepository := tt.setupMock()
+
+			// Create service with mock repository
+			userService := NewUserService(mockUserRepository, jwtSecret, jwtExpiration)
+
+			// Create context
+			ctx := context.Background()
+
+			// Call GetCurrentUser
+			user, err := userService.GetCurrentUser(ctx, tt.userID)
+
+			// Validate error
+			if !errors.Is(err, tt.expectedError) {
+				t.Errorf("Expected error %v, got %v", tt.expectedError, err)
+			}
+
+			// Validate user if expected
+			if err == nil && tt.validateFunc != nil {
+				tt.validateFunc(t, user)
+			}
+		})
+	}
 }
 
+// Test_userService_UpdateUser tests the UpdateUser method of the userService
 func Test_userService_UpdateUser(t *testing.T) {
 	t.Parallel()
 
