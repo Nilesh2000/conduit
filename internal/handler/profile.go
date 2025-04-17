@@ -118,7 +118,7 @@ func (h *profileHandler) Follow() http.HandlerFunc {
 			case errors.Is(err, service.ErrCannotFollowSelf):
 				response.RespondWithError(
 					w,
-					http.StatusForbidden,
+					http.StatusBadRequest,
 					[]string{"Cannot follow yourself"},
 				)
 			default:
