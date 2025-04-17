@@ -316,6 +316,32 @@ func Test_articleService_GetArticle(t *testing.T) {
 				}
 			},
 		},
+		{
+			name: "Article not found",
+			slug: "non-existent-article",
+			setupMock: func() *MockArticleRepository {
+				return &MockArticleRepository{
+					getBySlugFunc: func(ctx context.Context, slug string) (*repository.Article, error) {
+						return nil, repository.ErrArticleNotFound
+					},
+				}
+			},
+			expectedErr: ErrArticleNotFound,
+			validate:    nil,
+		},
+		{
+			name: "Repository error",
+			slug: "test-article",
+			setupMock: func() *MockArticleRepository {
+				return &MockArticleRepository{
+					getBySlugFunc: func(ctx context.Context, slug string) (*repository.Article, error) {
+						return nil, repository.ErrInternal
+					},
+				}
+			},
+			expectedErr: ErrInternalServer,
+			validate:    nil,
+		},
 	}
 
 	for _, tt := range tests {
