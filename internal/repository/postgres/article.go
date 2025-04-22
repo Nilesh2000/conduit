@@ -54,6 +54,7 @@ func (r *articleRepository) Create(
 
 	now := time.Now()
 	var article repository.Article
+	article.Author = &repository.User{}
 	var authorBio, authorImage sql.NullString
 
 	err = tx.QueryRowContext(ctx, query, slug, title, description, body, userID, now, now).
@@ -97,8 +98,8 @@ func (r *articleRepository) Create(
 	}
 
 	// Add tags if any
-	if len(article.TagList) > 0 {
-		for _, tag := range article.TagList {
+	if len(tagList) > 0 {
+		for _, tag := range tagList {
 			var tagID int64
 			// Insert or update tag and get its ID
 			err := tx.QueryRowContext(ctx, "INSERT INTO tags (name) VALUES ($1) ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name RETURNING id", tag).
@@ -118,6 +119,9 @@ func (r *articleRepository) Create(
 				return nil, repository.ErrInternal
 			}
 		}
+
+		// Set the TagList field
+		article.TagList = tagList
 	}
 
 	// Commit the transaction
