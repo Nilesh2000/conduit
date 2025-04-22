@@ -224,7 +224,7 @@ func Test_userRepository_Create(t *testing.T) {
 }
 
 // TestFindByEmail tests the FindByEmail method of the UserRepository
-func TestFindByEmail(t *testing.T) {
+func Test_userRepository_FindByEmail(t *testing.T) {
 	t.Parallel()
 
 	// Define test cases
