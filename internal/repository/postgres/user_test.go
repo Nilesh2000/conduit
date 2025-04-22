@@ -348,3 +348,135 @@ func Test_userRepository_FindByEmail(t *testing.T) {
 		})
 	}
 }
+
+// TestFindByID tests the FindByID method of the UserRepository
+func Test_userRepository_FindByID(t *testing.T) {
+	t.Parallel()
+
+	// Define test cases
+	tests := []struct {
+		name         string
+		id           int64
+		mockSetup    func(mock sqlmock.Sqlmock)
+		expectedErr  error
+		validateUser func(*testing.T, *repository.User)
+	}{
+		{
+			name: "User found",
+			id:   1,
+			mockSetup: func(mock sqlmock.Sqlmock) {
+				rows := sqlmock.NewRows([]string{"id", "username", "email", "password", "bio", "image", "created_at", "updated_at"}).
+					AddRow(1, "testuser", "test@example.com", "hashedPassword", "Test bio", "test.jpg", time.Now(), time.Now())
+				mock.ExpectQuery(`SELECT id, username, email, password, bio, image, created_at, updated_at FROM users WHERE id = \$1`).
+					WithArgs(1).
+					WillReturnRows(rows)
+			},
+			expectedErr: nil,
+			validateUser: func(t *testing.T, user *repository.User) {
+				if user.ID != 1 {
+					t.Errorf("Expected ID 1, got %d", user.ID)
+				}
+				if user.Username != "testuser" {
+					t.Errorf("Expected username testuser, got %q", user.Username)
+				}
+				if user.Email != "test@example.com" {
+					t.Errorf("Expected email test@example.com, got %q", user.Email)
+				}
+				if user.Bio != "Test bio" {
+					t.Errorf("Expected bio 'Test bio', got %q", user.Bio)
+				}
+				if user.Image != "test.jpg" {
+					t.Errorf("Expected image 'test.jpg', got %q", user.Image)
+				}
+				if user.CreatedAt.IsZero() {
+					t.Errorf("Expected non-zero created_at, got %v", user.CreatedAt)
+				}
+				if user.UpdatedAt.IsZero() {
+					t.Errorf("Expected non-zero updated_at, got %v", user.UpdatedAt)
+				}
+			},
+		},
+		{
+			name: "User not found",
+			id:   999,
+			mockSetup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(`SELECT id, username, email, password, bio, image, created_at, updated_at FROM users WHERE id = \$1`).
+					WithArgs(999).
+					WillReturnError(sql.ErrNoRows)
+			},
+			expectedErr:  repository.ErrUserNotFound,
+			validateUser: nil,
+		},
+		{
+			name: "Database Error",
+			id:   1,
+			mockSetup: func(mock sqlmock.Sqlmock) {
+				mock.ExpectQuery(`SELECT id, username, email, password, bio, image, created_at, updated_at FROM users WHERE id = \$1`).
+					WithArgs(1).
+					WillReturnError(errors.New("database error"))
+			},
+			expectedErr:  repository.ErrInternal,
+			validateUser: nil,
+		},
+		{
+			name: "Null bio and image",
+			id:   2,
+			mockSetup: func(mock sqlmock.Sqlmock) {
+				rows := sqlmock.NewRows([]string{"id", "username", "email", "password", "bio", "image", "created_at", "updated_at"}).
+					AddRow(2, "testuser", "test@example.com", "hashedPassword", nil, nil, time.Now(), time.Now())
+				mock.ExpectQuery(`SELECT id, username, email, password, bio, image, created_at, updated_at FROM users WHERE id = \$1`).
+					WithArgs(2).
+					WillReturnRows(rows)
+			},
+			expectedErr: nil,
+			validateUser: func(t *testing.T, user *repository.User) {
+				if user.Bio != "" {
+					t.Errorf("Expected empty bio, got %q", user.Bio)
+				}
+				if user.Image != "" {
+					t.Errorf("Expected empty image, got %q", user.Image)
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			// Setup mock database for this test case
+			db, mock := setupTestDB(t)
+			defer db.Close()
+
+			// Setup mock expectations
+			if tt.mockSetup != nil {
+				tt.mockSetup(mock)
+			}
+
+			// Create repository with mock database
+			repo := NewUserRepository(db)
+
+			// Create context
+			ctx := context.Background()
+
+			// Call FindByID method
+			user, err := repo.FindByID(ctx, tt.id)
+
+			// Validate error
+			if !errors.Is(err, tt.expectedErr) {
+				t.Errorf("Expected error %v, got %v", tt.expectedErr, err)
+			}
+
+			// Validate user if no error
+			if err == nil && tt.validateUser != nil {
+				tt.validateUser(t, user)
+			}
+
+			// Ensure all expectations were met
+			if err := mock.ExpectationsWereMet(); err != nil {
+				t.Errorf("Unfulfilled expectations: %v", err)
+			}
+		})
+	}
+}
