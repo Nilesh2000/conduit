@@ -1,4 +1,4 @@
-module conduit
+module github.com/Nilesh2000/conduit
 
 go 1.24.1
 

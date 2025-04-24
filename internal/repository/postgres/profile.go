@@ -6,7 +6,7 @@ import (
 	"errors"
 	"log"
 
-	"conduit/internal/repository"
+	"github.com/Nilesh2000/conduit/internal/repository"
 
 	"github.com/lib/pq"
 )

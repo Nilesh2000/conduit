@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"conduit/internal/response"
+	"github.com/Nilesh2000/conduit/internal/response"
 
 	"github.com/golang-jwt/jwt"
 )

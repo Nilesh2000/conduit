@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"conduit/internal/repository"
+	"github.com/Nilesh2000/conduit/internal/repository"
 )
 
 // ProfileRepository is an interface for the profile repository

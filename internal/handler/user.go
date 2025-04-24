@@ -7,10 +7,10 @@ import (
 	"net/http"
 	"strings"
 
-	"conduit/internal/middleware"
-	"conduit/internal/response"
-	"conduit/internal/service"
-	"conduit/internal/validation"
+	"github.com/Nilesh2000/conduit/internal/middleware"
+	"github.com/Nilesh2000/conduit/internal/response"
+	"github.com/Nilesh2000/conduit/internal/service"
+	"github.com/Nilesh2000/conduit/internal/validation"
 
 	"github.com/go-playground/validator/v10"
 )

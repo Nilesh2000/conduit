@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"conduit/internal/repository"
+	"github.com/Nilesh2000/conduit/internal/repository"
 )
 
 // MockProfileRepository is a mock implementation of the ProfileRepository interface

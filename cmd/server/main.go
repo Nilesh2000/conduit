@@ -10,11 +10,11 @@ import (
 	"syscall"
 	"time"
 
-	"conduit/internal/config"
-	"conduit/internal/handler"
-	"conduit/internal/middleware"
-	"conduit/internal/repository/postgres"
-	"conduit/internal/service"
+	"github.com/Nilesh2000/conduit/internal/config"
+	"github.com/Nilesh2000/conduit/internal/handler"
+	"github.com/Nilesh2000/conduit/internal/middleware"
+	"github.com/Nilesh2000/conduit/internal/repository/postgres"
+	"github.com/Nilesh2000/conduit/internal/service"
 )
 
 type Profile struct {
