@@ -50,6 +50,8 @@ func (m *MockProfileService) UnfollowUser(
 
 // Test_profileHandler_GetProfile tests the GetProfile method of the profileHandler
 func Test_profileHandler_GetProfile(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name             string
 		username         string
@@ -237,6 +239,8 @@ func Test_profileHandler_GetProfile(t *testing.T) {
 
 // Test_profileHandler_Follow tests the Follow method of the profileHandler
 func Test_profileHandler_Follow(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name             string
 		username         string
@@ -427,6 +431,8 @@ func Test_profileHandler_Follow(t *testing.T) {
 
 // Test_profileHandler_Unfollow tests the Unfollow method of the profileHandler
 func Test_profileHandler_Unfollow(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name             string
 		username         string
