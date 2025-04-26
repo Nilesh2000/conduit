@@ -105,11 +105,7 @@ func Test_profileHandler_GetProfile(t *testing.T) {
 			name:     "Profile found (unauthenticated)",
 			username: "testuser",
 			setupAuth: func(r *http.Request) *http.Request {
-				r.Header.Set("Authorization", "Token testtoken")
-
-				ctx := r.Context()
-				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				r = r.WithContext(ctx)
+				// Don't add user ID to context to simulate unauthenticated request
 				return r
 			},
 			setupMock: func() *MockProfileService {
@@ -304,11 +300,7 @@ func Test_profileHandler_Follow(t *testing.T) {
 			name:     "Unauthenticated User",
 			username: "usertofollow",
 			setupAuth: func(r *http.Request) *http.Request {
-				r.Header.Set("Authorization", "Token testtoken")
-
-				ctx := r.Context()
-				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				r = r.WithContext(ctx)
+				// Don't add user ID to context to simulate unauthenticated request
 				return r
 			},
 			setupMock: func() *MockProfileService {
@@ -516,11 +508,7 @@ func Test_profileHandler_Unfollow(t *testing.T) {
 			name:     "Unauthenticated User",
 			username: "usertounfollow",
 			setupAuth: func(r *http.Request) *http.Request {
-				r.Header.Set("Authorization", "Token testtoken")
-
-				ctx := r.Context()
-				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				r = r.WithContext(ctx)
+				// Don't add user ID to context to simulate unauthenticated request
 				return r
 			},
 			setupMock: func() *MockProfileService {

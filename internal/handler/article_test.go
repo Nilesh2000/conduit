@@ -141,11 +141,7 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 				}
 			}`,
 			setupAuth: func(r *http.Request) *http.Request {
-				r.Header.Set("Authorization", "Token jwt.token.here")
-
-				ctx := r.Context()
-				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				r = r.WithContext(ctx)
+				// Don't add user ID to context to simulate unauthenticated request
 				return r
 			},
 			setupMock: func() *MockArticleService {
