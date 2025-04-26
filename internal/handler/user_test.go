@@ -62,7 +62,7 @@ func TestUserHandler_Register(t *testing.T) {
 	tests := []struct {
 		name             string
 		requestBody      string
-		setupMock        func() *MockUserService
+		mockUserService  func() *MockUserService
 		expectedStatus   int
 		expectedResponse interface{}
 	}{
@@ -75,7 +75,7 @@ func TestUserHandler_Register(t *testing.T) {
 					"password": "password123"
 				}
 			}`,
-			setupMock: func() *MockUserService {
+			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
 					registerFunc: func(ctx context.Context, username, email, password string) (*service.User, error) {
 						if username != "testuser" || email != "test@example.com" ||
@@ -121,7 +121,7 @@ func TestUserHandler_Register(t *testing.T) {
 					"password": "password123",
 				}
 			}`,
-			setupMock: func() *MockUserService {
+			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
 					registerFunc: func(ctx context.Context, username, email, password string) (*service.User, error) {
 						t.Errorf("Register should not be called for invalid JSON")
@@ -144,7 +144,7 @@ func TestUserHandler_Register(t *testing.T) {
 					"email": "test@example.com"
 				}
 			}`,
-			setupMock: func() *MockUserService {
+			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
 					registerFunc: func(ctx context.Context, username, email, password string) (*service.User, error) {
 						t.Errorf("Register should not be called for missing required fields")
@@ -169,7 +169,7 @@ func TestUserHandler_Register(t *testing.T) {
 						"password": "password123"
 					}
 				}`,
-			setupMock: func() *MockUserService {
+			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
 					registerFunc: func(ctx context.Context, username, email, password string) (*service.User, error) {
 						t.Errorf("Register should not be called for invalid email")
@@ -194,7 +194,7 @@ func TestUserHandler_Register(t *testing.T) {
 					"password": "short"
 				}
 			}`,
-			setupMock: func() *MockUserService {
+			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
 					registerFunc: func(ctx context.Context, username, email, password string) (*service.User, error) {
 						t.Errorf("Register should not be called for short password")
@@ -219,7 +219,7 @@ func TestUserHandler_Register(t *testing.T) {
 					"password": "password123"
 				}
 			}`,
-			setupMock: func() *MockUserService {
+			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
 					registerFunc: func(ctx context.Context, username, email, password string) (*service.User, error) {
 						return nil, service.ErrUsernameTaken
@@ -243,7 +243,7 @@ func TestUserHandler_Register(t *testing.T) {
 					"password": "password123"
 				}
 			}`,
-			setupMock: func() *MockUserService {
+			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
 					registerFunc: func(ctx context.Context, username, email, password string) (*service.User, error) {
 						return nil, service.ErrEmailTaken
@@ -267,7 +267,7 @@ func TestUserHandler_Register(t *testing.T) {
 					"password": "password123"
 				}
 			}`,
-			setupMock: func() *MockUserService {
+			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
 					registerFunc: func(ctx context.Context, username, email, password string) (*service.User, error) {
 						return nil, service.ErrInternalServer
@@ -290,7 +290,7 @@ func TestUserHandler_Register(t *testing.T) {
 			t.Parallel()
 
 			// Setup mock service
-			mockUserService := tt.setupMock()
+			mockUserService := tt.mockUserService()
 
 			// Create handler
 			userHandler := NewUserHandler(mockUserService)
@@ -345,7 +345,7 @@ func TestUserHandler_Login(t *testing.T) {
 	tests := []struct {
 		name             string
 		requestBody      string
-		setupMock        func() *MockUserService
+		mockUserService  func() *MockUserService
 		expectedStatus   int
 		expectedResponse interface{}
 	}{
@@ -357,7 +357,7 @@ func TestUserHandler_Login(t *testing.T) {
 					"password": "password123"
 				}
 			}`,
-			setupMock: func() *MockUserService {
+			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
 					loginFunc: func(ctx context.Context, email, password string) (*service.User, error) {
 						if email != "test@example.com" || password != "password123" {
@@ -399,7 +399,7 @@ func TestUserHandler_Login(t *testing.T) {
 					"password": "password123",
 				}
 			}`,
-			setupMock: func() *MockUserService {
+			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
 					loginFunc: func(ctx context.Context, email, password string) (*service.User, error) {
 						t.Errorf("Login should not be called for invalid JSON")
@@ -422,7 +422,7 @@ func TestUserHandler_Login(t *testing.T) {
 					"email": "test@example.com"
 				}
 			}`,
-			setupMock: func() *MockUserService {
+			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
 					loginFunc: func(ctx context.Context, email, password string) (*service.User, error) {
 						t.Errorf("Login should not be called for missing required fields")
@@ -446,7 +446,7 @@ func TestUserHandler_Login(t *testing.T) {
 					"password": "wrongpassword"
 				}
 			}`,
-			setupMock: func() *MockUserService {
+			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
 					loginFunc: func(ctx context.Context, email, password string) (*service.User, error) {
 						return nil, service.ErrInvalidCredentials
@@ -469,7 +469,7 @@ func TestUserHandler_Login(t *testing.T) {
 					"password": "password123"
 				}
 			}`,
-			setupMock: func() *MockUserService {
+			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
 					loginFunc: func(ctx context.Context, email, password string) (*service.User, error) {
 						return nil, service.ErrUserNotFound
@@ -492,7 +492,7 @@ func TestUserHandler_Login(t *testing.T) {
 					"password": "password123"
 				}
 			}`,
-			setupMock: func() *MockUserService {
+			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
 					loginFunc: func(ctx context.Context, email, password string) (*service.User, error) {
 						return nil, service.ErrInternalServer
@@ -515,7 +515,7 @@ func TestUserHandler_Login(t *testing.T) {
 			t.Parallel()
 
 			// Setup mock service
-			mockUserService := tt.setupMock()
+			mockUserService := tt.mockUserService()
 
 			// Create handler
 			userHandler := NewUserHandler(mockUserService)
@@ -569,8 +569,8 @@ func TestUserHandler_GetCurrentUser(t *testing.T) {
 
 	tests := []struct {
 		name             string
-		setupMock        func() *MockUserService
 		setupAuth        func(r *http.Request)
+		mockUserService  func() *MockUserService
 		expectedStatus   int
 		expectedResponse interface{}
 	}{
@@ -582,7 +582,7 @@ func TestUserHandler_GetCurrentUser(t *testing.T) {
 				*r = *r.WithContext(ctx)
 				r.Header.Set("Authorization", "Token jwt.token.here")
 			},
-			setupMock: func() *MockUserService {
+			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
 					getCurrentUserFunc: func(ctx context.Context, userID int64) (*service.User, error) {
 						if userID != 1 {
@@ -614,7 +614,7 @@ func TestUserHandler_GetCurrentUser(t *testing.T) {
 			setupAuth: func(r *http.Request) {
 				// Don't add user ID to context to simulate unauthenticated request
 			},
-			setupMock: func() *MockUserService {
+			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
 					getCurrentUserFunc: func(ctx context.Context, userID int64) (*service.User, error) {
 						t.Errorf("Service should not be called for unauthenticated request")
@@ -638,7 +638,7 @@ func TestUserHandler_GetCurrentUser(t *testing.T) {
 				*r = *r.WithContext(ctx)
 				r.Header.Set("Authorization", "Token jwt.token.here")
 			},
-			setupMock: func() *MockUserService {
+			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
 					getCurrentUserFunc: func(ctx context.Context, userID int64) (*service.User, error) {
 						return nil, service.ErrUserNotFound
@@ -661,7 +661,7 @@ func TestUserHandler_GetCurrentUser(t *testing.T) {
 				*r = *r.WithContext(ctx)
 				r.Header.Set("Authorization", "Token jwt.token.here")
 			},
-			setupMock: func() *MockUserService {
+			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
 					getCurrentUserFunc: func(ctx context.Context, userID int64) (*service.User, error) {
 						return nil, service.ErrInternalServer
@@ -684,7 +684,7 @@ func TestUserHandler_GetCurrentUser(t *testing.T) {
 			t.Parallel()
 
 			// Setup mock service
-			mockUserService := tt.setupMock()
+			mockUserService := tt.mockUserService()
 
 			// Create handler
 			userHandler := NewUserHandler(mockUserService)
@@ -738,7 +738,7 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 		name             string
 		requestBody      string
 		setupAuth        func(r *http.Request)
-		setupMock        func() *MockUserService
+		mockUserService  func() *MockUserService
 		expectedStatus   int
 		expectedResponse interface{}
 	}{
@@ -759,7 +759,7 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 				*r = *r.WithContext(ctx)
 				r.Header.Set("Authorization", "Token jwt.token.here")
 			},
-			setupMock: func() *MockUserService {
+			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
 					updateUserFunc: func(ctx context.Context, userID int64, username, email, password, bio, image *string) (*service.User, error) {
 						if userID != 1 {
@@ -818,7 +818,7 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 				*r = *r.WithContext(ctx)
 				r.Header.Set("Authorization", "Token jwt.token.here")
 			},
-			setupMock: func() *MockUserService {
+			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
 					updateUserFunc: func(ctx context.Context, userID int64, username, email, password, bio, image *string) (*service.User, error) {
 						if *email != "newmail@example.com" {
@@ -862,7 +862,7 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 			setupAuth: func(r *http.Request) {
 				// Don't add user ID to context to simulate unauthenticated request
 			},
-			setupMock: func() *MockUserService {
+			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
 					updateUserFunc: func(ctx context.Context, userID int64, username, email, password, bio, image *string) (*service.User, error) {
 						t.Errorf("Service should not be called for unauthenticated request")
@@ -891,7 +891,7 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 				*r = *r.WithContext(ctx)
 				r.Header.Set("Authorization", "Token jwt.token.here")
 			},
-			setupMock: func() *MockUserService {
+			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
 					updateUserFunc: func(ctx context.Context, userID int64, username, email, password, bio, image *string) (*service.User, error) {
 						t.Errorf("Service should not be called for invalid request JSON")
@@ -920,7 +920,7 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 				*r = *r.WithContext(ctx)
 				r.Header.Set("Authorization", "Token jwt.token.here")
 			},
-			setupMock: func() *MockUserService {
+			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
 					updateUserFunc: func(ctx context.Context, userID int64, username, email, password, bio, image *string) (*service.User, error) {
 						t.Errorf("Service should not be called for invalid email")
@@ -949,7 +949,7 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 				*r = *r.WithContext(ctx)
 				r.Header.Set("Authorization", "Token jwt.token.here")
 			},
-			setupMock: func() *MockUserService {
+			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
 					updateUserFunc: func(ctx context.Context, userID int64, username, email, password, bio, image *string) (*service.User, error) {
 						return nil, service.ErrUserNotFound
@@ -977,7 +977,7 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 				*r = *r.WithContext(ctx)
 				r.Header.Set("Authorization", "Token jwt.token.here")
 			},
-			setupMock: func() *MockUserService {
+			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
 					updateUserFunc: func(ctx context.Context, userID int64, username, email, password, bio, image *string) (*service.User, error) {
 						return nil, service.ErrUsernameTaken
@@ -1005,7 +1005,7 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 				*r = *r.WithContext(ctx)
 				r.Header.Set("Authorization", "Token jwt.token.here")
 			},
-			setupMock: func() *MockUserService {
+			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
 					updateUserFunc: func(ctx context.Context, userID int64, username, email, password, bio, image *string) (*service.User, error) {
 						return nil, service.ErrEmailTaken
@@ -1037,7 +1037,7 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 				*r = *r.WithContext(ctx)
 				r.Header.Set("Authorization", "Token jwt.token.here")
 			},
-			setupMock: func() *MockUserService {
+			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
 					updateUserFunc: func(ctx context.Context, userID int64, username, email, password, bio, image *string) (*service.User, error) {
 						return nil, service.ErrInternalServer
@@ -1060,7 +1060,7 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 			t.Parallel()
 
 			// Setup mock service
-			mockUserService := tt.setupMock()
+			mockUserService := tt.mockUserService()
 
 			// Create handler
 			userHandler := NewUserHandler(mockUserService)
