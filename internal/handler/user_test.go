@@ -569,18 +569,19 @@ func TestUserHandler_GetCurrentUser(t *testing.T) {
 
 	tests := []struct {
 		name             string
-		setupAuth        func(r *http.Request)
+		setupAuth        func(r *http.Request) *http.Request
 		mockUserService  func() *MockUserService
 		expectedStatus   int
 		expectedResponse interface{}
 	}{
 		{
 			name: "Valid current user",
-			setupAuth: func(r *http.Request) {
+			setupAuth: func(r *http.Request) *http.Request {
 				ctx := r.Context()
 				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				*r = *r.WithContext(ctx)
+				r = r.WithContext(ctx)
 				r.Header.Set("Authorization", "Token jwt.token.here")
+				return r
 			},
 			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
@@ -611,8 +612,9 @@ func TestUserHandler_GetCurrentUser(t *testing.T) {
 		},
 		{
 			name: "Unauthenticated request",
-			setupAuth: func(r *http.Request) {
+			setupAuth: func(r *http.Request) *http.Request {
 				// Don't add user ID to context to simulate unauthenticated request
+				return r
 			},
 			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
@@ -632,11 +634,12 @@ func TestUserHandler_GetCurrentUser(t *testing.T) {
 		},
 		{
 			name: "User not found",
-			setupAuth: func(r *http.Request) {
+			setupAuth: func(r *http.Request) *http.Request {
 				ctx := r.Context()
 				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				*r = *r.WithContext(ctx)
+				r = r.WithContext(ctx)
 				r.Header.Set("Authorization", "Token jwt.token.here")
+				return r
 			},
 			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
@@ -655,11 +658,12 @@ func TestUserHandler_GetCurrentUser(t *testing.T) {
 		},
 		{
 			name: "Internal server error",
-			setupAuth: func(r *http.Request) {
+			setupAuth: func(r *http.Request) *http.Request {
 				ctx := r.Context()
 				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				*r = *r.WithContext(ctx)
+				r = r.WithContext(ctx)
 				r.Header.Set("Authorization", "Token jwt.token.here")
+				return r
 			},
 			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
@@ -693,9 +697,7 @@ func TestUserHandler_GetCurrentUser(t *testing.T) {
 			req := httptest.NewRequest(http.MethodGet, "/api/user", nil)
 
 			// Add authorization and setup context
-			if tt.setupAuth != nil {
-				tt.setupAuth(req)
-			}
+			req = tt.setupAuth(req)
 
 			// Create response recorder
 			rr := httptest.NewRecorder()
@@ -737,7 +739,7 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 	tests := []struct {
 		name             string
 		requestBody      string
-		setupAuth        func(r *http.Request)
+		setupAuth        func(r *http.Request) *http.Request
 		mockUserService  func() *MockUserService
 		expectedStatus   int
 		expectedResponse interface{}
@@ -753,11 +755,12 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 					"image": "https://example.com/updated.jpg"
 				}
 			}`,
-			setupAuth: func(r *http.Request) {
+			setupAuth: func(r *http.Request) *http.Request {
 				ctx := r.Context()
 				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				*r = *r.WithContext(ctx)
+				r = r.WithContext(ctx)
 				r.Header.Set("Authorization", "Token jwt.token.here")
+				return r
 			},
 			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
@@ -812,11 +815,12 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 					"email": "newmail@example.com"
 				}
 			}`,
-			setupAuth: func(r *http.Request) {
+			setupAuth: func(r *http.Request) *http.Request {
 				ctx := r.Context()
 				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				*r = *r.WithContext(ctx)
+				r = r.WithContext(ctx)
 				r.Header.Set("Authorization", "Token jwt.token.here")
+				return r
 			},
 			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
@@ -859,8 +863,9 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 					"email": "newmail@example.com"
 				}
 			}`,
-			setupAuth: func(r *http.Request) {
+			setupAuth: func(r *http.Request) *http.Request {
 				// Don't add user ID to context to simulate unauthenticated request
+				return r
 			},
 			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
@@ -885,11 +890,12 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 					"email": "newmail@example.com",
 				}
 			}`,
-			setupAuth: func(r *http.Request) {
+			setupAuth: func(r *http.Request) *http.Request {
 				ctx := r.Context()
 				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				*r = *r.WithContext(ctx)
+				r = r.WithContext(ctx)
 				r.Header.Set("Authorization", "Token jwt.token.here")
+				return r
 			},
 			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
@@ -914,11 +920,12 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 					"email": "invalid-email"
 				}
 			}`,
-			setupAuth: func(r *http.Request) {
+			setupAuth: func(r *http.Request) *http.Request {
 				ctx := r.Context()
 				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				*r = *r.WithContext(ctx)
+				r = r.WithContext(ctx)
 				r.Header.Set("Authorization", "Token jwt.token.here")
+				return r
 			},
 			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
@@ -943,11 +950,12 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 					"username": "updateduser"
 				}
 			}`,
-			setupAuth: func(r *http.Request) {
+			setupAuth: func(r *http.Request) *http.Request {
 				ctx := r.Context()
 				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				*r = *r.WithContext(ctx)
+				r = r.WithContext(ctx)
 				r.Header.Set("Authorization", "Token jwt.token.here")
+				return r
 			},
 			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
@@ -971,11 +979,12 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 					"username": "existinguser"
 				}
 			}`,
-			setupAuth: func(r *http.Request) {
+			setupAuth: func(r *http.Request) *http.Request {
 				ctx := r.Context()
 				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				*r = *r.WithContext(ctx)
+				r = r.WithContext(ctx)
 				r.Header.Set("Authorization", "Token jwt.token.here")
+				return r
 			},
 			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
@@ -999,11 +1008,12 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 					"email": "existing@example.com"
 				}
 			}`,
-			setupAuth: func(r *http.Request) {
+			setupAuth: func(r *http.Request) *http.Request {
 				ctx := r.Context()
 				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				*r = *r.WithContext(ctx)
+				r = r.WithContext(ctx)
 				r.Header.Set("Authorization", "Token jwt.token.here")
+				return r
 			},
 			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
@@ -1031,11 +1041,12 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 					"image": "https://example.com/updated.jpg"
 				}
 			}`,
-			setupAuth: func(r *http.Request) {
+			setupAuth: func(r *http.Request) *http.Request {
 				ctx := r.Context()
 				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				*r = *r.WithContext(ctx)
+				r = r.WithContext(ctx)
 				r.Header.Set("Authorization", "Token jwt.token.here")
+				return r
 			},
 			mockUserService: func() *MockUserService {
 				mockService := &MockUserService{
@@ -1074,9 +1085,7 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 			req.Header.Set("Content-Type", "application/json")
 
 			// Add authorization token and setup context
-			if tt.setupAuth != nil {
-				tt.setupAuth(req)
-			}
+			req = tt.setupAuth(req)
 
 			// Create response recorder
 			rr := httptest.NewRecorder()
