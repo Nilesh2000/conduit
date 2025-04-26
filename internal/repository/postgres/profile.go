@@ -28,14 +28,14 @@ func (r *profileRepository) GetByUsername(
 	currentUserID int64,
 ) (*repository.Profile, error) {
 	query := `
-		SELECT id, username, bio, image, following
+		SELECT id, username, bio, image
 		FROM users
 		WHERE username = $1
 	`
 
 	var profile repository.Profile
 	err := r.db.QueryRowContext(ctx, query, username).
-		Scan(&profile.ID, &profile.Username, &profile.Bio, &profile.Image, &profile.Following)
+		Scan(&profile.ID, &profile.Username, &profile.Bio, &profile.Image)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, repository.ErrUserNotFound

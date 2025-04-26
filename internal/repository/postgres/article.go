@@ -188,7 +188,11 @@ func (r *articleRepository) GetBySlug(
 	if err != nil {
 		return nil, repository.ErrInternal
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			log.Printf("error closing rows: %v", err)
+		}
+	}()
 
 	var tagList []string
 	for rows.Next() {
