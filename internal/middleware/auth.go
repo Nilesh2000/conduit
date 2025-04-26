@@ -43,7 +43,7 @@ func RequireAuth(jwtSecret []byte) func(http.HandlerFunc) http.HandlerFunc {
 			token, err := jwt.ParseWithClaims(
 				tokenString,
 				&jwt.StandardClaims{},
-				func(token *jwt.Token) (interface{}, error) {
+				func(token *jwt.Token) (any, error) {
 					return jwtSecret, nil
 				},
 			)

@@ -48,7 +48,7 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 		setupAuth        func(r *http.Request) *http.Request
 		setupMock        func() *MockArticleService
 		expectedStatus   int
-		expectedResponse interface{}
+		expectedResponse any
 	}{
 		{
 			name: "Successful article creation",
@@ -362,7 +362,7 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 			}
 
 			// Check Response Body
-			var got interface{}
+			var got any
 			if tt.expectedStatus == http.StatusCreated {
 				var resp ArticleResponse
 				if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
@@ -396,7 +396,7 @@ func TestArticleHandler_GetArticle(t *testing.T) {
 		slug             string
 		setupMock        func() *MockArticleService
 		expectedStatus   int
-		expectedResponse interface{}
+		expectedResponse any
 	}{
 		{
 			name: "Article found",
@@ -519,7 +519,7 @@ func TestArticleHandler_GetArticle(t *testing.T) {
 			}
 
 			// Check Response Body
-			var got interface{}
+			var got any
 			if tt.expectedStatus == http.StatusOK {
 				var resp ArticleResponse
 				if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {

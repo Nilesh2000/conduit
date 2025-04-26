@@ -130,7 +130,7 @@ func Test_userService_Register(t *testing.T) {
 				token, err := jwt.ParseWithClaims(
 					u.Token,
 					&jwt.StandardClaims{},
-					func(token *jwt.Token) (interface{}, error) {
+					func(token *jwt.Token) (any, error) {
 						return []byte(jwtSecret), nil
 					},
 				)
@@ -326,7 +326,7 @@ func Test_userService_Login(t *testing.T) {
 				token, err := jwt.ParseWithClaims(
 					u.Token,
 					&jwt.StandardClaims{},
-					func(token *jwt.Token) (interface{}, error) {
+					func(token *jwt.Token) (any, error) {
 						return []byte(jwtSecret), nil
 					},
 				)

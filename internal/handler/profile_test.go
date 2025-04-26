@@ -58,7 +58,7 @@ func Test_profileHandler_GetProfile(t *testing.T) {
 		setupAuth        func(r *http.Request) *http.Request
 		setupMock        func() *MockProfileService
 		expectedStatus   int
-		expectedResponse interface{}
+		expectedResponse any
 	}{
 		{
 			name:     "Profile found (authenticated)",
@@ -226,7 +226,7 @@ func Test_profileHandler_GetProfile(t *testing.T) {
 			}
 
 			// Check response body
-			var got interface{}
+			var got any
 			if tt.expectedStatus == http.StatusOK {
 				var resp ProfileResponse
 				if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
@@ -258,7 +258,7 @@ func Test_profileHandler_Follow(t *testing.T) {
 		setupAuth        func(r *http.Request) *http.Request
 		setupMock        func() *MockProfileService
 		expectedStatus   int
-		expectedResponse interface{}
+		expectedResponse any
 	}{
 		{
 			name:     "Successfully follow user",
@@ -435,7 +435,7 @@ func Test_profileHandler_Follow(t *testing.T) {
 			}
 
 			// Check response body
-			var got interface{}
+			var got any
 			if tt.expectedStatus == http.StatusOK {
 				var resp ProfileResponse
 				if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
@@ -467,7 +467,7 @@ func Test_profileHandler_Unfollow(t *testing.T) {
 		setupAuth        func(r *http.Request) *http.Request
 		setupMock        func() *MockProfileService
 		expectedStatus   int
-		expectedResponse interface{}
+		expectedResponse any
 	}{
 		{
 			name:     "Successfully unfollow user",
@@ -647,7 +647,7 @@ func Test_profileHandler_Unfollow(t *testing.T) {
 			}
 
 			// Check response body
-			var got interface{}
+			var got any
 			if tt.expectedStatus == http.StatusOK {
 				var resp ProfileResponse
 				if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {

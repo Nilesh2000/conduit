@@ -64,7 +64,7 @@ func TestUserHandler_Register(t *testing.T) {
 		requestBody      string
 		setupMock        func() *MockUserService
 		expectedStatus   int
-		expectedResponse interface{}
+		expectedResponse any
 	}{
 		{
 			name: "Valid registration",
@@ -316,7 +316,7 @@ func TestUserHandler_Register(t *testing.T) {
 			}
 
 			// Check response body
-			var got interface{}
+			var got any
 			if tt.expectedStatus == http.StatusCreated {
 				var resp UserResponse
 				if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
@@ -347,7 +347,7 @@ func TestUserHandler_Login(t *testing.T) {
 		requestBody      string
 		setupMock        func() *MockUserService
 		expectedStatus   int
-		expectedResponse interface{}
+		expectedResponse any
 	}{
 		{
 			name: "Valid login",
@@ -541,7 +541,7 @@ func TestUserHandler_Login(t *testing.T) {
 			}
 
 			// Check response body
-			var got interface{}
+			var got any
 			if tt.expectedStatus == http.StatusOK {
 				var resp UserResponse
 				if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
@@ -572,7 +572,7 @@ func TestUserHandler_GetCurrentUser(t *testing.T) {
 		setupAuth        func(r *http.Request) *http.Request
 		setupMock        func() *MockUserService
 		expectedStatus   int
-		expectedResponse interface{}
+		expectedResponse any
 	}{
 		{
 			name: "Valid current user",
@@ -715,7 +715,7 @@ func TestUserHandler_GetCurrentUser(t *testing.T) {
 			}
 
 			// Check response body
-			var got interface{}
+			var got any
 			if tt.expectedStatus == http.StatusOK {
 				var resp UserResponse
 				if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
@@ -745,7 +745,7 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 		setupAuth        func(r *http.Request) *http.Request
 		setupMock        func() *MockUserService
 		expectedStatus   int
-		expectedResponse interface{}
+		expectedResponse any
 	}{
 		{
 			name: "Valid update",
@@ -1111,7 +1111,7 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 			}
 
 			// Check response body
-			var got interface{}
+			var got any
 			if tt.expectedStatus == http.StatusOK {
 				var resp UserResponse
 				if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
