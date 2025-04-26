@@ -73,7 +73,7 @@ docker:
 # Run tests
 test:
 	@echo "Running tests..."
-	$(GO) test -v -race -coverprofile=coverage.out ./...
+	$(GO) test -p 4 -v -race -coverprofile=coverage.out ./...
 
 # View test coverage report in browser
 test-coverage: test
