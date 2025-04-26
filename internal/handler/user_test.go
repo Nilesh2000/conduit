@@ -1,12 +1,12 @@
 package handler
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
-	"strings"
 	"testing"
 
 	"github.com/Nilesh2000/conduit/internal/middleware"
@@ -61,20 +61,24 @@ func TestUserHandler_Register(t *testing.T) {
 
 	tests := []struct {
 		name             string
-		requestBody      string
+		requestBody      any
 		setupMock        func() *MockUserService
 		expectedStatus   int
 		expectedResponse any
 	}{
 		{
 			name: "Valid registration",
-			requestBody: `{
-				"user": {
-					"username": "testuser",
-					"email": "test@example.com",
-					"password": "password123"
-				}
-			}`,
+			requestBody: RegisterRequest{
+				User: struct {
+					Username string `json:"username" validate:"required"`
+					Email    string `json:"email" validate:"required,email"`
+					Password string `json:"password" validate:"required,min=8"`
+				}{
+					Username: "testuser",
+					Email:    "test@example.com",
+					Password: "password123",
+				},
+			},
 			setupMock: func() *MockUserService {
 				mockService := &MockUserService{
 					registerFunc: func(ctx context.Context, username, email, password string) (*service.User, error) {
@@ -139,11 +143,15 @@ func TestUserHandler_Register(t *testing.T) {
 		},
 		{
 			name: "Missing required fields",
-			requestBody: `{
-				"user": {
-					"email": "test@example.com"
-				}
-			}`,
+			requestBody: RegisterRequest{
+				User: struct {
+					Username string `json:"username" validate:"required"`
+					Email    string `json:"email" validate:"required,email"`
+					Password string `json:"password" validate:"required,min=8"`
+				}{
+					Email: "test@example.com",
+				},
+			},
 			setupMock: func() *MockUserService {
 				mockService := &MockUserService{
 					registerFunc: func(ctx context.Context, username, email, password string) (*service.User, error) {
@@ -162,13 +170,17 @@ func TestUserHandler_Register(t *testing.T) {
 		},
 		{
 			name: "Invalid email",
-			requestBody: `{
-					"user": {
-						"username": "testuser",
-						"email": "invalid-email",
-						"password": "password123"
-					}
-				}`,
+			requestBody: RegisterRequest{
+				User: struct {
+					Username string `json:"username" validate:"required"`
+					Email    string `json:"email" validate:"required,email"`
+					Password string `json:"password" validate:"required,min=8"`
+				}{
+					Username: "testuser",
+					Email:    "invalid-email",
+					Password: "password123",
+				},
+			},
 			setupMock: func() *MockUserService {
 				mockService := &MockUserService{
 					registerFunc: func(ctx context.Context, username, email, password string) (*service.User, error) {
@@ -187,13 +199,17 @@ func TestUserHandler_Register(t *testing.T) {
 		},
 		{
 			name: "Password too short",
-			requestBody: `{
-				"user": {
-					"username": "testuser",
-					"email": "test@example.com",
-					"password": "short"
-				}
-			}`,
+			requestBody: RegisterRequest{
+				User: struct {
+					Username string `json:"username" validate:"required"`
+					Email    string `json:"email" validate:"required,email"`
+					Password string `json:"password" validate:"required,min=8"`
+				}{
+					Username: "testuser",
+					Email:    "test@example.com",
+					Password: "short",
+				},
+			},
 			setupMock: func() *MockUserService {
 				mockService := &MockUserService{
 					registerFunc: func(ctx context.Context, username, email, password string) (*service.User, error) {
@@ -212,13 +228,17 @@ func TestUserHandler_Register(t *testing.T) {
 		},
 		{
 			name: "Username already taken",
-			requestBody: `{
-				"user": {
-					"username": "existinguser",
-					"email": "test@example.com",
-					"password": "password123"
-				}
-			}`,
+			requestBody: RegisterRequest{
+				User: struct {
+					Username string `json:"username" validate:"required"`
+					Email    string `json:"email" validate:"required,email"`
+					Password string `json:"password" validate:"required,min=8"`
+				}{
+					Username: "existinguser",
+					Email:    "test@example.com",
+					Password: "password123",
+				},
+			},
 			setupMock: func() *MockUserService {
 				mockService := &MockUserService{
 					registerFunc: func(ctx context.Context, username, email, password string) (*service.User, error) {
@@ -236,13 +256,17 @@ func TestUserHandler_Register(t *testing.T) {
 		},
 		{
 			name: "Email already registered",
-			requestBody: `{
-				"user": {
-					"username": "testuser",
-					"email": "existing@example.com",
-					"password": "password123"
-				}
-			}`,
+			requestBody: RegisterRequest{
+				User: struct {
+					Username string `json:"username" validate:"required"`
+					Email    string `json:"email" validate:"required,email"`
+					Password string `json:"password" validate:"required,min=8"`
+				}{
+					Username: "testuser",
+					Email:    "existing@example.com",
+					Password: "password123",
+				},
+			},
 			setupMock: func() *MockUserService {
 				mockService := &MockUserService{
 					registerFunc: func(ctx context.Context, username, email, password string) (*service.User, error) {
@@ -260,13 +284,17 @@ func TestUserHandler_Register(t *testing.T) {
 		},
 		{
 			name: "Internal server error",
-			requestBody: `{
-				"user": {
-					"username": "testuser",
-					"email": "test@example.com",
-					"password": "password123"
-				}
-			}`,
+			requestBody: RegisterRequest{
+				User: struct {
+					Username string `json:"username" validate:"required"`
+					Email    string `json:"email" validate:"required,email"`
+					Password string `json:"password" validate:"required,min=8"`
+				}{
+					Username: "testuser",
+					Email:    "test@example.com",
+					Password: "password123",
+				},
+			},
 			setupMock: func() *MockUserService {
 				mockService := &MockUserService{
 					registerFunc: func(ctx context.Context, username, email, password string) (*service.User, error) {
@@ -295,11 +323,24 @@ func TestUserHandler_Register(t *testing.T) {
 			// Create handler
 			userHandler := NewUserHandler(mockUserService)
 
+			var bodyBytes []byte
+
+			switch v := tt.requestBody.(type) {
+			case string:
+				bodyBytes = []byte(v)
+			default:
+				var err error
+				bodyBytes, err = json.Marshal(v)
+				if err != nil {
+					t.Fatalf("Failed to marshal request body: %v", err)
+				}
+			}
+
 			// Create request
 			req := httptest.NewRequest(
 				http.MethodPost,
 				"/api/users",
-				strings.NewReader(tt.requestBody),
+				bytes.NewReader(bodyBytes),
 			)
 			req.Header.Set("Content-Type", "application/json")
 
@@ -344,19 +385,22 @@ func TestUserHandler_Login(t *testing.T) {
 
 	tests := []struct {
 		name             string
-		requestBody      string
+		requestBody      any
 		setupMock        func() *MockUserService
 		expectedStatus   int
 		expectedResponse any
 	}{
 		{
 			name: "Valid login",
-			requestBody: `{
-				"user": {
-					"email": "test@example.com",
-					"password": "password123"
-				}
-			}`,
+			requestBody: LoginRequest{
+				User: struct {
+					Email    string `json:"email" validate:"required,email"`
+					Password string `json:"password" validate:"required"`
+				}{
+					Email:    "test@example.com",
+					Password: "password123",
+				},
+			},
 			setupMock: func() *MockUserService {
 				mockService := &MockUserService{
 					loginFunc: func(ctx context.Context, email, password string) (*service.User, error) {
@@ -417,11 +461,14 @@ func TestUserHandler_Login(t *testing.T) {
 		},
 		{
 			name: "Missing required fields",
-			requestBody: `{
-				"user": {
-					"email": "test@example.com"
-				}
-			}`,
+			requestBody: LoginRequest{
+				User: struct {
+					Email    string `json:"email" validate:"required,email"`
+					Password string `json:"password" validate:"required"`
+				}{
+					Email: "test@example.com",
+				},
+			},
 			setupMock: func() *MockUserService {
 				mockService := &MockUserService{
 					loginFunc: func(ctx context.Context, email, password string) (*service.User, error) {
@@ -440,12 +487,15 @@ func TestUserHandler_Login(t *testing.T) {
 		},
 		{
 			name: "Invalid credentials",
-			requestBody: `{
-				"user": {
-					"email": "test@example.com",
-					"password": "wrongpassword"
-				}
-			}`,
+			requestBody: LoginRequest{
+				User: struct {
+					Email    string `json:"email" validate:"required,email"`
+					Password string `json:"password" validate:"required"`
+				}{
+					Email:    "test@example.com",
+					Password: "wrongpassword",
+				},
+			},
 			setupMock: func() *MockUserService {
 				mockService := &MockUserService{
 					loginFunc: func(ctx context.Context, email, password string) (*service.User, error) {
@@ -463,12 +513,15 @@ func TestUserHandler_Login(t *testing.T) {
 		},
 		{
 			name: "User not found",
-			requestBody: `{
-				"user": {
-					"email": "nonexistent@example.com",
-					"password": "password123"
-				}
-			}`,
+			requestBody: LoginRequest{
+				User: struct {
+					Email    string `json:"email" validate:"required,email"`
+					Password string `json:"password" validate:"required"`
+				}{
+					Email:    "nonexistent@example.com",
+					Password: "password123",
+				},
+			},
 			setupMock: func() *MockUserService {
 				mockService := &MockUserService{
 					loginFunc: func(ctx context.Context, email, password string) (*service.User, error) {
@@ -486,12 +539,15 @@ func TestUserHandler_Login(t *testing.T) {
 		},
 		{
 			name: "Internal server error",
-			requestBody: `{
-				"user": {
-					"email": "test@example.com",
-					"password": "password123"
-				}
-			}`,
+			requestBody: LoginRequest{
+				User: struct {
+					Email    string `json:"email" validate:"required,email"`
+					Password string `json:"password" validate:"required"`
+				}{
+					Email:    "test@example.com",
+					Password: "password123",
+				},
+			},
 			setupMock: func() *MockUserService {
 				mockService := &MockUserService{
 					loginFunc: func(ctx context.Context, email, password string) (*service.User, error) {
@@ -520,11 +576,24 @@ func TestUserHandler_Login(t *testing.T) {
 			// Create handler
 			userHandler := NewUserHandler(mockUserService)
 
+			var bodyBytes []byte
+
+			switch v := tt.requestBody.(type) {
+			case string:
+				bodyBytes = []byte(v)
+			default:
+				var err error
+				bodyBytes, err = json.Marshal(v)
+				if err != nil {
+					t.Fatalf("Failed to marshal request body: %v", err)
+				}
+			}
+
 			// Create request
 			req := httptest.NewRequest(
 				http.MethodPost,
 				"/api/users/login",
-				strings.NewReader(tt.requestBody),
+				bytes.NewReader(bodyBytes),
 			)
 			req.Header.Set("Content-Type", "application/json")
 
@@ -739,9 +808,14 @@ func TestUserHandler_GetCurrentUser(t *testing.T) {
 
 func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 	t.Parallel()
+
+	strPtr := func(s string) *string {
+		return &s
+	}
+
 	tests := []struct {
 		name             string
-		requestBody      string
+		requestBody      any
 		setupAuth        func(r *http.Request) *http.Request
 		setupMock        func() *MockUserService
 		expectedStatus   int
@@ -749,15 +823,21 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 	}{
 		{
 			name: "Valid update",
-			requestBody: `{
-				"user": {
-					"username": "updateduser",
-					"email": "updated@example.com",
-					"password": "newpassword123",
-					"bio": "Updated bio",
-					"image": "https://example.com/updated.jpg"
-				}
-			}`,
+			requestBody: UpdateUserRequest{
+				User: struct {
+					Username *string `json:"username" validate:"omitempty"`
+					Email    *string `json:"email" validate:"omitempty,email"`
+					Password *string `json:"password" validate:"omitempty,min=8"`
+					Bio      *string `json:"bio" validate:"omitempty"`
+					Image    *string `json:"image" validate:"omitempty"`
+				}{
+					Username: strPtr("updateduser"),
+					Email:    strPtr("updated@example.com"),
+					Password: strPtr("newpassword123"),
+					Bio:      strPtr("Updated bio"),
+					Image:    strPtr("https://example.com/updated.jpg"),
+				},
+			},
 			setupAuth: func(r *http.Request) *http.Request {
 				r.Header.Set("Authorization", "Token jwt.token.here")
 
@@ -814,11 +894,17 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 		},
 		{
 			name: "Partial update - only email",
-			requestBody: `{
-				"user": {
-					"email": "newmail@example.com"
-				}
-			}`,
+			requestBody: UpdateUserRequest{
+				User: struct {
+					Username *string `json:"username" validate:"omitempty"`
+					Email    *string `json:"email" validate:"omitempty,email"`
+					Password *string `json:"password" validate:"omitempty,min=8"`
+					Bio      *string `json:"bio" validate:"omitempty"`
+					Image    *string `json:"image" validate:"omitempty"`
+				}{
+					Email: strPtr("newmail@example.com"),
+				},
+			},
 			setupAuth: func(r *http.Request) *http.Request {
 				r.Header.Set("Authorization", "Token jwt.token.here")
 
@@ -863,11 +949,17 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 		},
 		{
 			name: "Unauthenticated request",
-			requestBody: `{
-				"user": {
-					"email": "newmail@example.com"
-				}
-			}`,
+			requestBody: UpdateUserRequest{
+				User: struct {
+					Username *string `json:"username" validate:"omitempty"`
+					Email    *string `json:"email" validate:"omitempty,email"`
+					Password *string `json:"password" validate:"omitempty,min=8"`
+					Bio      *string `json:"bio" validate:"omitempty"`
+					Image    *string `json:"image" validate:"omitempty"`
+				}{
+					Email: strPtr("newmail@example.com"),
+				},
+			},
 			setupAuth: func(r *http.Request) *http.Request {
 				// Don't add user ID to context to simulate unauthenticated request
 				return r
@@ -921,11 +1013,17 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 		},
 		{
 			name: "Invalid email",
-			requestBody: `{
-				"user": {
-					"email": "invalid-email"
-				}
-			}`,
+			requestBody: UpdateUserRequest{
+				User: struct {
+					Username *string `json:"username" validate:"omitempty"`
+					Email    *string `json:"email" validate:"omitempty,email"`
+					Password *string `json:"password" validate:"omitempty,min=8"`
+					Bio      *string `json:"bio" validate:"omitempty"`
+					Image    *string `json:"image" validate:"omitempty"`
+				}{
+					Email: strPtr("invalid-email"),
+				},
+			},
 			setupAuth: func(r *http.Request) *http.Request {
 				r.Header.Set("Authorization", "Token jwt.token.here")
 
@@ -952,16 +1050,22 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 		},
 		{
 			name: "User not found",
-			requestBody: `{
-				"user": {
-					"username": "updateduser"
-				}
-			}`,
+			requestBody: UpdateUserRequest{
+				User: struct {
+					Username *string `json:"username" validate:"omitempty"`
+					Email    *string `json:"email" validate:"omitempty,email"`
+					Password *string `json:"password" validate:"omitempty,min=8"`
+					Bio      *string `json:"bio" validate:"omitempty"`
+					Image    *string `json:"image" validate:"omitempty"`
+				}{
+					Username: strPtr("updateduser"),
+				},
+			},
 			setupAuth: func(r *http.Request) *http.Request {
 				r.Header.Set("Authorization", "Token jwt.token.here")
 
 				ctx := r.Context()
-				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
+				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(999))
 				r = r.WithContext(ctx)
 				return r
 			},
@@ -982,11 +1086,17 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 		},
 		{
 			name: "Username already taken",
-			requestBody: `{
-				"user": {
-					"username": "existinguser"
-				}
-			}`,
+			requestBody: UpdateUserRequest{
+				User: struct {
+					Username *string `json:"username" validate:"omitempty"`
+					Email    *string `json:"email" validate:"omitempty,email"`
+					Password *string `json:"password" validate:"omitempty,min=8"`
+					Bio      *string `json:"bio" validate:"omitempty"`
+					Image    *string `json:"image" validate:"omitempty"`
+				}{
+					Username: strPtr("existinguser"),
+				},
+			},
 			setupAuth: func(r *http.Request) *http.Request {
 				r.Header.Set("Authorization", "Token jwt.token.here")
 
@@ -1012,11 +1122,17 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 		},
 		{
 			name: "Email already registered",
-			requestBody: `{
-				"user": {
-					"email": "existing@example.com"
-				}
-			}`,
+			requestBody: UpdateUserRequest{
+				User: struct {
+					Username *string `json:"username" validate:"omitempty"`
+					Email    *string `json:"email" validate:"omitempty,email"`
+					Password *string `json:"password" validate:"omitempty,min=8"`
+					Bio      *string `json:"bio" validate:"omitempty"`
+					Image    *string `json:"image" validate:"omitempty"`
+				}{
+					Email: strPtr("existing@example.com"),
+				},
+			},
 			setupAuth: func(r *http.Request) *http.Request {
 				r.Header.Set("Authorization", "Token jwt.token.here")
 
@@ -1042,15 +1158,21 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 		},
 		{
 			name: "Internal server error",
-			requestBody: `{
-				"user": {
-					"username": "updateduser",
-					"email": "updated@example.com",
-					"password": "newpassword123",
-					"bio": "Updated bio",
-					"image": "https://example.com/updated.jpg"
-				}
-			}`,
+			requestBody: UpdateUserRequest{
+				User: struct {
+					Username *string `json:"username" validate:"omitempty"`
+					Email    *string `json:"email" validate:"omitempty,email"`
+					Password *string `json:"password" validate:"omitempty,min=8"`
+					Bio      *string `json:"bio" validate:"omitempty"`
+					Image    *string `json:"image" validate:"omitempty"`
+				}{
+					Username: strPtr("updateduser"),
+					Email:    strPtr("updated@example.com"),
+					Password: strPtr("newpassword123"),
+					Bio:      strPtr("Updated bio"),
+					Image:    strPtr("https://example.com/updated.jpg"),
+				},
+			},
 			setupAuth: func(r *http.Request) *http.Request {
 				r.Header.Set("Authorization", "Token jwt.token.here")
 
@@ -1087,11 +1209,24 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 			// Create handler
 			userHandler := NewUserHandler(mockUserService)
 
+			var bodyBytes []byte
+
+			switch v := tt.requestBody.(type) {
+			case string:
+				bodyBytes = []byte(v)
+			default:
+				var err error
+				bodyBytes, err = json.Marshal(v)
+				if err != nil {
+					t.Fatalf("Failed to marshal request body: %v", err)
+				}
+			}
+
 			// Create request
 			req := httptest.NewRequest(
 				http.MethodPut,
 				"/api/user",
-				strings.NewReader(tt.requestBody),
+				bytes.NewReader(bodyBytes),
 			)
 			req.Header.Set("Content-Type", "application/json")
 
