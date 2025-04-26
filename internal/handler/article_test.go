@@ -1,12 +1,12 @@
 package handler
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
-	"strings"
 	"testing"
 	"time"
 
@@ -44,7 +44,7 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 
 	tests := []struct {
 		name             string
-		requestBody      string
+		requestBody      any
 		setupAuth        func(r *http.Request) *http.Request
 		setupMock        func() *MockArticleService
 		expectedStatus   int
@@ -52,14 +52,19 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 	}{
 		{
 			name: "Successful article creation",
-			requestBody: `{
-				"article": {
-					"title": "Test Article",
-					"description": "Test Description",
-					"body": "Test Body",
-					"tagList": ["tag1", "tag2"]
-				}
-			}`,
+			requestBody: CreateArticleRequest{
+				Article: struct {
+					Title       string   `json:"title" validate:"required"`
+					Description string   `json:"description" validate:"required"`
+					Body        string   `json:"body" validate:"required"`
+					TagList     []string `json:"tagList,omitempty"`
+				}{
+					Title:       "Test Article",
+					Description: "Test Description",
+					Body:        "Test Body",
+					TagList:     []string{"tag1", "tag2"},
+				},
+			},
 			setupAuth: func(r *http.Request) *http.Request {
 				r.Header.Set("Authorization", "Token jwt.token.here")
 
@@ -132,14 +137,19 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 		},
 		{
 			name: "Unauthenticated request",
-			requestBody: `{
-				"article": {
-					"title": "Test Article",
-					"description": "Test Description",
-					"body": "Test Body",
-					"tagList": ["tag1", "tag2"]
-				}
-			}`,
+			requestBody: CreateArticleRequest{
+				Article: struct {
+					Title       string   `json:"title" validate:"required"`
+					Description string   `json:"description" validate:"required"`
+					Body        string   `json:"body" validate:"required"`
+					TagList     []string `json:"tagList,omitempty"`
+				}{
+					Title:       "Test Article",
+					Description: "Test Description",
+					Body:        "Test Body",
+					TagList:     []string{"tag1", "tag2"},
+				},
+			},
 			setupAuth: func(r *http.Request) *http.Request {
 				// Don't add user ID to context to simulate unauthenticated request
 				return r
@@ -193,11 +203,16 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 		},
 		{
 			name: "Missing required fields",
-			requestBody: `{
-				"article": {
-					"title": "Test Article"
-				}
-			}`,
+			requestBody: CreateArticleRequest{
+				Article: struct {
+					Title       string   `json:"title" validate:"required"`
+					Description string   `json:"description" validate:"required"`
+					Body        string   `json:"body" validate:"required"`
+					TagList     []string `json:"tagList,omitempty"`
+				}{
+					Title: "Test Article",
+				},
+			},
 			setupAuth: func(r *http.Request) *http.Request {
 				r.Header.Set("Authorization", "Token jwt.token.here")
 
@@ -224,14 +239,19 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 		},
 		{
 			name: "Article already exists",
-			requestBody: `{
-				"article": {
-					"title": "Existing Article",
-					"description": "Test Description",
-					"body": "Test Body",
-					"tagList": ["tag1", "tag2"]
-				}
-			}`,
+			requestBody: CreateArticleRequest{
+				Article: struct {
+					Title       string   `json:"title" validate:"required"`
+					Description string   `json:"description" validate:"required"`
+					Body        string   `json:"body" validate:"required"`
+					TagList     []string `json:"tagList,omitempty"`
+				}{
+					Title:       "Existing Article",
+					Description: "Test Description",
+					Body:        "Test Body",
+					TagList:     []string{"tag1", "tag2"},
+				},
+			},
 			setupAuth: func(r *http.Request) *http.Request {
 				r.Header.Set("Authorization", "Token jwt.token.here")
 
@@ -257,14 +277,19 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 		},
 		{
 			name: "User not found",
-			requestBody: `{
-				"article": {
-					"title": "Test Article",
-					"description": "Test Description",
-					"body": "Test Body",
-					"tagList": ["tag1", "tag2"]
-				}
-			}`,
+			requestBody: CreateArticleRequest{
+				Article: struct {
+					Title       string   `json:"title" validate:"required"`
+					Description string   `json:"description" validate:"required"`
+					Body        string   `json:"body" validate:"required"`
+					TagList     []string `json:"tagList,omitempty"`
+				}{
+					Title:       "Test Article",
+					Description: "Test Description",
+					Body:        "Test Body",
+					TagList:     []string{"tag1", "tag2"},
+				},
+			},
 			setupAuth: func(r *http.Request) *http.Request {
 				r.Header.Set("Authorization", "Token jwt.token.here")
 				ctx := r.Context()
@@ -289,14 +314,19 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 		},
 		{
 			name: "Internal server error",
-			requestBody: `{
-				"article": {
-					"title": "Test Article",
-					"description": "Test Description",
-					"body": "Test Body",
-					"tagList": ["tag1", "tag2"]
-				}
-			}`,
+			requestBody: CreateArticleRequest{
+				Article: struct {
+					Title       string   `json:"title" validate:"required"`
+					Description string   `json:"description" validate:"required"`
+					Body        string   `json:"body" validate:"required"`
+					TagList     []string `json:"tagList,omitempty"`
+				}{
+					Title:       "Test Article",
+					Description: "Test Description",
+					Body:        "Test Body",
+					TagList:     []string{"tag1", "tag2"},
+				},
+			},
 			setupAuth: func(r *http.Request) *http.Request {
 				r.Header.Set("Authorization", "Token jwt.token.here")
 
@@ -333,11 +363,24 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 			// Create Handler
 			handler := NewArticleHandler(mockService)
 
+			var bodyBytes []byte
+
+			switch v := tt.requestBody.(type) {
+			case string:
+				bodyBytes = []byte(v)
+			default:
+				var err error
+				bodyBytes, err = json.Marshal(v)
+				if err != nil {
+					t.Fatalf("Failed to marshal request body: %v", err)
+				}
+			}
+
 			// Create Request
 			req := httptest.NewRequest(
 				http.MethodPost,
 				"/api/articles",
-				strings.NewReader(tt.requestBody),
+				bytes.NewReader(bodyBytes),
 			)
 			req.Header.Set("Content-Type", "application/json")
 
