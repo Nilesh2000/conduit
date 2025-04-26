@@ -88,7 +88,7 @@ fmt:
 # Run linter with gosec security checks
 lint:
 	@echo "Running linter..."
-	$(GOLANGCI_LINT) run --enable=gosec
+	$(GOLANGCI_LINT) run --enable=gosec ./...
 
 # Create new migration files
 create-migration:
