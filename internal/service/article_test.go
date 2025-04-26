@@ -188,6 +188,23 @@ func Test_articleService_CreateArticle(t *testing.T) {
 			expectedErr: ErrArticleAlreadyExists,
 			validate:    nil,
 		},
+		{
+			name:        "Internal server error",
+			userID:      1,
+			title:       "Test Article",
+			description: "Test Description",
+			body:        "Test Body",
+			tagList:     []string{"tag1", "tag2"},
+			setupMock: func() *MockArticleRepository {
+				return &MockArticleRepository{
+					createFunc: func(ctx context.Context, userID int64, articleSlug, title, description, body string, tagList []string) (*repository.Article, error) {
+						return nil, repository.ErrInternal
+					},
+				}
+			},
+			expectedErr: ErrInternalServer,
+			validate:    nil,
+		},
 	}
 
 	for _, tt := range tests {
