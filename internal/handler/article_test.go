@@ -45,7 +45,7 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 	tests := []struct {
 		name             string
 		requestBody      string
-		setupAuth        func(r *http.Request)
+		setupAuth        func(r *http.Request) *http.Request
 		setupMock        func() *MockArticleService
 		expectedStatus   int
 		expectedResponse interface{}
@@ -60,10 +60,13 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 					"tagList": ["tag1", "tag2"]
 				}
 			}`,
-			setupAuth: func(r *http.Request) {
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token jwt.token.here")
+
 				ctx := r.Context()
 				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				*r = *r.WithContext(ctx)
+				r = r.WithContext(ctx)
+				return r
 			},
 			setupMock: func() *MockArticleService {
 				mockService := &MockArticleService{
@@ -137,8 +140,13 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 					"tagList": ["tag1", "tag2"]
 				}
 			}`,
-			setupAuth: func(r *http.Request) {
-				// Don't add user ID to context to simulate unauthenticated request
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token jwt.token.here")
+
+				ctx := r.Context()
+				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
+				r = r.WithContext(ctx)
+				return r
 			},
 			setupMock: func() *MockArticleService {
 				mockService := &MockArticleService{
@@ -163,10 +171,13 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 					"title": "Test Article",
 				}
 			}`,
-			setupAuth: func(r *http.Request) {
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token jwt.token.here")
+
 				ctx := r.Context()
 				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				*r = *r.WithContext(ctx)
+				r = r.WithContext(ctx)
+				return r
 			},
 			setupMock: func() *MockArticleService {
 				mockService := &MockArticleService{
@@ -191,10 +202,13 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 					"title": "Test Article"
 				}
 			}`,
-			setupAuth: func(r *http.Request) {
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token jwt.token.here")
+
 				ctx := r.Context()
 				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				*r = *r.WithContext(ctx)
+				r = r.WithContext(ctx)
+				return r
 			},
 			setupMock: func() *MockArticleService {
 				mockService := &MockArticleService{
@@ -222,10 +236,13 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 					"tagList": ["tag1", "tag2"]
 				}
 			}`,
-			setupAuth: func(r *http.Request) {
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token jwt.token.here")
+
 				ctx := r.Context()
 				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				*r = *r.WithContext(ctx)
+				r = r.WithContext(ctx)
+				return r
 			},
 			setupMock: func() *MockArticleService {
 				mockService := &MockArticleService{
@@ -252,10 +269,12 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 					"tagList": ["tag1", "tag2"]
 				}
 			}`,
-			setupAuth: func(r *http.Request) {
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token jwt.token.here")
 				ctx := r.Context()
 				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				*r = *r.WithContext(ctx)
+				r = r.WithContext(ctx)
+				return r
 			},
 			setupMock: func() *MockArticleService {
 				mockService := &MockArticleService{
@@ -282,10 +301,13 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 					"tagList": ["tag1", "tag2"]
 				}
 			}`,
-			setupAuth: func(r *http.Request) {
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token jwt.token.here")
+
 				ctx := r.Context()
 				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				*r = *r.WithContext(ctx)
+				r = r.WithContext(ctx)
+				return r
 			},
 			setupMock: func() *MockArticleService {
 				mockService := &MockArticleService{
@@ -325,7 +347,7 @@ func TestArticleHandler_CreateArticle(t *testing.T) {
 
 			// Setup Auth if provided
 			if tt.setupAuth != nil {
-				tt.setupAuth(req)
+				req = tt.setupAuth(req)
 			}
 
 			// Create Response Recorder

@@ -55,7 +55,7 @@ func Test_profileHandler_GetProfile(t *testing.T) {
 	tests := []struct {
 		name             string
 		username         string
-		setupAuth        func(r *http.Request)
+		setupAuth        func(r *http.Request) *http.Request
 		setupMock        func() *MockProfileService
 		expectedStatus   int
 		expectedResponse interface{}
@@ -63,11 +63,13 @@ func Test_profileHandler_GetProfile(t *testing.T) {
 		{
 			name:     "Profile found (authenticated)",
 			username: "testuser",
-			setupAuth: func(r *http.Request) {
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token testtoken")
+
 				ctx := r.Context()
 				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				*r = *r.WithContext(ctx)
-				r.Header.Set("Authorization", "Token testtoken")
+				r = r.WithContext(ctx)
+				return r
 			},
 			setupMock: func() *MockProfileService {
 				mockService := &MockProfileService{
@@ -102,8 +104,13 @@ func Test_profileHandler_GetProfile(t *testing.T) {
 		{
 			name:     "Profile found (unauthenticated)",
 			username: "testuser",
-			setupAuth: func(r *http.Request) {
-				// Do not add user ID to context
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token testtoken")
+
+				ctx := r.Context()
+				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
+				r = r.WithContext(ctx)
+				return r
 			},
 			setupMock: func() *MockProfileService {
 				mockService := &MockProfileService{
@@ -138,11 +145,13 @@ func Test_profileHandler_GetProfile(t *testing.T) {
 		{
 			name:     "Profile not found",
 			username: "nonexistentuser",
-			setupAuth: func(r *http.Request) {
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token testtoken")
+
 				ctx := r.Context()
 				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				*r = *r.WithContext(ctx)
-				r.Header.Set("Authorization", "Token testtoken")
+				r = r.WithContext(ctx)
+				return r
 			},
 			setupMock: func() *MockProfileService {
 				return &MockProfileService{
@@ -161,11 +170,13 @@ func Test_profileHandler_GetProfile(t *testing.T) {
 		{
 			name:     "Internal server error",
 			username: "testuser",
-			setupAuth: func(r *http.Request) {
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token testtoken")
+
 				ctx := r.Context()
 				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				*r = *r.WithContext(ctx)
-				r.Header.Set("Authorization", "Token testtoken")
+				r = r.WithContext(ctx)
+				return r
 			},
 			setupMock: func() *MockProfileService {
 				return &MockProfileService{
@@ -199,7 +210,7 @@ func Test_profileHandler_GetProfile(t *testing.T) {
 
 			// Add authorization token and setup context
 			if tt.setupAuth != nil {
-				tt.setupAuth(req)
+				req = tt.setupAuth(req)
 			}
 
 			// Create response recorder
@@ -244,7 +255,7 @@ func Test_profileHandler_Follow(t *testing.T) {
 	tests := []struct {
 		name             string
 		username         string
-		setupAuth        func(r *http.Request)
+		setupAuth        func(r *http.Request) *http.Request
 		setupMock        func() *MockProfileService
 		expectedStatus   int
 		expectedResponse interface{}
@@ -252,10 +263,13 @@ func Test_profileHandler_Follow(t *testing.T) {
 		{
 			name:     "Successfully follow user",
 			username: "usertofollow",
-			setupAuth: func(r *http.Request) {
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token testtoken")
+
 				ctx := r.Context()
 				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				*r = *r.WithContext(ctx)
+				r = r.WithContext(ctx)
+				return r
 			},
 			setupMock: func() *MockProfileService {
 				return &MockProfileService{
@@ -289,8 +303,13 @@ func Test_profileHandler_Follow(t *testing.T) {
 		{
 			name:     "Unauthenticated User",
 			username: "usertofollow",
-			setupAuth: func(r *http.Request) {
-				// Do not add user ID to context
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token testtoken")
+
+				ctx := r.Context()
+				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
+				r = r.WithContext(ctx)
+				return r
 			},
 			setupMock: func() *MockProfileService {
 				return &MockProfileService{
@@ -310,10 +329,13 @@ func Test_profileHandler_Follow(t *testing.T) {
 		{
 			name:     "User not found",
 			username: "nonexistentuser",
-			setupAuth: func(r *http.Request) {
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token testtoken")
+
 				ctx := r.Context()
 				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				*r = *r.WithContext(ctx)
+				r = r.WithContext(ctx)
+				return r
 			},
 			setupMock: func() *MockProfileService {
 				return &MockProfileService{
@@ -332,10 +354,13 @@ func Test_profileHandler_Follow(t *testing.T) {
 		{
 			name:     "Cannot follow self",
 			username: "currentuser",
-			setupAuth: func(r *http.Request) {
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token testtoken")
+
 				ctx := r.Context()
 				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				*r = *r.WithContext(ctx)
+				r = r.WithContext(ctx)
+				return r
 			},
 			setupMock: func() *MockProfileService {
 				return &MockProfileService{
@@ -354,10 +379,13 @@ func Test_profileHandler_Follow(t *testing.T) {
 		{
 			name:     "Internal server error",
 			username: "usertofollow",
-			setupAuth: func(r *http.Request) {
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token testtoken")
+
 				ctx := r.Context()
 				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				*r = *r.WithContext(ctx)
+				r = r.WithContext(ctx)
+				return r
 			},
 			setupMock: func() *MockProfileService {
 				return &MockProfileService{
@@ -391,7 +419,7 @@ func Test_profileHandler_Follow(t *testing.T) {
 
 			// Add authorization token and setup context
 			if tt.setupAuth != nil {
-				tt.setupAuth(req)
+				req = tt.setupAuth(req)
 			}
 
 			// Create response recorder
@@ -436,7 +464,7 @@ func Test_profileHandler_Unfollow(t *testing.T) {
 	tests := []struct {
 		name             string
 		username         string
-		setupAuth        func(r *http.Request)
+		setupAuth        func(r *http.Request) *http.Request
 		setupMock        func() *MockProfileService
 		expectedStatus   int
 		expectedResponse interface{}
@@ -444,10 +472,13 @@ func Test_profileHandler_Unfollow(t *testing.T) {
 		{
 			name:     "Successfully unfollow user",
 			username: "usertounfollow",
-			setupAuth: func(r *http.Request) {
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token testtoken")
+
 				ctx := r.Context()
 				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				*r = *r.WithContext(ctx)
+				r = r.WithContext(ctx)
+				return r
 			},
 			setupMock: func() *MockProfileService {
 				return &MockProfileService{
@@ -484,8 +515,13 @@ func Test_profileHandler_Unfollow(t *testing.T) {
 		{
 			name:     "Unauthenticated User",
 			username: "usertounfollow",
-			setupAuth: func(r *http.Request) {
-				// Do not add user ID to context
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token testtoken")
+
+				ctx := r.Context()
+				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
+				r = r.WithContext(ctx)
+				return r
 			},
 			setupMock: func() *MockProfileService {
 				return &MockProfileService{
@@ -505,10 +541,13 @@ func Test_profileHandler_Unfollow(t *testing.T) {
 		{
 			name:     "User not found",
 			username: "nonexistentuser",
-			setupAuth: func(r *http.Request) {
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token testtoken")
+
 				ctx := r.Context()
 				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				*r = *r.WithContext(ctx)
+				r = r.WithContext(ctx)
+				return r
 			},
 			setupMock: func() *MockProfileService {
 				return &MockProfileService{
@@ -527,10 +566,13 @@ func Test_profileHandler_Unfollow(t *testing.T) {
 		{
 			name:     "Cannot unfollow self",
 			username: "currentuser",
-			setupAuth: func(r *http.Request) {
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token testtoken")
+
 				ctx := r.Context()
 				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				*r = *r.WithContext(ctx)
+				r = r.WithContext(ctx)
+				return r
 			},
 			setupMock: func() *MockProfileService {
 				return &MockProfileService{
@@ -549,10 +591,13 @@ func Test_profileHandler_Unfollow(t *testing.T) {
 		{
 			name:     "Internal server error",
 			username: "usertounfollow",
-			setupAuth: func(r *http.Request) {
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token testtoken")
+
 				ctx := r.Context()
 				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				*r = *r.WithContext(ctx)
+				r = r.WithContext(ctx)
+				return r
 			},
 			setupMock: func() *MockProfileService {
 				return &MockProfileService{
@@ -586,7 +631,7 @@ func Test_profileHandler_Unfollow(t *testing.T) {
 
 			// Add authorization token and setup context
 			if tt.setupAuth != nil {
-				tt.setupAuth(req)
+				req = tt.setupAuth(req)
 			}
 
 			// Create response recorder
