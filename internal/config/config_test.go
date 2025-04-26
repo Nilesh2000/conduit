@@ -6,6 +6,8 @@ import (
 )
 
 func TestDatabase_GetDSN(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name     string
 		database Database
@@ -35,6 +37,8 @@ func TestDatabase_GetDSN(t *testing.T) {
 }
 
 func TestConfig_Validate(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name    string
 		config  Config
