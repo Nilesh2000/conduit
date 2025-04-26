@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"log"
 	"testing"
 	"time"
 
@@ -189,7 +190,11 @@ func Test_userRepository_Create(t *testing.T) {
 
 			// Setup mock database for this test case
 			db, mock := setupTestDB(t)
-			defer db.Close()
+			defer func() {
+				if err := db.Close(); err != nil {
+					log.Printf("Error closing database connection: %v", err)
+				}
+			}()
 
 			// Setup mock expectations
 			if tt.mockSetup != nil {
@@ -315,7 +320,11 @@ func Test_userRepository_FindByEmail(t *testing.T) {
 
 			// Setup mock database for this test case
 			db, mock := setupTestDB(t)
-			defer db.Close()
+			defer func() {
+				if err := db.Close(); err != nil {
+					log.Printf("Error closing database connection: %v", err)
+				}
+			}()
 
 			// Setup mock expectations
 			if tt.mockSetup != nil {
@@ -447,7 +456,11 @@ func Test_userRepository_FindByID(t *testing.T) {
 
 			// Setup mock database for this test case
 			db, mock := setupTestDB(t)
-			defer db.Close()
+			defer func() {
+				if err := db.Close(); err != nil {
+					log.Printf("Error closing database connection: %v", err)
+				}
+			}()
 
 			// Setup mock expectations
 			if tt.mockSetup != nil {
@@ -739,7 +752,11 @@ func Test_userRepository_Update(t *testing.T) {
 
 			// Setup mock database for this test case
 			db, mock := setupTestDB(t)
-			defer db.Close()
+			defer func() {
+				if err := db.Close(); err != nil {
+					log.Printf("Error closing database connection: %v", err)
+				}
+			}()
 
 			// Setup mock expectations
 			if tt.mockSetup != nil {
