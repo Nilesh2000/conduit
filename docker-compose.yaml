@@ -18,7 +18,7 @@ services:
       - DB_PASSWORD=postgres
       - DB_NAME=conduit
       - DB_SSLMODE=disable
-      - JWT_SECRET_KEY=secret-key
+      - JWT_SECRET_KEY=this-is-a-32-char-long-secret-key-123
       - JWT_EXPIRY=24h
       - SERVER_PORT=8080
     networks:
