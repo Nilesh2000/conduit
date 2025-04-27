@@ -49,6 +49,11 @@ func main() {
 		log.Fatalf("Failed to load configuration: %v", err)
 	}
 
+	// Validate configuration
+	if err := cfg.Validate(); err != nil {
+		log.Fatalf("Invalid configuration: %v", err)
+	}
+
 	// Connect to database
 	db, err := sql.Open("postgres", cfg.Database.GetDSN())
 	if err != nil {

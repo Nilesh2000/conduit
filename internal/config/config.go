@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -52,7 +53,7 @@ func Load() (*Config, error) {
 			SSLMode:  getEnv("DB_SSLMODE", "disable"),
 		},
 		JWT: JWT{
-			SecretKey: getEnv("JWT_SECRET_KEY", "secret-key"),
+			SecretKey: getEnv("JWT_SECRET_KEY", "this-is-a-32-char-long-secret-key-123"),
 			Expiry:    expiry,
 		},
 		Server: Server{
@@ -78,26 +79,77 @@ func (c *Database) GetDSN() string {
 
 // Validate checks if the configuration is valid.
 func (c *Config) Validate() error {
-	if c.Database.Host == "" {
-		return fmt.Errorf("database host is required")
+	// Validate database configuration
+	if err := c.Database.Validate(); err != nil {
+		return fmt.Errorf("database configuration error: %w", err)
 	}
-	if c.Database.Port == "" {
-		return fmt.Errorf("database port is required")
+
+	// Validate JWT configuration
+	if err := c.JWT.Validate(); err != nil {
+		return fmt.Errorf("JWT configuration error: %w", err)
 	}
-	if c.Database.User == "" {
-		return fmt.Errorf("database user is required")
+
+	// Validate server configuration
+	if err := c.Server.Validate(); err != nil {
+		return fmt.Errorf("server configuration error: %w", err)
 	}
-	if c.Database.Name == "" {
-		return fmt.Errorf("database name is required")
+
+	return nil
+}
+
+// Validate checks if the database configuration is valid.
+func (d *Database) Validate() error {
+	if d.Host == "" {
+		return fmt.Errorf("host is required")
 	}
-	if c.JWT.SecretKey == "" {
-		return fmt.Errorf("JWT secret key is required")
+	if d.Port == "" {
+		return fmt.Errorf("port is required")
 	}
-	if c.JWT.Expiry <= 0 {
-		return fmt.Errorf("JWT expiry is required")
+	if d.User == "" {
+		return fmt.Errorf("user is required")
 	}
-	if c.Server.Port == "" {
-		return fmt.Errorf("server port is required")
+	if d.Name == "" {
+		return fmt.Errorf("name is required")
+	}
+
+	// Validate port is a number
+	if _, err := strconv.Atoi(d.Port); err != nil {
+		return fmt.Errorf("port must be a valid number: %w", err)
+	}
+
+	return nil
+}
+
+// Validate checks if the JWT configuration is valid.
+func (j *JWT) Validate() error {
+	if j.SecretKey == "" {
+		return fmt.Errorf("secret key is required")
+	}
+	if j.Expiry <= 0 {
+		return fmt.Errorf("expiry must be greater than 0")
+	}
+
+	// Validate secret key is at least 32 bytes long for security
+	if len(j.SecretKey) < 32 {
+		return fmt.Errorf("secret key must be at least 32 bytes long for security")
+	}
+
+	return nil
+}
+
+// Validate checks if the server configuration is valid.
+func (s *Server) Validate() error {
+	if s.Port == "" {
+		return fmt.Errorf("port is required")
+	}
+
+	// Validate port is a number and in valid range
+	port, err := strconv.Atoi(s.Port)
+	if err != nil {
+		return fmt.Errorf("port must be a valid number: %w", err)
+	}
+	if port < 0 || port > 65535 {
+		return fmt.Errorf("port must be between 0 and 65535")
 	}
 
 	return nil
