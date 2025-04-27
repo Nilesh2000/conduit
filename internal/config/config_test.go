@@ -56,7 +56,7 @@ func TestConfig_Validate(t *testing.T) {
 					SSLMode:  "disable",
 				},
 				JWT: JWT{
-					SecretKey: "testkey",
+					SecretKey: "this-is-a-32-char-long-secret-key-123",
 					Expiry:    24 * time.Hour,
 				},
 				Server: Server{
@@ -76,7 +76,7 @@ func TestConfig_Validate(t *testing.T) {
 					SSLMode:  "disable",
 				},
 				JWT: JWT{
-					SecretKey: "testkey",
+					SecretKey: "this-is-a-32-char-long-secret-key-123",
 					Expiry:    24 * time.Hour,
 				},
 				Server: Server{
@@ -97,7 +97,7 @@ func TestConfig_Validate(t *testing.T) {
 					SSLMode:  "disable",
 				},
 				JWT: JWT{
-					SecretKey: "testkey",
+					SecretKey: "this-is-a-32-char-long-secret-key-123",
 					Expiry:    -1 * time.Hour,
 				},
 				Server: Server{
@@ -118,7 +118,7 @@ func TestConfig_Validate(t *testing.T) {
 					SSLMode:  "disable",
 				},
 				JWT: JWT{
-					SecretKey: "testkey",
+					SecretKey: "this-is-a-32-char-long-secret-key-123",
 					Expiry:    24 * time.Hour,
 				},
 				Server: Server{
