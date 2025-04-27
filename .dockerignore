@@ -8,7 +8,6 @@ lefthook.yml
 conduit
 
 # Testing
-*_test.go
 **/*_test.go
 coverage.out
 
