@@ -203,6 +203,7 @@ func Test_profileHandler_GetProfile(t *testing.T) {
 
 			// Create request
 			req := httptest.NewRequest(http.MethodGet, "/api/profiles/"+tt.username, nil)
+			req.SetPathValue("username", tt.username)
 
 			// Add authorization token and setup context
 			if tt.setupAuth != nil {
@@ -408,6 +409,7 @@ func Test_profileHandler_Follow(t *testing.T) {
 
 			// Create request
 			req := httptest.NewRequest(http.MethodPost, "/api/profiles/"+tt.username+"/follow", nil)
+			req.SetPathValue("username", tt.username)
 
 			// Add authorization token and setup context
 			if tt.setupAuth != nil {
@@ -615,7 +617,12 @@ func Test_profileHandler_Unfollow(t *testing.T) {
 			profileHandler := NewProfileHandler(mockService)
 
 			// Create request
-			req := httptest.NewRequest(http.MethodPost, "/api/profiles/"+tt.username+"/follow", nil)
+			req := httptest.NewRequest(
+				http.MethodDelete,
+				"/api/profiles/"+tt.username+"/follow",
+				nil,
+			)
+			req.SetPathValue("username", tt.username)
 
 			// Add authorization token and setup context
 			if tt.setupAuth != nil {

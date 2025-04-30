@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"strings"
 
 	"github.com/Nilesh2000/conduit/internal/middleware"
 	"github.com/Nilesh2000/conduit/internal/response"
@@ -51,7 +50,7 @@ func (h *profileHandler) GetProfile() http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 
 		// Get username from context
-		username := r.URL.Path[len("/api/profiles/"):]
+		username := r.PathValue("username")
 
 		// Get current user ID from context
 		currentUserID := int64(0)
@@ -101,13 +100,7 @@ func (h *profileHandler) Follow() http.HandlerFunc {
 		}
 
 		// Get username from URL path
-		pathParams := strings.Split(r.URL.Path, "/")
-		if len(pathParams) < 4 {
-			response.RespondWithError(w, http.StatusBadRequest, []string{"User not found"})
-			return
-		}
-		// Get second to last path parameter (username in /profiles/:username/follow)
-		username := pathParams[len(pathParams)-2]
+		username := r.PathValue("username")
 
 		// Call service to follow user
 		profile, err := h.profileService.FollowUser(r.Context(), followerID, username)
@@ -157,14 +150,7 @@ func (h *profileHandler) Unfollow() http.HandlerFunc {
 		}
 
 		// Get username from URL path
-		pathParams := strings.Split(r.URL.Path, "/")
-		if len(pathParams) < 4 {
-			response.RespondWithError(w, http.StatusBadRequest, []string{"User not found"})
-			return
-		}
-
-		// Get second to last path parameter (username in /profiles/:username/follow)
-		username := pathParams[len(pathParams)-2]
+		username := r.PathValue("username")
 
 		// Call service to unfollow user
 		profile, err := h.profileService.UnfollowUser(r.Context(), followerID, username)
