@@ -22,6 +22,11 @@ type Database struct {
 	Password string
 	Name     string
 	SSLMode  string
+
+	MaxOpenConns    int
+	MaxIdleConns    int
+	ConnMaxLifetime time.Duration
+	ConnMaxIdleTime time.Duration
 }
 
 // JWT represents the JWT configuration.
@@ -51,6 +56,11 @@ func Load() (*Config, error) {
 			Password: getEnv("DB_PASSWORD", "admin"),
 			Name:     getEnv("DB_NAME", "conduit"),
 			SSLMode:  getEnv("DB_SSLMODE", "disable"),
+
+			MaxOpenConns:    getEnvInt("DB_MAX_OPEN_CONNS", 10),
+			MaxIdleConns:    getEnvInt("DB_MAX_IDLE_CONNS", 5),
+			ConnMaxLifetime: getEnvDuration("DB_CONN_MAX_LIFETIME", 10*time.Second),
+			ConnMaxIdleTime: getEnvDuration("DB_CONN_MAX_IDLE_TIME", 5*time.Second),
 		},
 		JWT: JWT{
 			SecretKey: getEnv("JWT_SECRET_KEY", "this-is-a-32-char-long-secret-key-123"),
@@ -117,6 +127,26 @@ func (d *Database) Validate() error {
 		return fmt.Errorf("port must be a valid number: %w", err)
 	}
 
+	// Validate max open connections
+	if d.MaxOpenConns <= 0 {
+		return fmt.Errorf("max open connections must be greater than 0")
+	}
+
+	// Validate max idle connections
+	if d.MaxIdleConns <= 0 {
+		return fmt.Errorf("max idle connections must be greater than 0")
+	}
+
+	// Validate connection max lifetime
+	if d.ConnMaxLifetime <= 0 {
+		return fmt.Errorf("connection max lifetime must be greater than 0")
+	}
+
+	// Validate connection max idle time
+	if d.ConnMaxIdleTime <= 0 {
+		return fmt.Errorf("connection max idle time must be greater than 0")
+	}
+
 	return nil
 }
 
@@ -163,4 +193,24 @@ func getEnv(key, defaultValue string) string {
 		return defaultValue
 	}
 	return value
+}
+
+// getEnvInt returns the value of the environment variable as an int.
+func getEnvInt(key string, defaultValue int) int {
+	value := getEnv(key, strconv.Itoa(defaultValue))
+	val, err := strconv.Atoi(value)
+	if err != nil {
+		return defaultValue
+	}
+	return val
+}
+
+// getEnvDuration returns the value of the environment variable as a duration.
+func getEnvDuration(key string, defaultValue time.Duration) time.Duration {
+	value := getEnv(key, defaultValue.String())
+	duration, err := time.ParseDuration(value)
+	if err != nil {
+		return defaultValue
+	}
+	return duration
 }

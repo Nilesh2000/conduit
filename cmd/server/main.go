@@ -65,6 +65,12 @@ func main() {
 		}
 	}()
 
+	// Configure database connection pool
+	db.SetMaxOpenConns(cfg.Database.MaxOpenConns)
+	db.SetMaxIdleConns(cfg.Database.MaxIdleConns)
+	db.SetConnMaxLifetime(cfg.Database.ConnMaxLifetime)
+	db.SetConnMaxIdleTime(cfg.Database.ConnMaxIdleTime)
+
 	// Ping database to check connection
 	err = db.Ping()
 	if err != nil {

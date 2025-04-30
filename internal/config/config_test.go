@@ -54,6 +54,11 @@ func TestConfig_Validate(t *testing.T) {
 					Password: "testpass",
 					Name:     "testdb",
 					SSLMode:  "disable",
+
+					MaxOpenConns:    10,
+					MaxIdleConns:    5,
+					ConnMaxLifetime: 10 * time.Second,
+					ConnMaxIdleTime: 5 * time.Second,
 				},
 				JWT: JWT{
 					SecretKey: "this-is-a-32-char-long-secret-key-123",
@@ -74,6 +79,11 @@ func TestConfig_Validate(t *testing.T) {
 					Password: "testpass",
 					Name:     "testdb",
 					SSLMode:  "disable",
+
+					MaxOpenConns:    10,
+					MaxIdleConns:    5,
+					ConnMaxLifetime: 10 * time.Second,
+					ConnMaxIdleTime: 5 * time.Second,
 				},
 				JWT: JWT{
 					SecretKey: "this-is-a-32-char-long-secret-key-123",
@@ -95,6 +105,11 @@ func TestConfig_Validate(t *testing.T) {
 					Password: "testpass",
 					Name:     "testdb",
 					SSLMode:  "disable",
+
+					MaxOpenConns:    10,
+					MaxIdleConns:    5,
+					ConnMaxLifetime: 10 * time.Second,
+					ConnMaxIdleTime: 5 * time.Second,
 				},
 				JWT: JWT{
 					SecretKey: "this-is-a-32-char-long-secret-key-123",
@@ -116,6 +131,11 @@ func TestConfig_Validate(t *testing.T) {
 					Password: "testpass",
 					Name:     "testdb",
 					SSLMode:  "disable",
+
+					MaxOpenConns:    10,
+					MaxIdleConns:    5,
+					ConnMaxLifetime: 10 * time.Second,
+					ConnMaxIdleTime: 5 * time.Second,
 				},
 				JWT: JWT{
 					SecretKey: "this-is-a-32-char-long-secret-key-123",
