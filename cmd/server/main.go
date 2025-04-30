@@ -90,16 +90,25 @@ func main() {
 	router := http.NewServeMux()
 
 	// Public routes
+
+	// Auth routes
 	router.HandleFunc("POST /api/users", userHandler.Register())
 	router.HandleFunc("POST /api/users/login", userHandler.Login())
+
+	// Article routes
 	router.HandleFunc("GET /api/articles/{slug}", articleHandler.GetArticle())
 
+	// Profile routes
 	router.HandleFunc("GET /api/profiles/{username}", profileHandler.GetProfile())
 
 	// Protected routes
 	authMiddleware := middleware.RequireAuth([]byte(cfg.JWT.SecretKey))
+
+	// User routes
 	router.HandleFunc("GET /api/user", authMiddleware(userHandler.GetCurrentUser()))
 	router.HandleFunc("PUT /api/user", authMiddleware(userHandler.UpdateCurrentUser()))
+
+	// Profile routes
 	router.HandleFunc(
 		"POST /api/profiles/{username}/follow",
 		authMiddleware(profileHandler.Follow()),
@@ -108,6 +117,8 @@ func main() {
 		"DELETE /api/profiles/{username}/follow",
 		authMiddleware(profileHandler.Unfollow()),
 	)
+
+	// Article routes
 	router.HandleFunc("POST /api/articles", authMiddleware(articleHandler.CreateArticle()))
 
 	// Create HTTP server
