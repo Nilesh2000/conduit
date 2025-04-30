@@ -144,6 +144,23 @@ func (s *articleService) GetArticle(
 	}, nil
 }
 
+// FavoriteArticle favorites an article
+func (s *articleService) FavoriteArticle(
+	ctx context.Context,
+	userID int64,
+	slug string,
+) (*Article, error) {
+	return nil, nil
+}
+
+func (s *articleService) UnfavoriteArticle(
+	ctx context.Context,
+	userID int64,
+	slug string,
+) (*Article, error) {
+	return nil, nil
+}
+
 // generateSlug generates a slug from a title
 func generateSlug(title string) string {
 	return slug.Make(title)

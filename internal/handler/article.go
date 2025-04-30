@@ -38,6 +38,8 @@ type ArticleService interface {
 		tagList []string,
 	) (*service.Article, error)
 	GetArticle(ctx context.Context, slug string) (*service.Article, error)
+	FavoriteArticle(ctx context.Context, userID int64, slug string) (*service.Article, error)
+	UnfavoriteArticle(ctx context.Context, userID int64, slug string) (*service.Article, error)
 }
 
 // articleHandler is a handler for article operations
@@ -167,5 +169,64 @@ func (h *articleHandler) GetArticle() http.HandlerFunc {
 				[]string{"Internal server error"},
 			)
 		}
+	}
+}
+
+// FavoriteArticle is a handler function for favoriting an article
+func (h *articleHandler) FavoriteArticle() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Set the content type to JSON
+		w.Header().Set("Content-Type", "application/json")
+
+		// Get user ID from context
+		userID, ok := middleware.GetUserIDFromContext(r.Context())
+		if !ok {
+			response.RespondWithError(w, http.StatusUnauthorized, []string{"Unauthorized"})
+			return
+		}
+
+		// Get slug from request path
+		slug := r.PathValue("slug")
+
+		// Call service to favorite article
+		article, err := h.articleService.FavoriteArticle(
+			r.Context(),
+			userID,
+			slug,
+		)
+		// Handle errors
+		if err != nil {
+			switch {
+			case errors.Is(err, service.ErrUserNotFound):
+				response.RespondWithError(w, http.StatusNotFound, []string{"User not found"})
+			case errors.Is(err, service.ErrArticleNotFound):
+				response.RespondWithError(w, http.StatusNotFound, []string{"Article not found"})
+			default:
+				response.RespondWithError(
+					w,
+					http.StatusInternalServerError,
+					[]string{"Internal server error"},
+				)
+			}
+			return
+		}
+
+		// Respond with favorite article
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(ArticleResponse{Article: *article}); err != nil {
+			response.RespondWithError(
+				w,
+				http.StatusInternalServerError,
+				[]string{"Internal server error"},
+			)
+		}
+	}
+}
+
+// UnfavoriteArticle is a handler function for unfavoriting an article
+func (h *articleHandler) UnfavoriteArticle() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Set the content type to JSON
+		w.Header().Set("Content-Type", "application/json")
 	}
 }
