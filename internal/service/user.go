@@ -8,7 +8,7 @@ import (
 
 	"github.com/Nilesh2000/conduit/internal/repository"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -191,15 +191,15 @@ func (s *userService) generateToken(userID int64) (string, error) {
 	now := time.Now()
 	expirationTime := now.Add(s.jwtExpiration)
 
-	claims := jwt.StandardClaims{
-		ExpiresAt: expirationTime.Unix(),
-		Id:        uuid.New().String(),
-		IssuedAt:  now.Unix(),
+	claims := jwt.RegisteredClaims{
+		ExpiresAt: jwt.NewNumericDate(expirationTime),
+		ID:        uuid.New().String(),
+		IssuedAt:  jwt.NewNumericDate(now),
 		Issuer:    "conduit-api",
-		NotBefore: now.Unix(),
+		NotBefore: jwt.NewNumericDate(now),
 		Subject:   fmt.Sprintf("%d", userID),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(s.jwtSecret))
+	return token.SignedString(s.jwtSecret)
 }

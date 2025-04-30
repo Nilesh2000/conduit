@@ -9,7 +9,7 @@ import (
 
 	"github.com/Nilesh2000/conduit/internal/response"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // contextKey is a type for context keys to avoid collisions
@@ -42,7 +42,7 @@ func RequireAuth(jwtSecret []byte) func(http.HandlerFunc) http.HandlerFunc {
 			// Parse the token
 			token, err := jwt.ParseWithClaims(
 				tokenString,
-				&jwt.StandardClaims{},
+				&jwt.RegisteredClaims{},
 				func(token *jwt.Token) (any, error) {
 					return jwtSecret, nil
 				},
@@ -53,14 +53,15 @@ func RequireAuth(jwtSecret []byte) func(http.HandlerFunc) http.HandlerFunc {
 			}
 
 			// Extract the claims from the token
-			claims, ok := token.Claims.(*jwt.StandardClaims)
+			claims, ok := token.Claims.(*jwt.RegisteredClaims)
 			if !ok || claims.Subject == "" {
 				response.RespondWithError(w, http.StatusUnauthorized, []string{"Unauthorized"})
 				return
 			}
 
 			// Check if the token has expired
-			if claims.ExpiresAt < time.Now().Unix() {
+			expTime, err := claims.GetExpirationTime()
+			if err != nil || expTime.Before(time.Now()) {
 				response.RespondWithError(w, http.StatusUnauthorized, []string{"Unauthorized"})
 				return
 			}

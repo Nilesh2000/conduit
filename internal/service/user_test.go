@@ -9,7 +9,7 @@ import (
 
 	"github.com/Nilesh2000/conduit/internal/repository"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -129,7 +129,7 @@ func Test_userService_Register(t *testing.T) {
 				// Verify token
 				token, err := jwt.ParseWithClaims(
 					u.Token,
-					&jwt.StandardClaims{},
+					&jwt.RegisteredClaims{},
 					func(token *jwt.Token) (any, error) {
 						return []byte(jwtSecret), nil
 					},
@@ -142,7 +142,7 @@ func Test_userService_Register(t *testing.T) {
 				}
 
 				// Verify claims
-				if claims, ok := token.Claims.(*jwt.StandardClaims); ok {
+				if claims, ok := token.Claims.(*jwt.RegisteredClaims); ok {
 					expectedSubject := "1"
 					if claims.Subject != expectedSubject {
 						t.Errorf(
@@ -156,7 +156,7 @@ func Test_userService_Register(t *testing.T) {
 						t.Errorf("Expected token issuer to be 'conduit-api', got %q", claims.Issuer)
 					}
 				} else {
-					t.Errorf("Failed to parse token claims as StandardClaims")
+					t.Errorf("Failed to parse token claims as RegisteredClaims")
 				}
 			},
 		},
@@ -325,7 +325,7 @@ func Test_userService_Login(t *testing.T) {
 				// Verify token
 				token, err := jwt.ParseWithClaims(
 					u.Token,
-					&jwt.StandardClaims{},
+					&jwt.RegisteredClaims{},
 					func(token *jwt.Token) (any, error) {
 						return []byte(jwtSecret), nil
 					},
@@ -338,7 +338,7 @@ func Test_userService_Login(t *testing.T) {
 				}
 
 				// Verify claims
-				if claims, ok := token.Claims.(*jwt.StandardClaims); ok {
+				if claims, ok := token.Claims.(*jwt.RegisteredClaims); ok {
 					expectedSubject := "1"
 					if claims.Subject != expectedSubject {
 						t.Errorf(
@@ -352,7 +352,7 @@ func Test_userService_Login(t *testing.T) {
 						t.Errorf("Expected token issuer to be 'conduit-api', got %q", claims.Issuer)
 					}
 				} else {
-					t.Errorf("Failed to parse token claims as StandardClaims")
+					t.Errorf("Failed to parse token claims as RegisteredClaims")
 				}
 			},
 		},
