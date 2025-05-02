@@ -44,6 +44,20 @@ type ArticleRepository interface {
 		ctx context.Context,
 		slug string,
 	) (*repository.Article, error)
+	Favorite(
+		ctx context.Context,
+		userID int64,
+		articleID int64,
+	) error
+	Unfavorite(
+		ctx context.Context,
+		userID int64,
+		articleID int64,
+	) error
+	GetFavoritesCount(
+		ctx context.Context,
+		articleID int64,
+	) (int, error)
 }
 
 // articleService implements the articleService interface
@@ -150,7 +164,52 @@ func (s *articleService) FavoriteArticle(
 	userID int64,
 	slug string,
 ) (*Article, error) {
-	return nil, nil
+	article, err := s.articleRepository.GetBySlug(ctx, slug)
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrArticleNotFound):
+			return nil, ErrArticleNotFound
+		default:
+			return nil, ErrInternalServer
+		}
+	}
+
+	// Favorite the article
+	err = s.articleRepository.Favorite(ctx, userID, article.ID)
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrUserNotFound):
+			return nil, ErrUserNotFound
+		case errors.Is(err, repository.ErrArticleNotFound):
+			return nil, ErrArticleNotFound
+		default:
+			return nil, ErrInternalServer
+		}
+	}
+
+	// Get favorites count
+	favoritesCount, err := s.articleRepository.GetFavoritesCount(ctx, article.ID)
+	if err != nil {
+		return nil, ErrInternalServer
+	}
+
+	return &Article{
+		Slug:           article.Slug,
+		Title:          article.Title,
+		Description:    article.Description,
+		Body:           article.Body,
+		TagList:        article.TagList,
+		CreatedAt:      article.CreatedAt,
+		UpdatedAt:      article.UpdatedAt,
+		Favorited:      true,
+		FavoritesCount: favoritesCount,
+		Author: Profile{
+			Username:  article.Author.Username,
+			Bio:       article.Author.Bio,
+			Image:     article.Author.Image,
+			Following: false, // TODO: Implement following
+		},
+	}, nil
 }
 
 func (s *articleService) UnfavoriteArticle(
@@ -158,7 +217,40 @@ func (s *articleService) UnfavoriteArticle(
 	userID int64,
 	slug string,
 ) (*Article, error) {
-	return nil, nil
+	article, err := s.articleRepository.GetBySlug(ctx, slug)
+	if err != nil {
+		return nil, ErrInternalServer
+	}
+
+	// Unfavorite the article
+	err = s.articleRepository.Unfavorite(ctx, userID, article.ID)
+	if err != nil {
+		return nil, ErrInternalServer
+	}
+
+	// Get favorites count
+	favoritesCount, err := s.articleRepository.GetFavoritesCount(ctx, article.ID)
+	if err != nil {
+		return nil, ErrInternalServer
+	}
+
+	return &Article{
+		Slug:           article.Slug,
+		Title:          article.Title,
+		Description:    article.Description,
+		Body:           article.Body,
+		TagList:        article.TagList,
+		CreatedAt:      article.CreatedAt,
+		UpdatedAt:      article.UpdatedAt,
+		Favorited:      false,
+		FavoritesCount: favoritesCount,
+		Author: Profile{
+			Username:  article.Author.Username,
+			Bio:       article.Author.Bio,
+			Image:     article.Author.Image,
+			Following: false, // TODO: Implement following
+		},
+	}, nil
 }
 
 // generateSlug generates a slug from a title

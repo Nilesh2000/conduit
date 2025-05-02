@@ -211,3 +211,29 @@ func (r *articleRepository) GetBySlug(
 
 	return &article, nil
 }
+
+// Favorite adds an article to the user's favorites
+func (r *articleRepository) Favorite(
+	ctx context.Context,
+	userID int64,
+	articleID int64,
+) error {
+	return nil
+}
+
+// Unfavorite removes an article from the user's favorites
+func (r *articleRepository) Unfavorite(
+	ctx context.Context,
+	userID int64,
+	articleID int64,
+) error {
+	return nil
+}
+
+// GetFavoritesCount gets the number of favorites for an article
+func (r *articleRepository) GetFavoritesCount(
+	ctx context.Context,
+	articleID int64,
+) (int, error) {
+	return 0, nil
+}

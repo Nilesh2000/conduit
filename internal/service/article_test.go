@@ -13,8 +13,11 @@ import (
 
 // MockArticleRepository is a mock implementation of the ArticleRepository interface
 type MockArticleRepository struct {
-	createFunc    func(ctx context.Context, userID int64, articleSlug, title, description, body string, tagList []string) (*repository.Article, error)
-	getBySlugFunc func(ctx context.Context, slug string) (*repository.Article, error)
+	createFunc            func(ctx context.Context, userID int64, articleSlug, title, description, body string, tagList []string) (*repository.Article, error)
+	getBySlugFunc         func(ctx context.Context, slug string) (*repository.Article, error)
+	favoriteFunc          func(ctx context.Context, userID int64, articleID int64) error
+	unfavoriteFunc        func(ctx context.Context, userID int64, articleID int64) error
+	getFavoritesCountFunc func(ctx context.Context, articleID int64) (int, error)
 }
 
 // Create is a mock implementation of the Create method
@@ -33,6 +36,32 @@ func (m *MockArticleRepository) GetBySlug(
 	slug string,
 ) (*repository.Article, error) {
 	return m.getBySlugFunc(ctx, slug)
+}
+
+// Favorite is a mock implementation of the Favorite method
+func (m *MockArticleRepository) Favorite(
+	ctx context.Context,
+	userID int64,
+	articleID int64,
+) error {
+	return m.favoriteFunc(ctx, userID, articleID)
+}
+
+// Unfavorite is a mock implementation of the Unfavorite method
+func (m *MockArticleRepository) Unfavorite(
+	ctx context.Context,
+	userID int64,
+	articleID int64,
+) error {
+	return m.unfavoriteFunc(ctx, userID, articleID)
+}
+
+// GetFavoritesCount is a mock implementation of the GetFavoritesCount method
+func (m *MockArticleRepository) GetFavoritesCount(
+	ctx context.Context,
+	articleID int64,
+) (int, error) {
+	return m.getFavoritesCountFunc(ctx, articleID)
 }
 
 // Test_articleService_CreateArticle tests the CreateArticle method of the articleService
