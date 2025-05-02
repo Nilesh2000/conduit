@@ -127,6 +127,16 @@ func main() {
 	// Article routes
 	router.HandleFunc("POST /api/articles", authMiddleware(articleHandler.CreateArticle()))
 
+	// Favorite routes
+	router.HandleFunc(
+		"POST /api/articles/{slug}/favorite",
+		authMiddleware(articleHandler.FavoriteArticle()),
+	)
+	router.HandleFunc(
+		"DELETE /api/articles/{slug}/favorite",
+		authMiddleware(articleHandler.UnfavoriteArticle()),
+	)
+
 	// Create HTTP server
 	server := &http.Server{
 		Addr:              ":" + cfg.Server.Port,
