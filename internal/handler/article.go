@@ -228,5 +228,48 @@ func (h *articleHandler) UnfavoriteArticle() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Set the content type to JSON
 		w.Header().Set("Content-Type", "application/json")
+
+		// Get user ID from context
+		userID, ok := middleware.GetUserIDFromContext(r.Context())
+		if !ok {
+			response.RespondWithError(w, http.StatusUnauthorized, []string{"Unauthorized"})
+			return
+		}
+
+		// Get slug from request path
+		slug := r.PathValue("slug")
+
+		// Call service to unfavorite article
+		article, err := h.articleService.UnfavoriteArticle(
+			r.Context(),
+			userID,
+			slug,
+		)
+		// Handle errors
+		if err != nil {
+			switch {
+			case errors.Is(err, service.ErrUserNotFound):
+				response.RespondWithError(w, http.StatusNotFound, []string{"User not found"})
+			case errors.Is(err, service.ErrArticleNotFound):
+				response.RespondWithError(w, http.StatusNotFound, []string{"Article not found"})
+			default:
+				response.RespondWithError(
+					w,
+					http.StatusInternalServerError,
+					[]string{"Internal server error"},
+				)
+			}
+			return
+		}
+
+		// Respond with unfavorite article
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(ArticleResponse{Article: *article}); err != nil {
+			response.RespondWithError(
+				w,
+				http.StatusInternalServerError,
+				[]string{"Internal server error"},
+			)
+		}
 	}
 }
