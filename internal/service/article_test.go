@@ -419,3 +419,45 @@ func Test_articleService_GetArticle(t *testing.T) {
 		})
 	}
 }
+
+// Test_articleService_FavoriteArticle tests the FavoriteArticle method of the articleService
+func Test_articleService_FavoriteArticle(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name        string
+		userID      int64
+		slug        string
+		setupMock   func() *MockArticleRepository
+		expectedErr error
+		validate    func(*testing.T, *Article)
+	}{}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+		})
+	}
+}
+
+// Test_articleService_UnfavoriteArticle tests the UnfavoriteArticle method of the articleService
+func Test_articleService_UnfavoriteArticle(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name        string
+		userID      int64
+		slug        string
+		setupMock   func() *MockArticleRepository
+		expectedErr error
+		validate    func(*testing.T, *Article)
+	}{}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+		})
+	}
+}

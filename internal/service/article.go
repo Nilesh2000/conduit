@@ -212,6 +212,7 @@ func (s *articleService) FavoriteArticle(
 	}, nil
 }
 
+// UnfavoriteArticle unfavorites an article
 func (s *articleService) UnfavoriteArticle(
 	ctx context.Context,
 	userID int64,
