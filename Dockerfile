@@ -1,6 +1,10 @@
 # Build stage
 FROM golang:1.24.1-alpine AS builder
 
+# Set environment variables
+ENV CGO_ENABLED=0 \
+    GOOS=linux \
+
 # Set working directory
 WORKDIR /app
 
@@ -14,7 +18,7 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -o /conduit ./cmd/...
+RUN go build -o /conduit ./cmd/...
 
 # Final stage
 FROM alpine:latest AS runner
