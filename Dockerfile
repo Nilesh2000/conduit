@@ -21,7 +21,7 @@ COPY . .
 RUN go build -o /conduit ./cmd/...
 
 # Final stage
-FROM alpine:latest AS runner
+FROM alpine:3.21 AS runner
 
 # Set working directory
 WORKDIR /app
