@@ -15,6 +15,7 @@ import (
 type MockArticleRepository struct {
 	createFunc            func(ctx context.Context, userID int64, articleSlug, title, description, body string, tagList []string) (*repository.Article, error)
 	getBySlugFunc         func(ctx context.Context, slug string) (*repository.Article, error)
+	updateFunc            func(ctx context.Context, userID int64, slug string, title, description, body *string) (*repository.Article, error)
 	favoriteFunc          func(ctx context.Context, userID int64, articleID int64) error
 	unfavoriteFunc        func(ctx context.Context, userID int64, articleID int64) error
 	getFavoritesCountFunc func(ctx context.Context, articleID int64) (int, error)
@@ -37,6 +38,16 @@ func (m *MockArticleRepository) GetBySlug(
 	slug string,
 ) (*repository.Article, error) {
 	return m.getBySlugFunc(ctx, slug)
+}
+
+// Update is a mock implementation of the Update method
+func (m *MockArticleRepository) Update(
+	ctx context.Context,
+	userID int64,
+	slug string,
+	title, description, body *string,
+) (*repository.Article, error) {
+	return m.updateFunc(ctx, userID, slug, title, description, body)
 }
 
 // Favorite is a mock implementation of the Favorite method

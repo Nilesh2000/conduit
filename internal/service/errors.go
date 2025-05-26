@@ -18,4 +18,6 @@ var (
 	ErrCannotFollowSelf = errors.New("cannot follow yourself")
 
 	ErrArticleAuthorCannotFavorite = errors.New("article author cannot favorite their own article")
+
+	ErrArticleNotAuthorized = errors.New("article not authorized")
 )

@@ -19,6 +19,7 @@ import (
 type MockArticleService struct {
 	createArticleFunc     func(ctx context.Context, userID int64, title, description, body string, tagList []string) (*service.Article, error)
 	getArticleFunc        func(ctx context.Context, slug string, currentUserID *int64) (*service.Article, error)
+	updateArticleFunc     func(ctx context.Context, userID int64, slug string, title, description, body *string) (*service.Article, error)
 	favoriteArticleFunc   func(ctx context.Context, userID int64, slug string) (*service.Article, error)
 	unfavoriteArticleFunc func(ctx context.Context, userID int64, slug string) (*service.Article, error)
 }
@@ -40,6 +41,16 @@ func (m *MockArticleService) GetArticle(
 	currentUserID *int64,
 ) (*service.Article, error) {
 	return m.getArticleFunc(ctx, slug, currentUserID)
+}
+
+// UpdateArticle is a mock implementation of the UpdateArticle method
+func (m *MockArticleService) UpdateArticle(
+	ctx context.Context,
+	userID int64,
+	slug string,
+	title, description, body *string,
+) (*service.Article, error) {
+	return m.updateArticleFunc(ctx, userID, slug, title, description, body)
 }
 
 // FavoriteArticle is a mock implementation of the FavoriteArticle method

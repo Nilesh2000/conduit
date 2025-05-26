@@ -111,6 +111,7 @@ func main() {
 
 	// Article routes
 	router.HandleFunc("POST /api/articles", authMiddleware(articleHandler.CreateArticle()))
+	router.HandleFunc("PUT /api/articles/{slug}", authMiddleware(articleHandler.UpdateArticle()))
 
 	// Favorite routes
 	router.HandleFunc(

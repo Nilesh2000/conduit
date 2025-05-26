@@ -24,6 +24,15 @@ type CreateArticleRequest struct {
 	} `json:"article" validate:"required"`
 }
 
+// UpdateArticleRequest is the request body for updating an article
+type UpdateArticleRequest struct {
+	Article struct {
+		Title       *string `json:"title" validate:"omitempty"`
+		Description *string `json:"description" validate:"omitempty"`
+		Body        *string `json:"body" validate:"omitempty"`
+	} `json:"article" validate:"required"`
+}
+
 // ArticleResponse is the response body for an article
 type ArticleResponse struct {
 	Article service.Article `json:"article"`
@@ -38,6 +47,12 @@ type ArticleService interface {
 		tagList []string,
 	) (*service.Article, error)
 	GetArticle(ctx context.Context, slug string, currentUserID *int64) (*service.Article, error)
+	UpdateArticle(
+		ctx context.Context,
+		userID int64,
+		slug string,
+		title, description, body *string,
+	) (*service.Article, error)
 	FavoriteArticle(ctx context.Context, userID int64, slug string) (*service.Article, error)
 	UnfavoriteArticle(ctx context.Context, userID int64, slug string) (*service.Article, error)
 }
@@ -165,6 +180,76 @@ func (h *articleHandler) GetArticle() http.HandlerFunc {
 		}
 
 		// Respond with article
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(ArticleResponse{Article: *article}); err != nil {
+			response.RespondWithError(
+				w,
+				http.StatusInternalServerError,
+				[]string{"Internal server error"},
+			)
+		}
+	}
+}
+
+func (h *articleHandler) UpdateArticle() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Set the content type to JSON
+		w.Header().Set("Content-Type", "application/json")
+
+		// Get user ID from context
+		userID, ok := middleware.GetUserIDFromContext(r.Context())
+		if !ok {
+			response.RespondWithError(w, http.StatusUnauthorized, []string{"Unauthorized"})
+			return
+		}
+
+		// Parse request body
+		var req UpdateArticleRequest
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			response.RespondWithError(
+				w,
+				http.StatusUnprocessableEntity,
+				[]string{"Invalid request body"},
+			)
+			return
+		}
+
+		// Validate request body
+		if err := h.validate.Struct(req); err != nil {
+			errors := validation.TranslateValidationErrors(err)
+			response.RespondWithError(w, http.StatusUnprocessableEntity, errors)
+			return
+		}
+
+		// Get slug from request path
+		slug := r.PathValue("slug")
+
+		// Call service to update article
+		article, err := h.articleService.UpdateArticle(
+			r.Context(),
+			userID,
+			slug,
+			req.Article.Title,
+			req.Article.Description,
+			req.Article.Body,
+		)
+		if err != nil {
+			switch {
+			case errors.Is(err, service.ErrUserNotFound):
+				response.RespondWithError(w, http.StatusNotFound, []string{"User not found"})
+			case errors.Is(err, service.ErrArticleNotFound):
+				response.RespondWithError(w, http.StatusNotFound, []string{"Article not found"})
+			default:
+				response.RespondWithError(
+					w,
+					http.StatusInternalServerError,
+					[]string{"Internal server error"},
+				)
+			}
+			return
+		}
+
+		// Respond with updated article
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(ArticleResponse{Article: *article}); err != nil {
 			response.RespondWithError(

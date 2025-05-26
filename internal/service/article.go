@@ -44,6 +44,12 @@ type ArticleRepository interface {
 		ctx context.Context,
 		slug string,
 	) (*repository.Article, error)
+	Update(
+		ctx context.Context,
+		userID int64,
+		slug string,
+		title, description, body *string,
+	) (*repository.Article, error)
 	Favorite(
 		ctx context.Context,
 		userID int64,
@@ -185,6 +191,73 @@ func (s *articleService) GetArticle(
 			Bio:       article.Author.Bio,
 			Image:     article.Author.Image,
 			Following: following,
+		},
+	}, nil
+}
+
+// UpdateArticle updates an article
+func (s *articleService) UpdateArticle(
+	ctx context.Context,
+	userID int64,
+	slug string,
+	title, description, body *string,
+) (*Article, error) {
+	article, err := s.articleRepository.GetBySlug(ctx, slug)
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrArticleNotFound):
+			return nil, ErrArticleNotFound
+		default:
+			return nil, ErrInternalServer
+		}
+	}
+
+	// Check if user is the author
+	if article.AuthorID != userID {
+		return nil, ErrArticleNotAuthorized
+	}
+
+	// Proceed with update
+	article, err = s.articleRepository.Update(
+		ctx,
+		userID,
+		slug,
+		title,
+		description,
+		body,
+	)
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrUserNotFound):
+			return nil, ErrUserNotFound
+		case errors.Is(err, repository.ErrArticleNotFound):
+			return nil, ErrArticleNotFound
+		default:
+			return nil, ErrInternalServer
+		}
+	}
+
+	// Get favorites count
+	favoritesCount, err := s.articleRepository.GetFavoritesCount(ctx, article.ID)
+	if err != nil {
+		return nil, ErrInternalServer
+	}
+
+	return &Article{
+		Slug:           article.Slug,
+		Title:          article.Title,
+		Description:    article.Description,
+		Body:           article.Body,
+		TagList:        article.TagList,
+		CreatedAt:      article.CreatedAt,
+		UpdatedAt:      article.UpdatedAt,
+		Favorited:      false,
+		FavoritesCount: favoritesCount,
+		Author: Profile{
+			Username:  article.Author.Username,
+			Bio:       article.Author.Bio,
+			Image:     article.Author.Image,
+			Following: false,
 		},
 	}, nil
 }
