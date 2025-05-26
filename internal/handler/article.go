@@ -53,6 +53,7 @@ type ArticleService interface {
 		slug string,
 		title, description, body *string,
 	) (*service.Article, error)
+	DeleteArticle(ctx context.Context, userID int64, slug string) error
 	FavoriteArticle(ctx context.Context, userID int64, slug string) (*service.Article, error)
 	UnfavoriteArticle(ctx context.Context, userID int64, slug string) (*service.Article, error)
 }
@@ -257,6 +258,38 @@ func (h *articleHandler) UpdateArticle() http.HandlerFunc {
 				[]string{"Internal server error"},
 			)
 		}
+	}
+}
+
+// DeleteArticle is a handler function for deleting an article
+func (h *articleHandler) DeleteArticle() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Set the content type to JSON
+		w.Header().Set("Content-Type", "application/json")
+
+		// Get user ID from context
+		userID, ok := middleware.GetUserIDFromContext(r.Context())
+		if !ok {
+			response.RespondWithError(w, http.StatusUnauthorized, []string{"Unauthorized"})
+			return
+		}
+
+		// Get slug from request path
+		slug := r.PathValue("slug")
+
+		// Call service to delete article
+		err := h.articleService.DeleteArticle(r.Context(), userID, slug)
+		if err != nil {
+			response.RespondWithError(
+				w,
+				http.StatusInternalServerError,
+				[]string{"Internal server error"},
+			)
+			return
+		}
+
+		// Respond with deleted article
+		w.WriteHeader(http.StatusOK)
 	}
 }
 

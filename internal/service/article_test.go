@@ -16,6 +16,7 @@ type MockArticleRepository struct {
 	createFunc            func(ctx context.Context, userID int64, articleSlug, title, description, body string, tagList []string) (*repository.Article, error)
 	getBySlugFunc         func(ctx context.Context, slug string) (*repository.Article, error)
 	updateFunc            func(ctx context.Context, userID int64, slug string, title, description, body *string) (*repository.Article, error)
+	deleteFunc            func(ctx context.Context, articleID int64) error
 	favoriteFunc          func(ctx context.Context, userID int64, articleID int64) error
 	unfavoriteFunc        func(ctx context.Context, userID int64, articleID int64) error
 	getFavoritesCountFunc func(ctx context.Context, articleID int64) (int, error)
@@ -48,6 +49,14 @@ func (m *MockArticleRepository) Update(
 	title, description, body *string,
 ) (*repository.Article, error) {
 	return m.updateFunc(ctx, userID, slug, title, description, body)
+}
+
+// Delete is a mock implementation of the Delete method
+func (m *MockArticleRepository) Delete(
+	ctx context.Context,
+	articleID int64,
+) error {
+	return m.deleteFunc(ctx, articleID)
 }
 
 // Favorite is a mock implementation of the Favorite method

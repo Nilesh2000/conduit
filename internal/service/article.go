@@ -50,6 +50,10 @@ type ArticleRepository interface {
 		slug string,
 		title, description, body *string,
 	) (*repository.Article, error)
+	Delete(
+		ctx context.Context,
+		articleID int64,
+	) error
 	Favorite(
 		ctx context.Context,
 		userID int64,
@@ -232,8 +236,6 @@ func (s *articleService) UpdateArticle(
 	)
 	if err != nil {
 		switch {
-		case errors.Is(err, repository.ErrUserNotFound):
-			return nil, ErrUserNotFound
 		case errors.Is(err, repository.ErrArticleNotFound):
 			return nil, ErrArticleNotFound
 		default:
@@ -264,6 +266,40 @@ func (s *articleService) UpdateArticle(
 			Following: false,
 		},
 	}, nil
+}
+
+// DeleteArticle deletes an article
+func (s *articleService) DeleteArticle(
+	ctx context.Context,
+	userID int64,
+	slug string,
+) error {
+	article, err := s.articleRepository.GetBySlug(ctx, slug)
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrArticleNotFound):
+			return ErrArticleNotFound
+		default:
+			return ErrInternalServer
+		}
+	}
+
+	// Check if user is the author
+	if article.AuthorID != userID {
+		return ErrArticleNotAuthorized
+	}
+
+	err = s.articleRepository.Delete(ctx, article.ID)
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrArticleNotFound):
+			return ErrArticleNotFound
+		default:
+			return ErrInternalServer
+		}
+	}
+
+	return nil
 }
 
 // FavoriteArticle favorites an article

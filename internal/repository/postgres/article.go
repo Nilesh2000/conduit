@@ -305,6 +305,24 @@ func (r *articleRepository) Update(
 	return &article, nil
 }
 
+// Delete deletes an article
+func (r *articleRepository) Delete(
+	ctx context.Context,
+	articleID int64,
+) error {
+	query := `
+		DELETE FROM articles
+		WHERE id = $1
+	`
+
+	_, err := r.db.ExecContext(ctx, query, articleID)
+	if err != nil {
+		return repository.ErrInternal
+	}
+
+	return nil
+}
+
 // Favorite adds an article to the user's favorites
 func (r *articleRepository) Favorite(
 	ctx context.Context,
