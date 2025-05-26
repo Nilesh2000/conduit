@@ -24,12 +24,6 @@ type Profile struct {
 	Following bool
 }
 
-type UpdateArticle struct {
-	Title       string
-	Description string
-	Body        string
-}
-
 type Comment struct {
 	Id        int
 	CreatedAt time.Time
