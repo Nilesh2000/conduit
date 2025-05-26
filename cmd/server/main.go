@@ -69,7 +69,7 @@ func main() {
 
 	// Initialize services
 	userService := service.NewUserService(userRepository, cfg.JWT.SecretKey, cfg.JWT.Expiry)
-	articleService := service.NewArticleService(articleRepository)
+	articleService := service.NewArticleService(articleRepository, profileRepository)
 	profileService := service.NewProfileService(profileRepository)
 
 	// Initialize handlers

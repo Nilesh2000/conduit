@@ -78,9 +78,13 @@ type articleService struct {
 }
 
 // NewArticleService creates a new ArticleService
-func NewArticleService(articleRepository ArticleRepository) *articleService {
+func NewArticleService(
+	articleRepository ArticleRepository,
+	profileRepository ProfileRepository,
+) *articleService {
 	return &articleService{
 		articleRepository: articleRepository,
+		profileRepository: profileRepository,
 	}
 }
 

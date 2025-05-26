@@ -96,7 +96,7 @@ func Test_articleService_CreateArticle(t *testing.T) {
 		description string
 		body        string
 		tagList     []string
-		setupMock   func() *MockArticleRepository
+		setupMock   func() (*MockArticleRepository, *MockProfileRepository)
 		expectedErr error
 		validate    func(*testing.T, *Article)
 	}{
@@ -107,8 +107,8 @@ func Test_articleService_CreateArticle(t *testing.T) {
 			description: "Test Description",
 			body:        "Test Body",
 			tagList:     []string{"tag1", "tag2"},
-			setupMock: func() *MockArticleRepository {
-				mockRepo := &MockArticleRepository{
+			setupMock: func() (*MockArticleRepository, *MockProfileRepository) {
+				mockArticleRepo := &MockArticleRepository{
 					createFunc: func(ctx context.Context, userID int64, articleSlug, title, description, body string, tagList []string) (*repository.Article, error) {
 						expectedSlug := slug.Make("Test Article")
 						if articleSlug != expectedSlug {
@@ -151,7 +151,7 @@ func Test_articleService_CreateArticle(t *testing.T) {
 						}, nil
 					},
 				}
-				return mockRepo
+				return mockArticleRepo, nil
 			},
 			expectedErr: nil,
 			validate: func(t *testing.T, article *Article) {
@@ -211,12 +211,12 @@ func Test_articleService_CreateArticle(t *testing.T) {
 			description: "Test Description",
 			body:        "Test Body",
 			tagList:     []string{"tag1", "tag2"},
-			setupMock: func() *MockArticleRepository {
+			setupMock: func() (*MockArticleRepository, *MockProfileRepository) {
 				return &MockArticleRepository{
 					createFunc: func(ctx context.Context, userID int64, articleSlug, title, description, body string, tagList []string) (*repository.Article, error) {
 						return nil, repository.ErrUserNotFound
 					},
-				}
+				}, nil
 			},
 			expectedErr: ErrUserNotFound,
 			validate:    nil,
@@ -228,12 +228,12 @@ func Test_articleService_CreateArticle(t *testing.T) {
 			description: "Test Description",
 			body:        "Test Body",
 			tagList:     []string{"tag1", "tag2"},
-			setupMock: func() *MockArticleRepository {
+			setupMock: func() (*MockArticleRepository, *MockProfileRepository) {
 				return &MockArticleRepository{
 					createFunc: func(ctx context.Context, userID int64, articleSlug, title, description, body string, tagList []string) (*repository.Article, error) {
 						return nil, repository.ErrDuplicateSlug
 					},
-				}
+				}, nil
 			},
 			expectedErr: ErrArticleAlreadyExists,
 			validate:    nil,
@@ -245,12 +245,12 @@ func Test_articleService_CreateArticle(t *testing.T) {
 			description: "Test Description",
 			body:        "Test Body",
 			tagList:     []string{"tag1", "tag2"},
-			setupMock: func() *MockArticleRepository {
+			setupMock: func() (*MockArticleRepository, *MockProfileRepository) {
 				return &MockArticleRepository{
 					createFunc: func(ctx context.Context, userID int64, articleSlug, title, description, body string, tagList []string) (*repository.Article, error) {
 						return nil, repository.ErrInternal
 					},
-				}
+				}, nil
 			},
 			expectedErr: ErrInternalServer,
 			validate:    nil,
@@ -263,10 +263,10 @@ func Test_articleService_CreateArticle(t *testing.T) {
 			t.Parallel()
 
 			// Setup mock repository
-			mockArticleRepository := tt.setupMock()
+			mockArticleRepository, mockProfileRepository := tt.setupMock()
 
 			// Create service with mock repository
-			articleService := NewArticleService(mockArticleRepository)
+			articleService := NewArticleService(mockArticleRepository, mockProfileRepository)
 
 			// Create context
 			ctx := context.Background()
@@ -301,15 +301,15 @@ func Test_articleService_GetArticle(t *testing.T) {
 	tests := []struct {
 		name        string
 		slug        string
-		setupMock   func() *MockArticleRepository
+		setupMock   func() (*MockArticleRepository, *MockProfileRepository)
 		expectedErr error
 		validate    func(*testing.T, *Article)
 	}{
 		{
 			name: "Article found",
 			slug: "test-article",
-			setupMock: func() *MockArticleRepository {
-				return &MockArticleRepository{
+			setupMock: func() (*MockArticleRepository, *MockProfileRepository) {
+				mockArticleRepo := &MockArticleRepository{
 					getBySlugFunc: func(ctx context.Context, slug string) (*repository.Article, error) {
 						if slug != "test-article" {
 							t.Errorf("Expected slug %q, got %q", "test-article", slug)
@@ -340,6 +340,12 @@ func Test_articleService_GetArticle(t *testing.T) {
 						return false, nil
 					},
 				}
+				mockProfileRepo := &MockProfileRepository{
+					isFollowingFunc: func(ctx context.Context, followerID int64, followingID int64) (bool, error) {
+						return false, nil
+					},
+				}
+				return mockArticleRepo, mockProfileRepo
 			},
 			expectedErr: nil,
 			validate: func(t *testing.T, article *Article) {
@@ -392,8 +398,8 @@ func Test_articleService_GetArticle(t *testing.T) {
 		{
 			name: "Article not found",
 			slug: "non-existent-article",
-			setupMock: func() *MockArticleRepository {
-				return &MockArticleRepository{
+			setupMock: func() (*MockArticleRepository, *MockProfileRepository) {
+				mockArticleRepo := &MockArticleRepository{
 					getBySlugFunc: func(ctx context.Context, slug string) (*repository.Article, error) {
 						return nil, repository.ErrArticleNotFound
 					},
@@ -404,6 +410,12 @@ func Test_articleService_GetArticle(t *testing.T) {
 						return false, nil
 					},
 				}
+				mockProfileRepo := &MockProfileRepository{
+					isFollowingFunc: func(ctx context.Context, followerID int64, followingID int64) (bool, error) {
+						return false, nil
+					},
+				}
+				return mockArticleRepo, mockProfileRepo
 			},
 			expectedErr: ErrArticleNotFound,
 			validate:    nil,
@@ -411,8 +423,8 @@ func Test_articleService_GetArticle(t *testing.T) {
 		{
 			name: "Repository error",
 			slug: "test-article",
-			setupMock: func() *MockArticleRepository {
-				return &MockArticleRepository{
+			setupMock: func() (*MockArticleRepository, *MockProfileRepository) {
+				mockArticleRepo := &MockArticleRepository{
 					getBySlugFunc: func(ctx context.Context, slug string) (*repository.Article, error) {
 						return nil, repository.ErrInternal
 					},
@@ -423,6 +435,12 @@ func Test_articleService_GetArticle(t *testing.T) {
 						return false, nil
 					},
 				}
+				mockProfileRepo := &MockProfileRepository{
+					isFollowingFunc: func(ctx context.Context, followerID int64, followingID int64) (bool, error) {
+						return false, nil
+					},
+				}
+				return mockArticleRepo, mockProfileRepo
 			},
 			expectedErr: ErrInternalServer,
 			validate:    nil,
@@ -435,10 +453,10 @@ func Test_articleService_GetArticle(t *testing.T) {
 			t.Parallel()
 
 			// Setup mock repository
-			mockArticleRepository := tt.setupMock()
+			mockArticleRepository, mockProfileRepository := tt.setupMock()
 
 			// Create service with mock repository
-			articleService := NewArticleService(mockArticleRepository)
+			articleService := NewArticleService(mockArticleRepository, mockProfileRepository)
 
 			// Create context
 			ctx := context.Background()
@@ -467,7 +485,7 @@ func Test_articleService_FavoriteArticle(t *testing.T) {
 		name        string
 		userID      int64
 		slug        string
-		setupMock   func() *MockArticleRepository
+		setupMock   func() (*MockArticleRepository, *MockProfileRepository)
 		expectedErr error
 		validate    func(*testing.T, *Article)
 	}{
@@ -475,8 +493,8 @@ func Test_articleService_FavoriteArticle(t *testing.T) {
 			name:   "Successfully favorite an article",
 			userID: 1,
 			slug:   "test-article",
-			setupMock: func() *MockArticleRepository {
-				mockRepo := &MockArticleRepository{
+			setupMock: func() (*MockArticleRepository, *MockProfileRepository) {
+				mockArticleRepo := &MockArticleRepository{
 					getBySlugFunc: func(ctx context.Context, slug string) (*repository.Article, error) {
 						now := time.Now()
 						return &repository.Article{
@@ -511,7 +529,12 @@ func Test_articleService_FavoriteArticle(t *testing.T) {
 						return 1, nil
 					},
 				}
-				return mockRepo
+				mockProfileRepo := &MockProfileRepository{
+					isFollowingFunc: func(ctx context.Context, followerID int64, followingID int64) (bool, error) {
+						return false, nil
+					},
+				}
+				return mockArticleRepo, mockProfileRepo
 			},
 			expectedErr: nil,
 			validate: func(t *testing.T, article *Article) {
@@ -531,13 +554,18 @@ func Test_articleService_FavoriteArticle(t *testing.T) {
 			name:   "Article not found",
 			userID: 1,
 			slug:   "non-existent-article",
-			setupMock: func() *MockArticleRepository {
-				mockRepo := &MockArticleRepository{
+			setupMock: func() (*MockArticleRepository, *MockProfileRepository) {
+				mockArticleRepo := &MockArticleRepository{
 					getBySlugFunc: func(ctx context.Context, slug string) (*repository.Article, error) {
 						return nil, repository.ErrArticleNotFound
 					},
 				}
-				return mockRepo
+				mockProfileRepo := &MockProfileRepository{
+					isFollowingFunc: func(ctx context.Context, followerID int64, followingID int64) (bool, error) {
+						return false, nil
+					},
+				}
+				return mockArticleRepo, mockProfileRepo
 			},
 			expectedErr: ErrArticleNotFound,
 			validate:    nil,
@@ -546,8 +574,8 @@ func Test_articleService_FavoriteArticle(t *testing.T) {
 			name:   "Failed to favorite an article",
 			userID: 1,
 			slug:   "test-article",
-			setupMock: func() *MockArticleRepository {
-				mockRepo := &MockArticleRepository{
+			setupMock: func() (*MockArticleRepository, *MockProfileRepository) {
+				mockArticleRepo := &MockArticleRepository{
 					getBySlugFunc: func(ctx context.Context, slug string) (*repository.Article, error) {
 						return &repository.Article{
 							ID:          1,
@@ -571,7 +599,12 @@ func Test_articleService_FavoriteArticle(t *testing.T) {
 						return repository.ErrInternal
 					},
 				}
-				return mockRepo
+				mockProfileRepo := &MockProfileRepository{
+					isFollowingFunc: func(ctx context.Context, followerID int64, followingID int64) (bool, error) {
+						return false, nil
+					},
+				}
+				return mockArticleRepo, mockProfileRepo
 			},
 			expectedErr: ErrInternalServer,
 			validate:    nil,
@@ -584,10 +617,10 @@ func Test_articleService_FavoriteArticle(t *testing.T) {
 			t.Parallel()
 
 			// Setup mock repository
-			mockArticleRepository := tt.setupMock()
+			mockArticleRepository, mockProfileRepository := tt.setupMock()
 
 			// Create service with mock repository
-			articleService := NewArticleService(mockArticleRepository)
+			articleService := NewArticleService(mockArticleRepository, mockProfileRepository)
 
 			// Create context
 			ctx := context.Background()
@@ -616,7 +649,7 @@ func Test_articleService_UnfavoriteArticle(t *testing.T) {
 		name        string
 		userID      int64
 		slug        string
-		setupMock   func() *MockArticleRepository
+		setupMock   func() (*MockArticleRepository, *MockProfileRepository)
 		expectedErr error
 		validate    func(*testing.T, *Article)
 	}{
@@ -624,8 +657,8 @@ func Test_articleService_UnfavoriteArticle(t *testing.T) {
 			name:   "Successfully unfavorite an article",
 			userID: 1,
 			slug:   "test-article",
-			setupMock: func() *MockArticleRepository {
-				mockRepo := &MockArticleRepository{
+			setupMock: func() (*MockArticleRepository, *MockProfileRepository) {
+				mockArticleRepo := &MockArticleRepository{
 					getBySlugFunc: func(ctx context.Context, slug string) (*repository.Article, error) {
 						now := time.Now()
 						return &repository.Article{
@@ -660,7 +693,12 @@ func Test_articleService_UnfavoriteArticle(t *testing.T) {
 						return 0, nil
 					},
 				}
-				return mockRepo
+				mockProfileRepo := &MockProfileRepository{
+					isFollowingFunc: func(ctx context.Context, followerID int64, followingID int64) (bool, error) {
+						return false, nil
+					},
+				}
+				return mockArticleRepo, mockProfileRepo
 			},
 			expectedErr: nil,
 			validate: func(t *testing.T, article *Article) {
@@ -680,13 +718,18 @@ func Test_articleService_UnfavoriteArticle(t *testing.T) {
 			name:   "Article not found",
 			userID: 1,
 			slug:   "non-existent-article",
-			setupMock: func() *MockArticleRepository {
-				mockRepo := &MockArticleRepository{
+			setupMock: func() (*MockArticleRepository, *MockProfileRepository) {
+				mockArticleRepo := &MockArticleRepository{
 					getBySlugFunc: func(ctx context.Context, slug string) (*repository.Article, error) {
 						return nil, repository.ErrArticleNotFound
 					},
 				}
-				return mockRepo
+				mockProfileRepo := &MockProfileRepository{
+					isFollowingFunc: func(ctx context.Context, followerID int64, followingID int64) (bool, error) {
+						return false, nil
+					},
+				}
+				return mockArticleRepo, mockProfileRepo
 			},
 			expectedErr: ErrArticleNotFound,
 			validate:    nil,
@@ -695,8 +738,8 @@ func Test_articleService_UnfavoriteArticle(t *testing.T) {
 			name:   "Failed to unfavorite an article",
 			userID: 1,
 			slug:   "test-article",
-			setupMock: func() *MockArticleRepository {
-				mockRepo := &MockArticleRepository{
+			setupMock: func() (*MockArticleRepository, *MockProfileRepository) {
+				mockArticleRepo := &MockArticleRepository{
 					getBySlugFunc: func(ctx context.Context, slug string) (*repository.Article, error) {
 						now := time.Now()
 						return &repository.Article{
@@ -721,7 +764,12 @@ func Test_articleService_UnfavoriteArticle(t *testing.T) {
 						return repository.ErrInternal
 					},
 				}
-				return mockRepo
+				mockProfileRepo := &MockProfileRepository{
+					isFollowingFunc: func(ctx context.Context, followerID int64, followingID int64) (bool, error) {
+						return false, nil
+					},
+				}
+				return mockArticleRepo, mockProfileRepo
 			},
 			expectedErr: ErrInternalServer,
 			validate:    nil,
@@ -734,10 +782,10 @@ func Test_articleService_UnfavoriteArticle(t *testing.T) {
 			t.Parallel()
 
 			// Setup mock repository
-			mockArticleRepository := tt.setupMock()
+			mockArticleRepository, mockProfileRepository := tt.setupMock()
 
 			// Create service with mock repository
-			articleService := NewArticleService(mockArticleRepository)
+			articleService := NewArticleService(mockArticleRepository, mockProfileRepository)
 
 			// Create context
 			ctx := context.Background()
