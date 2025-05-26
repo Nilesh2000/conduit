@@ -140,6 +140,12 @@ func (s *articleService) GetArticle(
 		}
 	}
 
+	// Get favorites count
+	favoritesCount, err := s.articleRepository.GetFavoritesCount(ctx, article.ID)
+	if err != nil {
+		return nil, ErrInternalServer
+	}
+
 	return &Article{
 		Slug:           article.Slug,
 		Title:          article.Title,
@@ -149,7 +155,7 @@ func (s *articleService) GetArticle(
 		CreatedAt:      article.CreatedAt,
 		UpdatedAt:      article.UpdatedAt,
 		Favorited:      false,
-		FavoritesCount: 0,
+		FavoritesCount: favoritesCount,
 		Author: Profile{
 			Username:  article.Author.Username,
 			Bio:       article.Author.Bio,
