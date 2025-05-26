@@ -298,5 +298,11 @@ func (r *articleRepository) GetFavoritesCount(
 	ctx context.Context,
 	articleID int64,
 ) (int, error) {
-	return 0, nil
+	var count int
+	err := r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM favorites WHERE article_id = $1", articleID).
+		Scan(&count)
+	if err != nil {
+		return 0, repository.ErrInternal
+	}
+	return count, nil
 }
