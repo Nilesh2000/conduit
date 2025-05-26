@@ -63,6 +63,7 @@ type ArticleRepository interface {
 // articleService implements the articleService interface
 type articleService struct {
 	articleRepository ArticleRepository
+	profileRepository ProfileRepository
 }
 
 // NewArticleService creates a new ArticleService
@@ -198,6 +199,12 @@ func (s *articleService) FavoriteArticle(
 		return nil, ErrInternalServer
 	}
 
+	// Check if user is following the author
+	following, err := s.profileRepository.IsFollowing(ctx, userID, article.Author.ID)
+	if err != nil {
+		return nil, ErrInternalServer
+	}
+
 	return &Article{
 		Slug:           article.Slug,
 		Title:          article.Title,
@@ -212,7 +219,7 @@ func (s *articleService) FavoriteArticle(
 			Username:  article.Author.Username,
 			Bio:       article.Author.Bio,
 			Image:     article.Author.Image,
-			Following: false, // TODO: Implement following
+			Following: following,
 		},
 	}, nil
 }
@@ -245,6 +252,12 @@ func (s *articleService) UnfavoriteArticle(
 		return nil, ErrInternalServer
 	}
 
+	// Check if user is following the author
+	following, err := s.profileRepository.IsFollowing(ctx, userID, article.Author.ID)
+	if err != nil {
+		return nil, ErrInternalServer
+	}
+
 	return &Article{
 		Slug:           article.Slug,
 		Title:          article.Title,
@@ -259,7 +272,7 @@ func (s *articleService) UnfavoriteArticle(
 			Username:  article.Author.Username,
 			Bio:       article.Author.Bio,
 			Image:     article.Author.Image,
-			Following: false, // TODO: Implement following
+			Following: following,
 		},
 	}, nil
 }
