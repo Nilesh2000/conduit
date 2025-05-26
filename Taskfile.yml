@@ -1,0 +1,136 @@
+version: '3'
+
+vars:
+  BIN: conduit
+  GO: go
+  GOLANGCI_LINT: golangci-lint
+  MIGRATE: migrate
+  MIGRATION_DIR: migrations
+  AIR: air
+  GOFUMPT: gofumpt
+  GOLINES: golines
+  DB_URL: postgres://postgres:postgres@localhost:5432/conduit?sslmode=disable
+
+tasks:
+  default:
+    cmds:
+      - task --list
+
+  setup:
+    desc: Setup development environment
+    cmds:
+      - echo "Installing development tools..."
+      - "{{.GO}} install github.com/golangci/golangci-lint/cmd/golangci-lint@latest"
+      - "{{.GO}} install github.com/golang-migrate/migrate/v4/cmd/migrate@latest"
+      - "{{.GO}} install github.com/air-verse/air@latest"
+      - "{{.GO}} install mvdan.cc/gofumpt@latest"
+      - "{{.GO}} install github.com/segmentio/golines@latest"
+      - "{{.GO}} install github.com/evilmartians/lefthook@latest"
+      - echo "Setting up git hooks..."
+      - lefthook install
+      - echo "Installing dependencies..."
+      - task: deps
+      - echo "Setup complete!"
+
+  init:
+    desc: Initialize project
+    cmds:
+      - echo "Initializing project..."
+      - echo "Creating .env file..."
+      - test -f .env || cp .env.example .env
+      - echo "Running database migrations..."
+      - "{{.MIGRATE}} -path {{.MIGRATION_DIR}} -database '{{.DB_URL}}' up"
+      - echo "Project initialization complete!"
+
+  deps:
+    desc: Manage dependencies
+    cmds:
+      - echo "Installing dependencies..."
+      - "{{.GO}} mod download"
+      - "{{.GO}} mod tidy"
+
+  build:
+    desc: Build application
+    deps: [fmt, lint]
+    cmds:
+      - echo "Building application..."
+      - "{{.GO}} build -o {{.BIN}} ./cmd/..."
+
+  clean:
+    desc: Clean build artifacts and test files
+    cmds:
+      - echo "Cleaning..."
+      - rm -f {{.BIN}}
+      - rm -f coverage.out
+
+  run:
+    desc: Run application
+    cmds:
+      - echo "Running application..."
+      - "{{.GO}} run ./cmd/..."
+
+  dev:
+    desc: Run with hot reload (Air)
+    cmds:
+      - echo "Starting development server with hot reload..."
+      - "{{.AIR}}"
+
+  docker:
+    desc: Run with Docker
+    cmds:
+      - echo "Starting Docker containers..."
+      - docker-compose up -d
+
+  test:
+    desc: Run tests
+    cmds:
+      - echo "Running tests..."
+      - "{{.GO}} test -p 4 -v -race -coverprofile=coverage.out ./..."
+
+  test-coverage:
+    desc: View test coverage report in browser
+    deps: [test]
+    cmds:
+      - "{{.GO}} tool cover -html=coverage.out"
+
+  fmt:
+    desc: Format code
+    cmds:
+      - echo "Formatting code with gofumpt and golines..."
+      - "{{.GOFUMPT}} -l -w ."
+      - "{{.GOLINES}} -w ."
+
+  lint:
+    desc: Run linter with gosec security checks
+    cmds:
+      - echo "Running linter..."
+      - "{{.GOLANGCI_LINT}} run --enable=gosec ./..."
+
+  create-migration:
+    desc: Create new migration files
+    cmds:
+      - echo "Creating migration files..."
+      - "{{.MIGRATE}} create -ext sql -dir {{.MIGRATION_DIR}} -seq {{.CLI_ARGS}}"
+
+  migrate-up:
+    desc: Run database migrations up
+    cmds:
+      - echo "Running database migrations up..."
+      - "{{.MIGRATE}} -path {{.MIGRATION_DIR}} -database '{{.DB_URL}}' up"
+
+  migrate-down:
+    desc: Run database migrations down
+    cmds:
+      - echo "Running database migrations down..."
+      - "{{.MIGRATE}} -path {{.MIGRATION_DIR}} -database '{{.DB_URL}}' down"
+
+  godoc:
+    desc: View Go documentation
+    cmds:
+      - echo "Starting godoc server at http://localhost:6060"
+      - godoc -http=:6060
+
+  list:
+    desc: List all available tasks
+    cmds:
+      - task --list
