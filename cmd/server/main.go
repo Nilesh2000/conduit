@@ -60,16 +60,19 @@ func main() {
 	userRepository := postgres.NewUserRepository(db)
 	articleRepository := postgres.NewArticleRepository(db)
 	profileRepository := postgres.NewProfileRepository(db)
+	tagRepository := postgres.NewTagRepository(db)
 
 	// Initialize services
 	userService := service.NewUserService(userRepository, cfg.JWT.SecretKey, cfg.JWT.Expiry)
 	articleService := service.NewArticleService(articleRepository, profileRepository)
 	profileService := service.NewProfileService(profileRepository)
+	tagService := service.NewTagService(tagRepository)
 
 	// Initialize handlers
 	userHandler := handler.NewUserHandler(userService)
 	articleHandler := handler.NewArticleHandler(articleService)
 	profileHandler := handler.NewProfileHandler(profileService)
+	tagHandler := handler.NewTagHandler(tagService)
 
 	// Setup router
 	router := http.NewServeMux()
@@ -85,6 +88,9 @@ func main() {
 
 	// Profile routes
 	router.HandleFunc("GET /api/profiles/{username}", profileHandler.GetProfile())
+
+	// Tag routes
+	router.HandleFunc("GET /api/tags", tagHandler.GetTags())
 
 	// Protected routes
 	authMiddleware := middleware.RequireAuth([]byte(cfg.JWT.SecretKey))
