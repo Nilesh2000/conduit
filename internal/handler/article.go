@@ -149,11 +149,10 @@ func (h *articleHandler) GetArticle() http.HandlerFunc {
 		// Set the content type to JSON
 		w.Header().Set("Content-Type", "application/json")
 
-		// Get current user ID from context
-		userID, ok := middleware.GetUserIDFromContext(r.Context())
-		if !ok {
-			response.RespondWithError(w, http.StatusUnauthorized, []string{"Unauthorized"})
-			return
+		// Get current user ID from context (optional)
+		var userID *int64
+		if id, ok := middleware.GetUserIDFromContext(r.Context()); ok {
+			userID = &id
 		}
 
 		// Get slug from request path
@@ -163,7 +162,7 @@ func (h *articleHandler) GetArticle() http.HandlerFunc {
 		article, err := h.articleService.GetArticle(
 			r.Context(),
 			slug,
-			&userID,
+			userID,
 		)
 		if err != nil {
 			switch {

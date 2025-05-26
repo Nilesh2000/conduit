@@ -579,6 +579,7 @@ func TestArticleHandler_GetArticle(t *testing.T) {
 				"/api/articles/"+tt.slug,
 				nil,
 			)
+			req.SetPathValue("slug", tt.slug)
 
 			// Create Response Recorder
 			rr := httptest.NewRecorder()
