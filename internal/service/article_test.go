@@ -580,12 +580,141 @@ func Test_articleService_UnfavoriteArticle(t *testing.T) {
 		setupMock   func() *MockArticleRepository
 		expectedErr error
 		validate    func(*testing.T, *Article)
-	}{}
+	}{
+		{
+			name:   "Successfully unfavorite an article",
+			userID: 1,
+			slug:   "test-article",
+			setupMock: func() *MockArticleRepository {
+				mockRepo := &MockArticleRepository{
+					getBySlugFunc: func(ctx context.Context, slug string) (*repository.Article, error) {
+						now := time.Now()
+						return &repository.Article{
+							ID:          1,
+							Slug:        "test-article",
+							Title:       "Test Article",
+							Description: "Test Description",
+							Body:        "Test Body",
+							AuthorID:    2,
+							Author: &repository.User{
+								ID:       2,
+								Username: "authoruser",
+								Bio:      "Author Bio",
+								Image:    "https://example.com/image.jpg",
+							},
+							CreatedAt: now,
+							UpdatedAt: now,
+							TagList:   []string{"tag1", "tag2"},
+						}, nil
+					},
+					unfavoriteFunc: func(ctx context.Context, userID int64, articleID int64) error {
+						if userID != 1 || articleID != 1 {
+							t.Errorf(
+								"Expected UnfavoriteArticle(1, 1), got UnfavoriteArticle(%d, %d)",
+								userID,
+								articleID,
+							)
+						}
+						return nil
+					},
+					getFavoritesCountFunc: func(ctx context.Context, articleID int64) (int, error) {
+						return 0, nil
+					},
+				}
+				return mockRepo
+			},
+			expectedErr: nil,
+			validate: func(t *testing.T, article *Article) {
+				if article == nil {
+					t.Errorf("Expected article to be not nil, got nil")
+					return
+				}
+				if article.Favorited {
+					t.Errorf("Expected favorited to be false, got true")
+				}
+				if article.FavoritesCount != 0 {
+					t.Errorf("Expected favorites count to be 0, got %d", article.FavoritesCount)
+				}
+			},
+		},
+		{
+			name:   "Article not found",
+			userID: 1,
+			slug:   "non-existent-article",
+			setupMock: func() *MockArticleRepository {
+				mockRepo := &MockArticleRepository{
+					getBySlugFunc: func(ctx context.Context, slug string) (*repository.Article, error) {
+						return nil, repository.ErrArticleNotFound
+					},
+				}
+				return mockRepo
+			},
+			expectedErr: ErrArticleNotFound,
+			validate:    nil,
+		},
+		{
+			name:   "Failed to unfavorite an article",
+			userID: 1,
+			slug:   "test-article",
+			setupMock: func() *MockArticleRepository {
+				mockRepo := &MockArticleRepository{
+					getBySlugFunc: func(ctx context.Context, slug string) (*repository.Article, error) {
+						now := time.Now()
+						return &repository.Article{
+							ID:          1,
+							Slug:        "test-article",
+							Title:       "Test Article",
+							Description: "Test Description",
+							Body:        "Test Body",
+							AuthorID:    2,
+							Author: &repository.User{
+								ID:       2,
+								Username: "authoruser",
+								Bio:      "Author Bio",
+								Image:    "https://example.com/image.jpg",
+							},
+							CreatedAt: now,
+							UpdatedAt: now,
+							TagList:   []string{"tag1", "tag2"},
+						}, nil
+					},
+					unfavoriteFunc: func(ctx context.Context, userID int64, articleID int64) error {
+						return repository.ErrInternal
+					},
+				}
+				return mockRepo
+			},
+			expectedErr: ErrInternalServer,
+			validate:    nil,
+		},
+	}
 
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
+
+			// Setup mock repository
+			mockArticleRepository := tt.setupMock()
+
+			// Create service with mock repository
+			articleService := NewArticleService(mockArticleRepository)
+
+			// Create context
+			ctx := context.Background()
+
+			// Call method
+			article, err := articleService.UnfavoriteArticle(ctx, tt.userID, tt.slug)
+
+			// Validate error
+			if !errors.Is(err, tt.expectedErr) {
+				t.Errorf("Expected error %v, got %v", tt.expectedErr, err)
+			}
+
+			// Validate article if expected
+			if err == nil && tt.validate != nil {
+				tt.validate(t, article)
+			}
 		})
 	}
 }
