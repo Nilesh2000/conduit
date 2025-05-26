@@ -254,6 +254,32 @@ func (r *articleRepository) Unfavorite(
 	userID int64,
 	articleID int64,
 ) error {
+	// Begin a transaction
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return repository.ErrInternal
+	}
+	defer func() {
+		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+			log.Printf("transaction rollback error: %v", err)
+		}
+	}()
+
+	query := `
+		DELETE FROM favorites
+		WHERE user_id = $1 AND article_id = $2
+	`
+
+	_, err = tx.ExecContext(ctx, query, userID, articleID)
+	if err != nil {
+		return repository.ErrInternal
+	}
+
+	// Commit the transaction
+	if err := tx.Commit(); err != nil {
+		return repository.ErrInternal
+	}
+
 	return nil
 }
 
