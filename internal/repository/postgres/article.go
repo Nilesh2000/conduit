@@ -237,6 +237,16 @@ func (r *articleRepository) Favorite(
 
 	_, err = tx.ExecContext(ctx, query, userID, articleID)
 	if err != nil {
+		if pqErr, ok := err.(*pq.Error); ok {
+			if pqErr.Code == "23503" {
+				if pqErr.Constraint == "favorites_article_id_fkey" {
+					return repository.ErrArticleNotFound
+				}
+				if pqErr.Constraint == "favorites_user_id_fkey" {
+					return repository.ErrUserNotFound
+				}
+			}
+		}
 		return repository.ErrInternal
 	}
 
