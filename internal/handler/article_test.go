@@ -18,7 +18,7 @@ import (
 // MockArticleService is a mock implementation of the ArticleService interface
 type MockArticleService struct {
 	createArticleFunc     func(ctx context.Context, userID int64, title, description, body string, tagList []string) (*service.Article, error)
-	getArticleFunc        func(ctx context.Context, slug string) (*service.Article, error)
+	getArticleFunc        func(ctx context.Context, slug string, currentUserID *int64) (*service.Article, error)
 	favoriteArticleFunc   func(ctx context.Context, userID int64, slug string) (*service.Article, error)
 	unfavoriteArticleFunc func(ctx context.Context, userID int64, slug string) (*service.Article, error)
 }
@@ -37,8 +37,9 @@ func (m *MockArticleService) CreateArticle(
 func (m *MockArticleService) GetArticle(
 	ctx context.Context,
 	slug string,
+	currentUserID *int64,
 ) (*service.Article, error) {
-	return m.getArticleFunc(ctx, slug)
+	return m.getArticleFunc(ctx, slug, currentUserID)
 }
 
 // FavoriteArticle is a mock implementation of the FavoriteArticle method
@@ -464,7 +465,7 @@ func TestArticleHandler_GetArticle(t *testing.T) {
 			slug: "test-article",
 			setupMock: func() *MockArticleService {
 				mockService := &MockArticleService{
-					getArticleFunc: func(ctx context.Context, slug string) (*service.Article, error) {
+					getArticleFunc: func(ctx context.Context, slug string, currentUserID *int64) (*service.Article, error) {
 						if slug != "test-article" {
 							t.Errorf("Expected slug 'test-article', got %q", slug)
 						}
@@ -517,7 +518,7 @@ func TestArticleHandler_GetArticle(t *testing.T) {
 			slug: "non-existent-article",
 			setupMock: func() *MockArticleService {
 				mockService := &MockArticleService{
-					getArticleFunc: func(ctx context.Context, slug string) (*service.Article, error) {
+					getArticleFunc: func(ctx context.Context, slug string, currentUserID *int64) (*service.Article, error) {
 						return nil, service.ErrArticleNotFound
 					},
 				}
@@ -535,7 +536,7 @@ func TestArticleHandler_GetArticle(t *testing.T) {
 			slug: "test-article",
 			setupMock: func() *MockArticleService {
 				mockService := &MockArticleService{
-					getArticleFunc: func(ctx context.Context, slug string) (*service.Article, error) {
+					getArticleFunc: func(ctx context.Context, slug string, currentUserID *int64) (*service.Article, error) {
 						return nil, service.ErrInternalServer
 					},
 				}

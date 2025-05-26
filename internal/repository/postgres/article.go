@@ -306,3 +306,25 @@ func (r *articleRepository) GetFavoritesCount(
 	}
 	return count, nil
 }
+
+// IsFavorited checks if a user has favorited an article
+func (r *articleRepository) IsFavorited(
+	ctx context.Context,
+	userID int64,
+	articleID int64,
+) (bool, error) {
+	var exists bool
+	query := `
+		SELECT EXISTS (
+			SELECT 1 FROM favorites
+			WHERE user_id = $1 AND article_id = $2
+		)
+	`
+
+	err := r.db.QueryRowContext(ctx, query, userID, articleID).Scan(&exists)
+	if err != nil {
+		return false, repository.ErrInternal
+	}
+
+	return exists, nil
+}

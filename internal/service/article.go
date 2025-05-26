@@ -58,6 +58,11 @@ type ArticleRepository interface {
 		ctx context.Context,
 		articleID int64,
 	) (int, error)
+	IsFavorited(
+		ctx context.Context,
+		userID int64,
+		articleID int64,
+	) (bool, error)
 }
 
 // articleService implements the articleService interface
@@ -126,6 +131,7 @@ func (s *articleService) CreateArticle(
 func (s *articleService) GetArticle(
 	ctx context.Context,
 	slug string,
+	currentUserID *int64,
 ) (*Article, error) {
 	article, err := s.articleRepository.GetBySlug(
 		ctx,
@@ -146,6 +152,24 @@ func (s *articleService) GetArticle(
 		return nil, ErrInternalServer
 	}
 
+	// Check if user has favorited the article
+	favorited := false
+	if currentUserID != nil {
+		favorited, err = s.articleRepository.IsFavorited(ctx, *currentUserID, article.ID)
+		if err != nil {
+			return nil, ErrInternalServer
+		}
+	}
+
+	// Check if user is following the author
+	following := false
+	if currentUserID != nil {
+		following, err = s.profileRepository.IsFollowing(ctx, *currentUserID, article.Author.ID)
+		if err != nil {
+			return nil, ErrInternalServer
+		}
+	}
+
 	return &Article{
 		Slug:           article.Slug,
 		Title:          article.Title,
@@ -154,13 +178,13 @@ func (s *articleService) GetArticle(
 		TagList:        article.TagList,
 		CreatedAt:      article.CreatedAt,
 		UpdatedAt:      article.UpdatedAt,
-		Favorited:      false,
+		Favorited:      favorited,
 		FavoritesCount: favoritesCount,
 		Author: Profile{
 			Username:  article.Author.Username,
 			Bio:       article.Author.Bio,
 			Image:     article.Author.Image,
-			Following: false,
+			Following: following,
 		},
 	}, nil
 }

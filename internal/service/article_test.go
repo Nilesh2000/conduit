@@ -18,6 +18,7 @@ type MockArticleRepository struct {
 	favoriteFunc          func(ctx context.Context, userID int64, articleID int64) error
 	unfavoriteFunc        func(ctx context.Context, userID int64, articleID int64) error
 	getFavoritesCountFunc func(ctx context.Context, articleID int64) (int, error)
+	isFavoritedFunc       func(ctx context.Context, userID int64, articleID int64) (bool, error)
 }
 
 // Create is a mock implementation of the Create method
@@ -62,6 +63,15 @@ func (m *MockArticleRepository) GetFavoritesCount(
 	articleID int64,
 ) (int, error) {
 	return m.getFavoritesCountFunc(ctx, articleID)
+}
+
+// IsFavorited is a mock implementation of the IsFavorited method
+func (m *MockArticleRepository) IsFavorited(
+	ctx context.Context,
+	userID int64,
+	articleID int64,
+) (bool, error) {
+	return m.isFavoritedFunc(ctx, userID, articleID)
 }
 
 // Test_articleService_CreateArticle tests the CreateArticle method of the articleService
@@ -312,6 +322,12 @@ func Test_articleService_GetArticle(t *testing.T) {
 							TagList:   []string{"tag1", "tag2"},
 						}, nil
 					},
+					getFavoritesCountFunc: func(ctx context.Context, articleID int64) (int, error) {
+						return 0, nil
+					},
+					isFavoritedFunc: func(ctx context.Context, userID int64, articleID int64) (bool, error) {
+						return false, nil
+					},
 				}
 			},
 			expectedErr: nil,
@@ -370,6 +386,12 @@ func Test_articleService_GetArticle(t *testing.T) {
 					getBySlugFunc: func(ctx context.Context, slug string) (*repository.Article, error) {
 						return nil, repository.ErrArticleNotFound
 					},
+					getFavoritesCountFunc: func(ctx context.Context, articleID int64) (int, error) {
+						return 0, nil
+					},
+					isFavoritedFunc: func(ctx context.Context, userID int64, articleID int64) (bool, error) {
+						return false, nil
+					},
 				}
 			},
 			expectedErr: ErrArticleNotFound,
@@ -382,6 +404,12 @@ func Test_articleService_GetArticle(t *testing.T) {
 				return &MockArticleRepository{
 					getBySlugFunc: func(ctx context.Context, slug string) (*repository.Article, error) {
 						return nil, repository.ErrInternal
+					},
+					getFavoritesCountFunc: func(ctx context.Context, articleID int64) (int, error) {
+						return 0, nil
+					},
+					isFavoritedFunc: func(ctx context.Context, userID int64, articleID int64) (bool, error) {
+						return false, nil
 					},
 				}
 			},
@@ -405,7 +433,7 @@ func Test_articleService_GetArticle(t *testing.T) {
 			ctx := context.Background()
 
 			// Call method
-			article, err := articleService.GetArticle(ctx, tt.slug)
+			article, err := articleService.GetArticle(ctx, tt.slug, nil)
 
 			// Validate error
 			if !errors.Is(err, tt.expectedErr) {

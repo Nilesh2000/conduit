@@ -37,7 +37,7 @@ type ArticleService interface {
 		title, description, body string,
 		tagList []string,
 	) (*service.Article, error)
-	GetArticle(ctx context.Context, slug string) (*service.Article, error)
+	GetArticle(ctx context.Context, slug string, currentUserID *int64) (*service.Article, error)
 	FavoriteArticle(ctx context.Context, userID int64, slug string) (*service.Article, error)
 	UnfavoriteArticle(ctx context.Context, userID int64, slug string) (*service.Article, error)
 }
@@ -134,6 +134,13 @@ func (h *articleHandler) GetArticle() http.HandlerFunc {
 		// Set the content type to JSON
 		w.Header().Set("Content-Type", "application/json")
 
+		// Get current user ID from context
+		userID, ok := middleware.GetUserIDFromContext(r.Context())
+		if !ok {
+			response.RespondWithError(w, http.StatusUnauthorized, []string{"Unauthorized"})
+			return
+		}
+
 		// Get slug from request path
 		slug := r.PathValue("slug")
 
@@ -141,6 +148,7 @@ func (h *articleHandler) GetArticle() http.HandlerFunc {
 		article, err := h.articleService.GetArticle(
 			r.Context(),
 			slug,
+			&userID,
 		)
 		if err != nil {
 			switch {
