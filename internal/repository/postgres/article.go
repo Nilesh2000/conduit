@@ -218,6 +218,33 @@ func (r *articleRepository) Favorite(
 	userID int64,
 	articleID int64,
 ) error {
+	// Begin a transaction
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return repository.ErrInternal
+	}
+	defer func() {
+		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+			log.Printf("transaction rollback error: %v", err)
+		}
+	}()
+
+	query := `
+		INSERT INTO favorites (user_id, article_id)
+		VALUES ($1, $2)
+		ON CONFLICT DO NOTHING
+	`
+
+	_, err = tx.ExecContext(ctx, query, userID, articleID)
+	if err != nil {
+		return repository.ErrInternal
+	}
+
+	// Commit the transaction
+	if err := tx.Commit(); err != nil {
+		return repository.ErrInternal
+	}
+
 	return nil
 }
 
