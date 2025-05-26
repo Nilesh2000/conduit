@@ -220,7 +220,12 @@ func (s *articleService) UnfavoriteArticle(
 ) (*Article, error) {
 	article, err := s.articleRepository.GetBySlug(ctx, slug)
 	if err != nil {
-		return nil, ErrInternalServer
+		switch {
+		case errors.Is(err, repository.ErrArticleNotFound):
+			return nil, ErrArticleNotFound
+		default:
+			return nil, ErrInternalServer
+		}
 	}
 
 	// Unfavorite the article
