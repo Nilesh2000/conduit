@@ -32,14 +32,22 @@ func (h *tagHandler) GetTags() http.HandlerFunc {
 		// Get tags from service
 		tags, err := h.tagService.GetTags(r.Context())
 		if err != nil {
-			response.RespondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+			response.RespondWithError(
+				w,
+				http.StatusInternalServerError,
+				[]string{"Internal server error"},
+			)
 			return
 		}
 
 		// Respond with tags
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(TagResponse{Tags: tags}); err != nil {
-			response.RespondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+			response.RespondWithError(
+				w,
+				http.StatusInternalServerError,
+				[]string{"Internal server error"},
+			)
 		}
 	}
 }
