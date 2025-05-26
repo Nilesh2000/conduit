@@ -24,6 +24,11 @@ type ProfileRepository interface {
 		followerID int64,
 		followingName string,
 	) (*repository.Profile, error)
+	IsFollowing(
+		ctx context.Context,
+		followerID int64,
+		followingID int64,
+	) (bool, error)
 }
 
 // profileService implements the profileService interface

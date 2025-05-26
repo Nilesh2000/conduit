@@ -211,3 +211,26 @@ func (r *profileRepository) UnfollowUser(
 
 	return &profile, nil
 }
+
+// IsFollowing checks if a user is following another user
+func (r *profileRepository) IsFollowing(
+	ctx context.Context,
+	followerID int64,
+	followingID int64,
+) (bool, error) {
+	query := `
+		SELECT EXISTS (
+			SELECT 1
+			FROM follows
+			WHERE follower_id = $1 AND following_id = $2
+		)
+	`
+
+	var following bool
+	err := r.db.QueryRowContext(ctx, query, followerID, followingID).Scan(&following)
+	if err != nil {
+		return false, repository.ErrInternal
+	}
+
+	return following, nil
+}

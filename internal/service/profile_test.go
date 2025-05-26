@@ -13,6 +13,7 @@ type MockProfileRepository struct {
 	getByUsernameFunc func(ctx context.Context, username string, currentUserID int64) (*repository.Profile, error)
 	followUserFunc    func(ctx context.Context, followerID int64, followingName string) (*repository.Profile, error)
 	unfollowUserFunc  func(ctx context.Context, followerID int64, followingName string) (*repository.Profile, error)
+	isFollowingFunc   func(ctx context.Context, followerID int64, followingID int64) (bool, error)
 }
 
 var _ ProfileRepository = (*MockProfileRepository)(nil)
@@ -42,6 +43,15 @@ func (m *MockProfileRepository) UnfollowUser(
 	followingName string,
 ) (*repository.Profile, error) {
 	return m.unfollowUserFunc(ctx, followerID, followingName)
+}
+
+// IsFollowing checks if a user is following another user
+func (m *MockProfileRepository) IsFollowing(
+	ctx context.Context,
+	followerID int64,
+	followingID int64,
+) (bool, error) {
+	return m.isFollowingFunc(ctx, followerID, followingID)
 }
 
 // Test_profileService_GetByUsername tests the GetByUsername method of the profileService
