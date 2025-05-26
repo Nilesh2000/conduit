@@ -16,4 +16,6 @@ var (
 	ErrArticleNotFound = errors.New("article not found")
 
 	ErrCannotFollowSelf = errors.New("cannot follow yourself")
+
+	ErrArticleAuthorCannotFavorite = errors.New("article author cannot favorite their own article")
 )

@@ -174,6 +174,11 @@ func (s *articleService) FavoriteArticle(
 		}
 	}
 
+	// Check if author is the same as the user
+	if article.Author.ID == userID {
+		return nil, ErrArticleAuthorCannotFavorite
+	}
+
 	// Favorite the article
 	err = s.articleRepository.Favorite(ctx, userID, article.ID)
 	if err != nil {
