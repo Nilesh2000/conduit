@@ -24,14 +24,6 @@ type Article struct {
 	Author         Profile   `json:"author"`
 }
 
-// Profile represents a user profile
-type Profile struct {
-	Username  string `json:"username"`
-	Bio       string `json:"bio"`
-	Image     string `json:"image"`
-	Following bool   `json:"following"`
-}
-
 // ArticleRepository is an interface for the article repository
 type ArticleRepository interface {
 	Create(

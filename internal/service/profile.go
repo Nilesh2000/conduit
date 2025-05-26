@@ -7,6 +7,14 @@ import (
 	"github.com/Nilesh2000/conduit/internal/repository"
 )
 
+// Profile represents a user profile
+type Profile struct {
+	Username  string `json:"username"`
+	Bio       string `json:"bio"`
+	Image     string `json:"image"`
+	Following bool   `json:"following"`
+}
+
 // ProfileRepository is an interface for the profile repository
 type ProfileRepository interface {
 	GetByUsername(
