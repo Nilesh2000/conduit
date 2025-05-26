@@ -135,11 +135,7 @@ func (h *articleHandler) GetArticle() http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 
 		// Get slug from request path
-		slug := r.URL.Path[len("/api/articles/"):]
-		if slug == "" {
-			response.RespondWithError(w, http.StatusNotFound, []string{"Article not found"})
-			return
-		}
+		slug := r.PathValue("slug")
 
 		// Call service to get article
 		article, err := h.articleService.GetArticle(
