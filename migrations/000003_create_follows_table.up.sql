@@ -5,6 +5,6 @@ CREATE TABLE IF NOT EXISTS follows (
     PRIMARY KEY (follower_id, following_id),
 
     -- Check constraint to prevent self-follow
-    CONSTRAINT prevent_self_follow CHECK (follower_id != following_id)
+    CONSTRAINT prevent_self_follow CHECK (follower_id <> following_id)
 );
 
