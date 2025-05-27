@@ -825,11 +825,11 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 			name: "Valid update",
 			requestBody: UpdateUserRequest{
 				User: struct {
-					Username *string `json:"username" validate:"omitempty"`
-					Email    *string `json:"email" validate:"omitempty,email"`
-					Password *string `json:"password" validate:"omitempty,min=8"`
-					Bio      *string `json:"bio" validate:"omitempty"`
-					Image    *string `json:"image" validate:"omitempty"`
+					Username *string `json:"username" validate:"omitempty,required_without_all=Email Password Bio Image"`
+					Email    *string `json:"email" validate:"omitempty,email,required_without_all=Username Password Bio Image"`
+					Password *string `json:"password" validate:"omitempty,min=8,required_without_all=Username Email Bio Image"`
+					Bio      *string `json:"bio" validate:"omitempty,required_without_all=Username Email Password Image"`
+					Image    *string `json:"image" validate:"omitempty,required_without_all=Username Email Password Bio"`
 				}{
 					Username: strPtr("updateduser"),
 					Email:    strPtr("updated@example.com"),
@@ -896,11 +896,11 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 			name: "Partial update - only email",
 			requestBody: UpdateUserRequest{
 				User: struct {
-					Username *string `json:"username" validate:"omitempty"`
-					Email    *string `json:"email" validate:"omitempty,email"`
-					Password *string `json:"password" validate:"omitempty,min=8"`
-					Bio      *string `json:"bio" validate:"omitempty"`
-					Image    *string `json:"image" validate:"omitempty"`
+					Username *string `json:"username" validate:"omitempty,required_without_all=Email Password Bio Image"`
+					Email    *string `json:"email" validate:"omitempty,email,required_without_all=Username Password Bio Image"`
+					Password *string `json:"password" validate:"omitempty,min=8,required_without_all=Username Email Bio Image"`
+					Bio      *string `json:"bio" validate:"omitempty,required_without_all=Username Email Password Image"`
+					Image    *string `json:"image" validate:"omitempty,required_without_all=Username Email Password Bio"`
 				}{
 					Email: strPtr("newmail@example.com"),
 				},
@@ -951,11 +951,11 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 			name: "Unauthenticated request",
 			requestBody: UpdateUserRequest{
 				User: struct {
-					Username *string `json:"username" validate:"omitempty"`
-					Email    *string `json:"email" validate:"omitempty,email"`
-					Password *string `json:"password" validate:"omitempty,min=8"`
-					Bio      *string `json:"bio" validate:"omitempty"`
-					Image    *string `json:"image" validate:"omitempty"`
+					Username *string `json:"username" validate:"omitempty,required_without_all=Email Password Bio Image"`
+					Email    *string `json:"email" validate:"omitempty,email,required_without_all=Username Password Bio Image"`
+					Password *string `json:"password" validate:"omitempty,min=8,required_without_all=Username Email Bio Image"`
+					Bio      *string `json:"bio" validate:"omitempty,required_without_all=Username Email Password Image"`
+					Image    *string `json:"image" validate:"omitempty,required_without_all=Username Email Password Bio"`
 				}{
 					Email: strPtr("newmail@example.com"),
 				},
@@ -1015,11 +1015,11 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 			name: "Invalid email",
 			requestBody: UpdateUserRequest{
 				User: struct {
-					Username *string `json:"username" validate:"omitempty"`
-					Email    *string `json:"email" validate:"omitempty,email"`
-					Password *string `json:"password" validate:"omitempty,min=8"`
-					Bio      *string `json:"bio" validate:"omitempty"`
-					Image    *string `json:"image" validate:"omitempty"`
+					Username *string `json:"username" validate:"omitempty,required_without_all=Email Password Bio Image"`
+					Email    *string `json:"email" validate:"omitempty,email,required_without_all=Username Password Bio Image"`
+					Password *string `json:"password" validate:"omitempty,min=8,required_without_all=Username Email Bio Image"`
+					Bio      *string `json:"bio" validate:"omitempty,required_without_all=Username Email Password Image"`
+					Image    *string `json:"image" validate:"omitempty,required_without_all=Username Email Password Bio"`
 				}{
 					Email: strPtr("invalid-email"),
 				},
@@ -1052,11 +1052,11 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 			name: "User not found",
 			requestBody: UpdateUserRequest{
 				User: struct {
-					Username *string `json:"username" validate:"omitempty"`
-					Email    *string `json:"email" validate:"omitempty,email"`
-					Password *string `json:"password" validate:"omitempty,min=8"`
-					Bio      *string `json:"bio" validate:"omitempty"`
-					Image    *string `json:"image" validate:"omitempty"`
+					Username *string `json:"username" validate:"omitempty,required_without_all=Email Password Bio Image"`
+					Email    *string `json:"email" validate:"omitempty,email,required_without_all=Username Password Bio Image"`
+					Password *string `json:"password" validate:"omitempty,min=8,required_without_all=Username Email Bio Image"`
+					Bio      *string `json:"bio" validate:"omitempty,required_without_all=Username Email Password Image"`
+					Image    *string `json:"image" validate:"omitempty,required_without_all=Username Email Password Bio"`
 				}{
 					Username: strPtr("updateduser"),
 				},
@@ -1088,11 +1088,11 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 			name: "Username already taken",
 			requestBody: UpdateUserRequest{
 				User: struct {
-					Username *string `json:"username" validate:"omitempty"`
-					Email    *string `json:"email" validate:"omitempty,email"`
-					Password *string `json:"password" validate:"omitempty,min=8"`
-					Bio      *string `json:"bio" validate:"omitempty"`
-					Image    *string `json:"image" validate:"omitempty"`
+					Username *string `json:"username" validate:"omitempty,required_without_all=Email Password Bio Image"`
+					Email    *string `json:"email" validate:"omitempty,email,required_without_all=Username Password Bio Image"`
+					Password *string `json:"password" validate:"omitempty,min=8,required_without_all=Username Email Bio Image"`
+					Bio      *string `json:"bio" validate:"omitempty,required_without_all=Username Email Password Image"`
+					Image    *string `json:"image" validate:"omitempty,required_without_all=Username Email Password Bio"`
 				}{
 					Username: strPtr("existinguser"),
 				},
@@ -1124,11 +1124,11 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 			name: "Email already registered",
 			requestBody: UpdateUserRequest{
 				User: struct {
-					Username *string `json:"username" validate:"omitempty"`
-					Email    *string `json:"email" validate:"omitempty,email"`
-					Password *string `json:"password" validate:"omitempty,min=8"`
-					Bio      *string `json:"bio" validate:"omitempty"`
-					Image    *string `json:"image" validate:"omitempty"`
+					Username *string `json:"username" validate:"omitempty,required_without_all=Email Password Bio Image"`
+					Email    *string `json:"email" validate:"omitempty,email,required_without_all=Username Password Bio Image"`
+					Password *string `json:"password" validate:"omitempty,min=8,required_without_all=Username Email Bio Image"`
+					Bio      *string `json:"bio" validate:"omitempty,required_without_all=Username Email Password Image"`
+					Image    *string `json:"image" validate:"omitempty,required_without_all=Username Email Password Bio"`
 				}{
 					Email: strPtr("existing@example.com"),
 				},
@@ -1160,11 +1160,11 @@ func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 			name: "Internal server error",
 			requestBody: UpdateUserRequest{
 				User: struct {
-					Username *string `json:"username" validate:"omitempty"`
-					Email    *string `json:"email" validate:"omitempty,email"`
-					Password *string `json:"password" validate:"omitempty,min=8"`
-					Bio      *string `json:"bio" validate:"omitempty"`
-					Image    *string `json:"image" validate:"omitempty"`
+					Username *string `json:"username" validate:"omitempty,required_without_all=Email Password Bio Image"`
+					Email    *string `json:"email" validate:"omitempty,email,required_without_all=Username Password Bio Image"`
+					Password *string `json:"password" validate:"omitempty,min=8,required_without_all=Username Email Bio Image"`
+					Bio      *string `json:"bio" validate:"omitempty,required_without_all=Username Email Password Image"`
+					Image    *string `json:"image" validate:"omitempty,required_without_all=Username Email Password Bio"`
 				}{
 					Username: strPtr("updateduser"),
 					Email:    strPtr("updated@example.com"),
