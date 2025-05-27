@@ -30,7 +30,7 @@ type UserRepository interface {
 	Update(
 		ctx context.Context,
 		userID int64,
-		username, email, password, bio, image *string,
+		username, email, passwordHash, bio, image *string,
 	) (*repository.User, error)
 }
 

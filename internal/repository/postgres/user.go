@@ -154,7 +154,7 @@ func (r *userRepository) FindByID(ctx context.Context, id int64) (*repository.Us
 func (r *userRepository) Update(
 	ctx context.Context,
 	userID int64,
-	username, email, password, bio, image *string,
+	username, email, passwordHash, bio, image *string,
 ) (*repository.User, error) {
 	// Begin a transaction
 	tx, err := r.db.BeginTx(ctx, nil)
@@ -190,7 +190,7 @@ func (r *userRepository) Update(
 		query,
 		username,
 		email,
-		password,
+		passwordHash,
 		bio,
 		image,
 		now,
