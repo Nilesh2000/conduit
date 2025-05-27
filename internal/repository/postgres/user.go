@@ -38,25 +38,27 @@ func (r *userRepository) Create(
 	}()
 
 	query := `
-		INSERT INTO users (username, email, password, created_at, updated_at)
+		INSERT INTO users (username, email, password_hash, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id, username, email, password, bio, image, created_at, updated_at
+		RETURNING id, username, email, password_hash, bio, image, created_at, updated_at
 	`
 
 	now := time.Now()
 	var user repository.User
 	var bio, image sql.NullString
+
 	// Insert user
 	err = tx.QueryRowContext(ctx, query, username, email, password, now, now).Scan(
 		&user.ID,
 		&user.Username,
 		&user.Email,
-		&user.Password,
+		&user.PasswordHash,
 		&bio,
 		&image,
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
+
 	// Handle database errors
 	if err != nil {
 		// PostgreSQL specific error handling
@@ -99,9 +101,9 @@ func (r *userRepository) FindByEmail(ctx context.Context, email string) (*reposi
 
 	err := r.db.QueryRowContext(
 		ctx,
-		"SELECT id, username, email, password, bio, image, created_at, updated_at FROM users WHERE email = $1",
+		"SELECT id, username, email, password_hash, bio, image, created_at, updated_at FROM users WHERE email = $1",
 		email,
-	).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &bio, &image, &user.CreatedAt, &user.UpdatedAt)
+	).Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &bio, &image, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, repository.ErrUserNotFound
@@ -127,9 +129,9 @@ func (r *userRepository) FindByID(ctx context.Context, id int64) (*repository.Us
 
 	err := r.db.QueryRowContext(
 		ctx,
-		"SELECT id, username, email, password, bio, image, created_at, updated_at FROM users WHERE id = $1",
+		"SELECT id, username, email, password_hash, bio, image, created_at, updated_at FROM users WHERE id = $1",
 		id,
-	).Scan(&user.ID, &user.Username, &user.Email, &user.Password, &bio, &image, &user.CreatedAt, &user.UpdatedAt)
+	).Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &bio, &image, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, repository.ErrUserNotFound
@@ -170,12 +172,12 @@ func (r *userRepository) Update(
 		SET
 			username = COALESCE($1, username),
 			email = COALESCE($2, email),
-			password = COALESCE($3, password),
+			password_hash = COALESCE($3, password_hash),
 			bio = COALESCE($4, bio),
 			image = COALESCE($5, image),
 			updated_at = $6
 		WHERE id = $7
-		RETURNING id, username, email, password, bio, image, created_at, updated_at
+		RETURNING id, username, email, password_hash, bio, image, created_at, updated_at
 	`
 
 	now := time.Now()
@@ -193,7 +195,7 @@ func (r *userRepository) Update(
 		image,
 		now,
 		userID,
-	).Scan(&updatedUser.ID, &updatedUser.Username, &updatedUser.Email, &updatedUser.Password, &nsBio, &nsImage, &updatedUser.CreatedAt, &updatedUser.UpdatedAt)
+	).Scan(&updatedUser.ID, &updatedUser.Username, &updatedUser.Email, &updatedUser.PasswordHash, &nsBio, &nsImage, &updatedUser.CreatedAt, &updatedUser.UpdatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, repository.ErrUserNotFound

@@ -47,9 +47,9 @@ func Test_userRepository_Create(t *testing.T) {
 				mock.ExpectBegin()
 
 				// Expect insert query with returning id
-				mock.ExpectQuery(`INSERT INTO users \(username, email, password, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5\) RETURNING id, username, email, password, bio, image, created_at, updated_at`).
+				mock.ExpectQuery(`INSERT INTO users \(username, email, password_hash, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5\) RETURNING id, username, email, password_hash, bio, image, created_at, updated_at`).
 					WithArgs("testuser", "test@example.com", "hashedPassword", sqlmock.AnyArg(), sqlmock.AnyArg()).
-					WillReturnRows(sqlmock.NewRows([]string{"id", "username", "email", "password", "bio", "image", "created_at", "updated_at"}).AddRow(1, "testuser", "test@example.com", "hashedPassword", nil, nil, time.Now(), time.Now()))
+					WillReturnRows(sqlmock.NewRows([]string{"id", "username", "email", "password_hash", "bio", "image", "created_at", "updated_at"}).AddRow(1, "testuser", "test@example.com", "hashedPassword", nil, nil, time.Now(), time.Now()))
 
 				// Expect commit
 				mock.ExpectCommit()
@@ -65,8 +65,8 @@ func Test_userRepository_Create(t *testing.T) {
 				if user.Email != "test@example.com" {
 					t.Errorf("Expected email test@example.com, got %q", user.Email)
 				}
-				if user.Password != "hashedPassword" {
-					t.Errorf("Expected password hashedPassword, got %q", user.Password)
+				if user.PasswordHash != "hashedPassword" {
+					t.Errorf("Expected password hashedPassword, got %q", user.PasswordHash)
 				}
 				if user.Bio != "" {
 					t.Errorf("Expected empty bio, got %q", user.Bio)
@@ -92,7 +92,7 @@ func Test_userRepository_Create(t *testing.T) {
 				mock.ExpectBegin()
 
 				// Expect insert query to fail with duplicate key error on username
-				mock.ExpectQuery(`INSERT INTO users \(username, email, password, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5\) RETURNING id, username, email, password`).
+				mock.ExpectQuery(`INSERT INTO users \(username, email, password_hash, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5\) RETURNING id, username, email, password_hash`).
 					WithArgs("existinguser", "new@example.com", "hashedPassword", sqlmock.AnyArg(), sqlmock.AnyArg()).
 					WillReturnError(&pq.Error{
 						Code:       "23505",
@@ -116,7 +116,7 @@ func Test_userRepository_Create(t *testing.T) {
 				mock.ExpectBegin()
 
 				// Expect insert query to fail with duplicate key error on email
-				mock.ExpectQuery(`INSERT INTO users \(username, email, password, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5\) RETURNING id, username, email, password`).
+				mock.ExpectQuery(`INSERT INTO users \(username, email, password_hash, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5\) RETURNING id, username, email, password_hash`).
 					WithArgs("newuser", "existing@example.com", "hashedPassword", sqlmock.AnyArg(), sqlmock.AnyArg()).
 					WillReturnError(&pq.Error{
 						Code:       "23505",
@@ -140,7 +140,7 @@ func Test_userRepository_Create(t *testing.T) {
 				mock.ExpectBegin()
 
 				// Expect insert query to fail with generic database error
-				mock.ExpectQuery(`INSERT INTO users \(username, email, password, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5\) RETURNING id, username, email, password`).
+				mock.ExpectQuery(`INSERT INTO users \(username, email, password_hash, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5\) RETURNING id, username, email, password_hash`).
 					WithArgs("testuser", "test@example.com", "hashedPassword", sqlmock.AnyArg(), sqlmock.AnyArg()).
 					WillReturnError(errors.New("database error"))
 
@@ -171,9 +171,9 @@ func Test_userRepository_Create(t *testing.T) {
 				mock.ExpectBegin()
 
 				// Expect insert query with returning id
-				mock.ExpectQuery(`INSERT INTO users \(username, email, password, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5\) RETURNING id, username, email, password, bio, image, created_at, updated_at`).
+				mock.ExpectQuery(`INSERT INTO users \(username, email, password_hash, created_at, updated_at\) VALUES \(\$1, \$2, \$3, \$4, \$5\) RETURNING id, username, email, password_hash, bio, image, created_at, updated_at`).
 					WithArgs("testuser", "test@example.com", "hashedPassword", sqlmock.AnyArg(), sqlmock.AnyArg()).
-					WillReturnRows(sqlmock.NewRows([]string{"id", "username", "email", "password", "bio", "image", "created_at", "updated_at"}).AddRow(1, "testuser", "test@example.com", "hashedPassword", nil, nil, time.Now(), time.Now()))
+					WillReturnRows(sqlmock.NewRows([]string{"id", "username", "email", "password_hash", "bio", "image", "created_at", "updated_at"}).AddRow(1, "testuser", "test@example.com", "hashedPassword", nil, nil, time.Now(), time.Now()))
 
 				// Expect commit transaction to fail
 				mock.ExpectCommit().WillReturnError(errors.New("commit error"))
@@ -244,9 +244,9 @@ func Test_userRepository_FindByEmail(t *testing.T) {
 			name:  "User found",
 			email: "test@example.com",
 			mockSetup: func(mock sqlmock.Sqlmock) {
-				rows := sqlmock.NewRows([]string{"id", "username", "email", "password", "bio", "image", "created_at", "updated_at"}).
+				rows := sqlmock.NewRows([]string{"id", "username", "email", "password_hash", "bio", "image", "created_at", "updated_at"}).
 					AddRow(1, "testuser", "test@example.com", "hashedPassword", "Test bio", "test.jpg", time.Now(), time.Now())
-				mock.ExpectQuery(`SELECT id, username, email, password, bio, image, created_at, updated_at FROM users WHERE email = \$1`).
+				mock.ExpectQuery(`SELECT id, username, email, password_hash, bio, image, created_at, updated_at FROM users WHERE email = \$1`).
 					WithArgs("test@example.com").
 					WillReturnRows(rows)
 			},
@@ -273,7 +273,7 @@ func Test_userRepository_FindByEmail(t *testing.T) {
 			name:  "User not found",
 			email: "nonexistent@example.com",
 			mockSetup: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery(`SELECT id, username, email, password, bio, image, created_at, updated_at FROM users WHERE email = \$1`).
+				mock.ExpectQuery(`SELECT id, username, email, password_hash, bio, image, created_at, updated_at FROM users WHERE email = \$1`).
 					WithArgs("nonexistent@example.com").
 					WillReturnError(sql.ErrNoRows)
 			},
@@ -284,7 +284,7 @@ func Test_userRepository_FindByEmail(t *testing.T) {
 			name:  "Database Error",
 			email: "test@example.com",
 			mockSetup: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery(`SELECT id, username, email, password, bio, image, created_at, updated_at FROM users WHERE email = \$1`).
+				mock.ExpectQuery(`SELECT id, username, email, password_hash, bio, image, created_at, updated_at FROM users WHERE email = \$1`).
 					WithArgs("test@example.com").
 					WillReturnError(errors.New("database error"))
 			},
@@ -295,9 +295,9 @@ func Test_userRepository_FindByEmail(t *testing.T) {
 			name:  "Null bio and image",
 			email: "nullfields@example.com",
 			mockSetup: func(mock sqlmock.Sqlmock) {
-				rows := sqlmock.NewRows([]string{"id", "username", "email", "password", "bio", "image", "created_at", "updated_at"}).
+				rows := sqlmock.NewRows([]string{"id", "username", "email", "password_hash", "bio", "image", "created_at", "updated_at"}).
 					AddRow(1, "testuser", "nullfields@example.com", "hashedPassword", nil, nil, time.Now(), time.Now())
-				mock.ExpectQuery(`SELECT id, username, email, password, bio, image, created_at, updated_at FROM users WHERE email = \$1`).
+				mock.ExpectQuery(`SELECT id, username, email, password_hash, bio, image, created_at, updated_at FROM users WHERE email = \$1`).
 					WithArgs("nullfields@example.com").
 					WillReturnRows(rows)
 			},
@@ -374,9 +374,9 @@ func Test_userRepository_FindByID(t *testing.T) {
 			name: "User found",
 			id:   1,
 			mockSetup: func(mock sqlmock.Sqlmock) {
-				rows := sqlmock.NewRows([]string{"id", "username", "email", "password", "bio", "image", "created_at", "updated_at"}).
+				rows := sqlmock.NewRows([]string{"id", "username", "email", "password_hash", "bio", "image", "created_at", "updated_at"}).
 					AddRow(1, "testuser", "test@example.com", "hashedPassword", "Test bio", "test.jpg", time.Now(), time.Now())
-				mock.ExpectQuery(`SELECT id, username, email, password, bio, image, created_at, updated_at FROM users WHERE id = \$1`).
+				mock.ExpectQuery(`SELECT id, username, email, password_hash, bio, image, created_at, updated_at FROM users WHERE id = \$1`).
 					WithArgs(1).
 					WillReturnRows(rows)
 			},
@@ -409,7 +409,7 @@ func Test_userRepository_FindByID(t *testing.T) {
 			name: "User not found",
 			id:   999,
 			mockSetup: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery(`SELECT id, username, email, password, bio, image, created_at, updated_at FROM users WHERE id = \$1`).
+				mock.ExpectQuery(`SELECT id, username, email, password_hash, bio, image, created_at, updated_at FROM users WHERE id = \$1`).
 					WithArgs(999).
 					WillReturnError(sql.ErrNoRows)
 			},
@@ -420,7 +420,7 @@ func Test_userRepository_FindByID(t *testing.T) {
 			name: "Database Error",
 			id:   1,
 			mockSetup: func(mock sqlmock.Sqlmock) {
-				mock.ExpectQuery(`SELECT id, username, email, password, bio, image, created_at, updated_at FROM users WHERE id = \$1`).
+				mock.ExpectQuery(`SELECT id, username, email, password_hash, bio, image, created_at, updated_at FROM users WHERE id = \$1`).
 					WithArgs(1).
 					WillReturnError(errors.New("database error"))
 			},
@@ -431,9 +431,9 @@ func Test_userRepository_FindByID(t *testing.T) {
 			name: "Null bio and image",
 			id:   2,
 			mockSetup: func(mock sqlmock.Sqlmock) {
-				rows := sqlmock.NewRows([]string{"id", "username", "email", "password", "bio", "image", "created_at", "updated_at"}).
+				rows := sqlmock.NewRows([]string{"id", "username", "email", "password_hash", "bio", "image", "created_at", "updated_at"}).
 					AddRow(2, "testuser", "test@example.com", "hashedPassword", nil, nil, time.Now(), time.Now())
-				mock.ExpectQuery(`SELECT id, username, email, password, bio, image, created_at, updated_at FROM users WHERE id = \$1`).
+				mock.ExpectQuery(`SELECT id, username, email, password_hash, bio, image, created_at, updated_at FROM users WHERE id = \$1`).
 					WithArgs(2).
 					WillReturnRows(rows)
 			},
@@ -525,10 +525,10 @@ func Test_userRepository_Update(t *testing.T) {
 			image:    strPtr("updatedimage.jpg"),
 			mockSetup: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin()
-				rows := sqlmock.NewRows([]string{"id", "username", "email", "password", "bio", "image", "created_at", "updated_at"}).
+				rows := sqlmock.NewRows([]string{"id", "username", "email", "password_hash", "bio", "image", "created_at", "updated_at"}).
 					AddRow(1, "updateduser", "updated@example.com", "updatedpassword", "Updated bio", "updatedimage.jpg", time.Now(), time.Now())
 
-				mock.ExpectQuery(`UPDATE users SET username = COALESCE\(\$1, username\), email = COALESCE\(\$2, email\), password = COALESCE\(\$3, password\), bio = COALESCE\(\$4, bio\), image = COALESCE\(\$5, image\), updated_at = \$6 WHERE id = \$7 RETURNING id, username, email, password, bio, image, created_at, updated_at`).
+				mock.ExpectQuery(`UPDATE users SET username = COALESCE\(\$1, username\), email = COALESCE\(\$2, email\), password_hash = COALESCE\(\$3, password_hash\), bio = COALESCE\(\$4, bio\), image = COALESCE\(\$5, image\), updated_at = \$6 WHERE id = \$7 RETURNING id, username, email, password_hash, bio, image, created_at, updated_at`).
 					WithArgs(strPtr("updateduser"), strPtr("updated@example.com"), strPtr("updatedpassword"), strPtr("Updated bio"), strPtr("updatedimage.jpg"), sqlmock.AnyArg(), 1).
 					WillReturnRows(rows)
 
@@ -542,8 +542,8 @@ func Test_userRepository_Update(t *testing.T) {
 				if user.Email != "updated@example.com" {
 					t.Errorf("Expected email updated@example.com, got %q", user.Email)
 				}
-				if user.Password != "updatedpassword" {
-					t.Errorf("Expected password updatedpassword, got %q", user.Password)
+				if user.PasswordHash != "updatedpassword" {
+					t.Errorf("Expected password updatedpassword, got %q", user.PasswordHash)
 				}
 				if user.Bio != "Updated bio" {
 					t.Errorf("Expected bio Updated bio, got %q", user.Bio)
@@ -569,10 +569,10 @@ func Test_userRepository_Update(t *testing.T) {
 			image:    strPtr("new-image.jpg"),
 			mockSetup: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin()
-				rows := sqlmock.NewRows([]string{"id", "username", "email", "password", "bio", "image", "created_at", "updated_at"}).
+				rows := sqlmock.NewRows([]string{"id", "username", "email", "password_hash", "bio", "image", "created_at", "updated_at"}).
 					AddRow(1, "testuser", "test@example.com", "hashedPassword", "New bio only", "new-image.jpg", time.Now(), time.Now())
 
-				mock.ExpectQuery(`UPDATE users SET username = COALESCE\(\$1, username\), email = COALESCE\(\$2, email\), password = COALESCE\(\$3, password\), bio = COALESCE\(\$4, bio\), image = COALESCE\(\$5, image\), updated_at = \$6 WHERE id = \$7 RETURNING id, username, email, password, bio, image, created_at, updated_at`).
+				mock.ExpectQuery(`UPDATE users SET username = COALESCE\(\$1, username\), email = COALESCE\(\$2, email\), password_hash = COALESCE\(\$3, password_hash\), bio = COALESCE\(\$4, bio\), image = COALESCE\(\$5, image\), updated_at = \$6 WHERE id = \$7 RETURNING id, username, email, password_hash, bio, image, created_at, updated_at`).
 					WithArgs(nil, nil, nil, strPtr("New bio only"), strPtr("new-image.jpg"), sqlmock.AnyArg(), 1).
 					WillReturnRows(rows)
 
@@ -586,8 +586,8 @@ func Test_userRepository_Update(t *testing.T) {
 				if user.Email != "test@example.com" {
 					t.Errorf("Expected email test@example.com, got %q", user.Email)
 				}
-				if user.Password != "hashedPassword" {
-					t.Errorf("Expected password hashedPassword, got %q", user.Password)
+				if user.PasswordHash != "hashedPassword" {
+					t.Errorf("Expected password hashedPassword, got %q", user.PasswordHash)
 				}
 				if user.Bio != "New bio only" {
 					t.Errorf("Expected bio New bio only, got %q", user.Bio)
@@ -613,7 +613,7 @@ func Test_userRepository_Update(t *testing.T) {
 			image:    nil,
 			mockSetup: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin()
-				mock.ExpectQuery(`UPDATE users SET username = COALESCE\(\$1, username\), email = COALESCE\(\$2, email\), password = COALESCE\(\$3, password\), bio = COALESCE\(\$4, bio\), image = COALESCE\(\$5, image\), updated_at = \$6 WHERE id = \$7 RETURNING id, username, email, password, bio, image, created_at, updated_at`).
+				mock.ExpectQuery(`UPDATE users SET username = COALESCE\(\$1, username\), email = COALESCE\(\$2, email\), password_hash = COALESCE\(\$3, password_hash\), bio = COALESCE\(\$4, bio\), image = COALESCE\(\$5, image\), updated_at = \$6 WHERE id = \$7 RETURNING id, username, email, password_hash, bio, image, created_at, updated_at`).
 					WithArgs(strPtr("existinguser"), nil, nil, nil, nil, sqlmock.AnyArg(), 1).
 					WillReturnError(&pq.Error{
 						Code:       "23505",
@@ -635,7 +635,7 @@ func Test_userRepository_Update(t *testing.T) {
 			image:    nil,
 			mockSetup: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin()
-				mock.ExpectQuery(`UPDATE users SET username = COALESCE\(\$1, username\), email = COALESCE\(\$2, email\), password = COALESCE\(\$3, password\), bio = COALESCE\(\$4, bio\), image = COALESCE\(\$5, image\), updated_at = \$6 WHERE id = \$7 RETURNING id, username, email, password, bio, image, created_at, updated_at`).
+				mock.ExpectQuery(`UPDATE users SET username = COALESCE\(\$1, username\), email = COALESCE\(\$2, email\), password_hash = COALESCE\(\$3, password_hash\), bio = COALESCE\(\$4, bio\), image = COALESCE\(\$5, image\), updated_at = \$6 WHERE id = \$7 RETURNING id, username, email, password_hash, bio, image, created_at, updated_at`).
 					WithArgs(nil, strPtr("existingemail@example.com"), nil, nil, nil, sqlmock.AnyArg(), 1).
 					WillReturnError(&pq.Error{
 						Code:       "23505",
@@ -657,7 +657,7 @@ func Test_userRepository_Update(t *testing.T) {
 			image:    nil,
 			mockSetup: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin()
-				mock.ExpectQuery(`UPDATE users SET username = COALESCE\(\$1, username\), email = COALESCE\(\$2, email\), password = COALESCE\(\$3, password\), bio = COALESCE\(\$4, bio\), image = COALESCE\(\$5, image\), updated_at = \$6 WHERE id = \$7 RETURNING id, username, email, password, bio, image, created_at, updated_at`).
+				mock.ExpectQuery(`UPDATE users SET username = COALESCE\(\$1, username\), email = COALESCE\(\$2, email\), password_hash = COALESCE\(\$3, password_hash\), bio = COALESCE\(\$4, bio\), image = COALESCE\(\$5, image\), updated_at = \$6 WHERE id = \$7 RETURNING id, username, email, password_hash, bio, image, created_at, updated_at`).
 					WithArgs(strPtr("newname"), nil, nil, nil, nil, sqlmock.AnyArg(), 1).
 					WillReturnError(sql.ErrNoRows)
 			},
@@ -674,7 +674,7 @@ func Test_userRepository_Update(t *testing.T) {
 			image:    nil,
 			mockSetup: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin()
-				mock.ExpectQuery(`UPDATE users SET username = COALESCE\(\$1, username\), email = COALESCE\(\$2, email\), password = COALESCE\(\$3, password\), bio = COALESCE\(\$4, bio\), image = COALESCE\(\$5, image\), updated_at = \$6 WHERE id = \$7 RETURNING id, username, email, password, bio, image, created_at, updated_at`).
+				mock.ExpectQuery(`UPDATE users SET username = COALESCE\(\$1, username\), email = COALESCE\(\$2, email\), password_hash = COALESCE\(\$3, password_hash\), bio = COALESCE\(\$4, bio\), image = COALESCE\(\$5, image\), updated_at = \$6 WHERE id = \$7 RETURNING id, username, email, password_hash, bio, image, created_at, updated_at`).
 					WithArgs(strPtr("newname"), nil, nil, nil, nil, sqlmock.AnyArg(), 1).
 					WillReturnError(errors.New("database error"))
 				mock.ExpectRollback()
@@ -706,9 +706,9 @@ func Test_userRepository_Update(t *testing.T) {
 			image:    nil,
 			mockSetup: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin()
-				rows := sqlmock.NewRows([]string{"id", "username", "email", "password", "bio", "image", "created_at", "updated_at"}).
+				rows := sqlmock.NewRows([]string{"id", "username", "email", "password_hash", "bio", "image", "created_at", "updated_at"}).
 					AddRow(1, "testuser", "test@example.com", "hashedPassword", "New bio only", "new-image.jpg", time.Now(), time.Now())
-				mock.ExpectQuery(`UPDATE users SET username = COALESCE\(\$1, username\), email = COALESCE\(\$2, email\), password = COALESCE\(\$3, password\), bio = COALESCE\(\$4, bio\), image = COALESCE\(\$5, image\), updated_at = \$6 WHERE id = \$7 RETURNING id, username, email, password, bio, image, created_at, updated_at`).
+				mock.ExpectQuery(`UPDATE users SET username = COALESCE\(\$1, username\), email = COALESCE\(\$2, email\), password_hash = COALESCE\(\$3, password_hash\), bio = COALESCE\(\$4, bio\), image = COALESCE\(\$5, image\), updated_at = \$6 WHERE id = \$7 RETURNING id, username, email, password_hash, bio, image, created_at, updated_at`).
 					WithArgs(strPtr("newname"), nil, nil, nil, nil, sqlmock.AnyArg(), 1).
 					WillReturnRows(rows)
 				mock.ExpectCommit().WillReturnError(errors.New("commit error"))
@@ -726,9 +726,9 @@ func Test_userRepository_Update(t *testing.T) {
 			image:    nil,
 			mockSetup: func(mock sqlmock.Sqlmock) {
 				mock.ExpectBegin()
-				rows := sqlmock.NewRows([]string{"id", "username", "email", "password", "bio", "image", "created_at", "updated_at"}).
+				rows := sqlmock.NewRows([]string{"id", "username", "email", "password_hash", "bio", "image", "created_at", "updated_at"}).
 					AddRow(1, "testuser", "test@example.com", "hashedPassword", nil, nil, time.Now(), time.Now())
-				mock.ExpectQuery(`UPDATE users SET username = COALESCE\(\$1, username\), email = COALESCE\(\$2, email\), password = COALESCE\(\$3, password\), bio = COALESCE\(\$4, bio\), image = COALESCE\(\$5, image\), updated_at = \$6 WHERE id = \$7 RETURNING id, username, email, password, bio, image, created_at, updated_at`).
+				mock.ExpectQuery(`UPDATE users SET username = COALESCE\(\$1, username\), email = COALESCE\(\$2, email\), password_hash = COALESCE\(\$3, password_hash\), bio = COALESCE\(\$4, bio\), image = COALESCE\(\$5, image\), updated_at = \$6 WHERE id = \$7 RETURNING id, username, email, password_hash, bio, image, created_at, updated_at`).
 					WithArgs(strPtr("newname"), nil, nil, nil, nil, sqlmock.AnyArg(), 1).
 					WillReturnRows(rows)
 				mock.ExpectCommit()

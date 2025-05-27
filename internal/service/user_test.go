@@ -98,12 +98,12 @@ func Test_userService_Register(t *testing.T) {
 						}
 
 						return &repository.User{
-							ID:       1,
-							Username: username,
-							Email:    email,
-							Password: password,
-							Bio:      "",
-							Image:    "",
+							ID:           1,
+							Username:     username,
+							Email:        email,
+							PasswordHash: password,
+							Bio:          "",
+							Image:        "",
 						}, nil
 					},
 				}
@@ -294,12 +294,12 @@ func Test_userService_Login(t *testing.T) {
 						}
 
 						return &repository.User{
-							ID:       1,
-							Username: "testuser",
-							Email:    "test@example.com",
-							Password: string(hashedPassword),
-							Bio:      "I'm a test user",
-							Image:    "https://example.com/image.jpg",
+							ID:           1,
+							Username:     "testuser",
+							Email:        "test@example.com",
+							PasswordHash: string(hashedPassword),
+							Bio:          "I'm a test user",
+							Image:        "https://example.com/image.jpg",
 						}, nil
 					},
 				}
@@ -386,12 +386,12 @@ func Test_userService_Login(t *testing.T) {
 						}
 
 						return &repository.User{
-							ID:       1,
-							Username: "testuser",
-							Email:    "test@example.com",
-							Password: string(hashedPassword),
-							Bio:      "I'm a test user",
-							Image:    "https://example.com/image.jpg",
+							ID:           1,
+							Username:     "testuser",
+							Email:        "test@example.com",
+							PasswordHash: string(hashedPassword),
+							Bio:          "I'm a test user",
+							Image:        "https://example.com/image.jpg",
 						}, nil
 					},
 				}
@@ -472,12 +472,12 @@ func Test_userService_GetCurrentUser(t *testing.T) {
 						}
 
 						return &repository.User{
-							ID:       1,
-							Username: "testuser",
-							Email:    "test@example.com",
-							Password: "password123",
-							Bio:      "I'm a test user",
-							Image:    "https://example.com/image.jpg",
+							ID:           1,
+							Username:     "testuser",
+							Email:        "test@example.com",
+							PasswordHash: "password123",
+							Bio:          "I'm a test user",
+							Image:        "https://example.com/image.jpg",
 						}, nil
 					},
 				}
@@ -624,12 +624,12 @@ func Test_userService_UpdateUser(t *testing.T) {
 						}
 
 						return &repository.User{
-							ID:       1,
-							Username: "updateduser",
-							Email:    "updated@example.com",
-							Password: "newpassword123",
-							Bio:      "Updated bio",
-							Image:    "https://example.com/updated-image.jpg",
+							ID:           1,
+							Username:     "updateduser",
+							Email:        "updated@example.com",
+							PasswordHash: "newpassword123",
+							Bio:          "Updated bio",
+							Image:        "https://example.com/updated-image.jpg",
 						}, nil
 					},
 				}
@@ -692,12 +692,12 @@ func Test_userService_UpdateUser(t *testing.T) {
 						}
 
 						return &repository.User{
-							ID:       1,
-							Username: "existinguser",
-							Email:    "existing@example.com",
-							Password: "existingpasswordhash",
-							Bio:      *bio,
-							Image:    *image,
+							ID:           1,
+							Username:     "existinguser",
+							Email:        "existing@example.com",
+							PasswordHash: "existingpasswordhash",
+							Bio:          *bio,
+							Image:        *image,
 						}, nil
 					},
 				}
