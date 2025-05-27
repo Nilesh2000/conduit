@@ -58,21 +58,24 @@ func main() {
 
 	// Initialize repositories
 	userRepository := postgres.NewUserRepository(db)
-	articleRepository := postgres.NewArticleRepository(db)
 	profileRepository := postgres.NewProfileRepository(db)
+	articleRepository := postgres.NewArticleRepository(db)
 	tagRepository := postgres.NewTagRepository(db)
+	commentRepository := postgres.NewCommentRepository(db)
 
 	// Initialize services
 	userService := service.NewUserService(userRepository, cfg.JWT.SecretKey, cfg.JWT.Expiry)
-	articleService := service.NewArticleService(articleRepository, profileRepository)
 	profileService := service.NewProfileService(profileRepository)
+	articleService := service.NewArticleService(articleRepository, profileRepository)
 	tagService := service.NewTagService(tagRepository)
+	commentService := service.NewCommentService(commentRepository, articleRepository)
 
 	// Initialize handlers
 	userHandler := handler.NewUserHandler(userService)
-	articleHandler := handler.NewArticleHandler(articleService)
 	profileHandler := handler.NewProfileHandler(profileService)
+	articleHandler := handler.NewArticleHandler(articleService)
 	tagHandler := handler.NewTagHandler(tagService)
+	commentHandler := handler.NewCommentHandler(commentService)
 
 	// Setup router
 	router := http.NewServeMux()
@@ -83,11 +86,11 @@ func main() {
 	router.HandleFunc("POST /api/users", userHandler.Register())
 	router.HandleFunc("POST /api/users/login", userHandler.Login())
 
-	// Article routes
-	router.HandleFunc("GET /api/articles/{slug}", articleHandler.GetArticle())
-
 	// Profile routes
 	router.HandleFunc("GET /api/profiles/{username}", profileHandler.GetProfile())
+
+	// Article routes
+	router.HandleFunc("GET /api/articles/{slug}", articleHandler.GetArticle())
 
 	// Tag routes
 	router.HandleFunc("GET /api/tags", tagHandler.GetTags())
@@ -122,6 +125,12 @@ func main() {
 	router.HandleFunc(
 		"DELETE /api/articles/{slug}/favorite",
 		authMiddleware(articleHandler.UnfavoriteArticle()),
+	)
+
+	// Comment routes
+	router.HandleFunc(
+		"POST /api/articles/{slug}/comments",
+		authMiddleware(commentHandler.CreateComment()),
 	)
 
 	// Create HTTP server
