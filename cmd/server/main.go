@@ -17,25 +17,6 @@ import (
 	"github.com/Nilesh2000/conduit/internal/service"
 )
 
-type Profile struct {
-	Username  string
-	Bio       string
-	Image     string
-	Following bool
-}
-
-type Comment struct {
-	Id        int
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	Body      string
-	Author    Profile
-}
-
-type NewComment struct {
-	Body string
-}
-
 func main() {
 	// Load configuration
 	cfg, err := config.Load()

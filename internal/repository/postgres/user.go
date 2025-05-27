@@ -46,7 +46,6 @@ func (r *userRepository) Create(
 	now := time.Now()
 	var user repository.User
 	var bio, image sql.NullString
-
 	// Insert user
 	err = tx.QueryRowContext(ctx, query, username, email, password, now, now).Scan(
 		&user.ID,
@@ -58,7 +57,6 @@ func (r *userRepository) Create(
 		&user.CreatedAt,
 		&user.UpdatedAt,
 	)
-
 	// Handle database errors
 	if err != nil {
 		// PostgreSQL specific error handling
