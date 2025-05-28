@@ -806,6 +806,7 @@ func TestUserHandler_GetCurrentUser(t *testing.T) {
 	}
 }
 
+// TestUserHandler_UpdateCurrentUser tests the UpdateCurrentUser method of the UserHandler
 func TestUserHandler_UpdateCurrentUser(t *testing.T) {
 	t.Parallel()
 
