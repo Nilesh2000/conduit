@@ -796,6 +796,42 @@ func TestArticleHandler_UpdateArticle(t *testing.T) {
 			},
 		},
 		{
+			name: "Not the author of the article",
+			slug: "test-article",
+			requestBody: UpdateArticleRequest{
+				Article: struct {
+					Title       *string `json:"title" validate:"omitempty"`
+					Description *string `json:"description" validate:"omitempty"`
+					Body        *string `json:"body" validate:"omitempty"`
+				}{
+					Title:       strPtr("Updated Title"),
+					Description: strPtr("Updated Description"),
+					Body:        strPtr("Updated Body"),
+				},
+			},
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token jwt.token.here")
+				ctx := r.Context()
+				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(2))
+				r = r.WithContext(ctx)
+				return r
+			},
+			setupMock: func() *MockArticleService {
+				mockService := &MockArticleService{
+					updateArticleFunc: func(ctx context.Context, userID int64, slug string, title, description, body *string) (*service.Article, error) {
+						return nil, service.ErrArticleNotAuthorized
+					},
+				}
+				return mockService
+			},
+			expectedStatus: http.StatusForbidden,
+			expectedResponse: response.GenericErrorModel{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"You are not the author of this article"}},
+			},
+		},
+		{
 			name: "Article not found",
 			slug: "non-existent-article",
 			requestBody: UpdateArticleRequest{
@@ -829,6 +865,42 @@ func TestArticleHandler_UpdateArticle(t *testing.T) {
 				Errors: struct {
 					Body []string `json:"body"`
 				}{Body: []string{"Article not found"}},
+			},
+		},
+		{
+			name: "Internal server error",
+			slug: "test-article",
+			requestBody: UpdateArticleRequest{
+				Article: struct {
+					Title       *string `json:"title" validate:"omitempty"`
+					Description *string `json:"description" validate:"omitempty"`
+					Body        *string `json:"body" validate:"omitempty"`
+				}{
+					Title:       strPtr("Updated Title"),
+					Description: strPtr("Updated Description"),
+					Body:        strPtr("Updated Body"),
+				},
+			},
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token jwt.token.here")
+				ctx := r.Context()
+				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
+				r = r.WithContext(ctx)
+				return r
+			},
+			setupMock: func() *MockArticleService {
+				mockService := &MockArticleService{
+					updateArticleFunc: func(ctx context.Context, userID int64, slug string, title, description, body *string) (*service.Article, error) {
+						return nil, service.ErrInternalServer
+					},
+				}
+				return mockService
+			},
+			expectedStatus: http.StatusInternalServerError,
+			expectedResponse: response.GenericErrorModel{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"Internal server error"}},
 			},
 		},
 	}
