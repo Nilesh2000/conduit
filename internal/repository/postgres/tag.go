@@ -16,7 +16,7 @@ func NewTagRepository(db *sql.DB) *tagRepository {
 }
 
 // GetTags gets all tags
-func (r *tagRepository) GetTags(ctx context.Context) ([]string, error) {
+func (r *tagRepository) Get(ctx context.Context) ([]string, error) {
 	query := `
 		SELECT name FROM tags
 	`

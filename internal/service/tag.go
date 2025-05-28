@@ -4,7 +4,7 @@ import "context"
 
 // TagRepository defines the interface for tag repository operations
 type TagRepository interface {
-	GetTags(ctx context.Context) ([]string, error)
+	Get(ctx context.Context) ([]string, error)
 }
 
 // tagService implements the TagService interface
@@ -19,5 +19,5 @@ func NewTagService(tagRepository TagRepository) *tagService {
 
 // GetTags gets all tags
 func (s *tagService) GetTags(ctx context.Context) ([]string, error) {
-	return s.tagRepository.GetTags(ctx)
+	return s.tagRepository.Get(ctx)
 }
