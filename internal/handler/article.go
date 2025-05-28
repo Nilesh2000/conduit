@@ -235,8 +235,8 @@ func (h *articleHandler) UpdateArticle() http.HandlerFunc {
 		)
 		if err != nil {
 			switch {
-			case errors.Is(err, service.ErrUserNotFound):
-				response.RespondWithError(w, http.StatusNotFound, []string{"User not found"})
+			case errors.Is(err, service.ErrArticleNotAuthorized):
+				response.RespondWithError(w, http.StatusForbidden, []string{"You are not the author of this article"})
 			case errors.Is(err, service.ErrArticleNotFound):
 				response.RespondWithError(w, http.StatusNotFound, []string{"Article not found"})
 			default:
