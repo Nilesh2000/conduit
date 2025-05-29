@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/Nilesh2000/conduit/internal/middleware"
@@ -14,6 +15,10 @@ type NewComment struct {
 	Comment struct {
 		Body string `json:"body" validate:"required"`
 	} `json:"comment" validate:"required"`
+}
+
+type CommentResponse struct {
+	Comment service.Comment `json:"comment"`
 }
 
 type CommentService interface {
@@ -53,17 +58,22 @@ func (h *commentHandler) CreateComment() http.HandlerFunc {
 		// Call service to create comment
 		comment, err := h.commentService.CreateComment(r.Context(), userID, slug, req.Comment.Body)
 		if err != nil {
-			response.RespondWithError(
-				w,
-				http.StatusInternalServerError,
-				[]string{"Internal server error"},
-			)
+			switch {
+			case errors.Is(err, service.ErrArticleNotFound):
+				response.RespondWithError(w, http.StatusNotFound, []string{"Article not found"})
+			default:
+				response.RespondWithError(
+					w,
+					http.StatusInternalServerError,
+					[]string{"Internal server error"},
+				)
+			}
 			return
 		}
 
 		// Respond with created comment
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(comment); err != nil {
+		if err := json.NewEncoder(w).Encode(CommentResponse{Comment: *comment}); err != nil {
 			response.RespondWithError(
 				w,
 				http.StatusInternalServerError,

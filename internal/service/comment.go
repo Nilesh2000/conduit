@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/Nilesh2000/conduit/internal/repository"
@@ -46,12 +47,22 @@ func (s *commentService) CreateComment(
 ) (*Comment, error) {
 	article, err := s.articleRepository.GetBySlug(ctx, slug)
 	if err != nil {
-		return nil, err
+		switch {
+		case errors.Is(err, ErrArticleNotFound):
+			return nil, ErrArticleNotFound
+		default:
+			return nil, ErrInternalServer
+		}
 	}
 
 	comment, err := s.commentRepository.Create(ctx, userID, article.ID, body)
 	if err != nil {
-		return nil, err
+		switch {
+		case errors.Is(err, repository.ErrArticleNotFound):
+			return nil, ErrArticleNotFound
+		default:
+			return nil, ErrInternalServer
+		}
 	}
 
 	return &Comment{
