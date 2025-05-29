@@ -284,12 +284,22 @@ func (h *articleHandler) DeleteArticle() http.HandlerFunc {
 		// Call service to delete article
 		err := h.articleService.DeleteArticle(r.Context(), userID, slug)
 		if err != nil {
-			response.RespondWithError(
-				w,
-				http.StatusInternalServerError,
-				[]string{"Internal server error"},
-			)
-			return
+			switch {
+			case errors.Is(err, service.ErrArticleNotAuthorized):
+				response.RespondWithError(
+					w,
+					http.StatusForbidden,
+					[]string{"You are not the author of this article"},
+				)
+			case errors.Is(err, service.ErrArticleNotFound):
+				response.RespondWithError(w, http.StatusNotFound, []string{"Article not found"})
+			default:
+				response.RespondWithError(
+					w,
+					http.StatusInternalServerError,
+					[]string{"Internal server error"},
+				)
+			}
 		}
 
 		// Respond with deleted article
