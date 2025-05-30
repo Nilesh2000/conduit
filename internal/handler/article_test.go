@@ -1014,6 +1014,27 @@ func TestArticleHandler_DeleteArticle(t *testing.T) {
 			expectedResponse: nil,
 		},
 		{
+			name: "Unauthenticated request",
+			slug: "test-article",
+			setupAuth: func(r *http.Request) *http.Request {
+				return r
+			},
+			setupMock: func() *MockArticleService {
+				mockService := &MockArticleService{
+					deleteArticleFunc: func(ctx context.Context, userID int64, slug string) error {
+						return nil
+					},
+				}
+				return mockService
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedResponse: response.GenericErrorModel{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"Unauthorized"}},
+			},
+		},
+		{
 			name: "Not the author of the article",
 			slug: "test-article",
 			setupAuth: func(r *http.Request) *http.Request {
