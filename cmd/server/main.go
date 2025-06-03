@@ -76,6 +76,9 @@ func main() {
 	// Article routes
 	router.HandleFunc("GET /api/articles/{slug}", articleHandler.GetArticle())
 
+	// Comment routes
+	router.HandleFunc("GET /api/articles/{slug}/comments", commentHandler.GetComments())
+
 	// Tag routes
 	router.HandleFunc("GET /api/tags", tagHandler.GetTags())
 

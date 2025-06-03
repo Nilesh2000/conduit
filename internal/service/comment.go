@@ -20,6 +20,7 @@ type Comment struct {
 // CommentRepository is an interface for the comment repository
 type CommentRepository interface {
 	GetByID(ctx context.Context, commentID int64) (*repository.Comment, error)
+	GetByArticleID(ctx context.Context, articleID int64, currentUserID *int64) ([]repository.Comment, error)
 	Create(ctx context.Context, userID, articleID int64, body string) (*repository.Comment, error)
 	Delete(ctx context.Context, commentID int64) error
 }
@@ -39,6 +40,47 @@ func NewCommentService(
 		commentRepository: commentRepository,
 		articleRepository: articleRepository,
 	}
+}
+
+// GetComments gets comments for an article
+func (s *commentService) GetComments(
+	ctx context.Context,
+	slug string,
+	currentUserID *int64,
+) ([]Comment, error) {
+	// Get article by slug
+	article, err := s.articleRepository.GetBySlug(ctx, slug)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrArticleNotFound):
+			return nil, ErrArticleNotFound
+		default:
+			return nil, ErrInternalServer
+		}
+	}
+
+	commentsRepo, err := s.commentRepository.GetByArticleID(ctx, article.ID, currentUserID)
+	if err != nil {
+		return nil, ErrInternalServer
+	}
+
+	comments := make([]Comment, len(commentsRepo))
+	for i, comment := range commentsRepo {
+		comments[i] = Comment{
+			ID:        comment.ID,
+			CreatedAt: comment.CreatedAt,
+			UpdatedAt: comment.UpdatedAt,
+			Body:      comment.Body,
+			Author: Profile{
+				Username:  comment.Author.Username,
+				Bio:       comment.Author.Bio,
+				Image:     comment.Author.Image,
+				Following: false,
+			},
+		}
+	}
+
+	return comments, nil
 }
 
 // CreateComment creates a new comment

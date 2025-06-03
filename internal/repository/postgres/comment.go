@@ -51,6 +51,72 @@ func (r *commentRepository) GetByID(
 	return &comment, nil
 }
 
+// GetByArticleID gets comments by article ID
+func (r *commentRepository) GetByArticleID(
+	ctx context.Context,
+	articleID int64,
+	currentUserID *int64,
+) ([]repository.Comment, error) {
+	query := `
+		SELECT
+			c.id, c.body, c.created_at, c.updated_at,
+			u.id AS author_id, u.username AS author_username, u.bio AS author_bio, u.image AS author_image,
+			a.id AS article_id, a.slug AS article_slug, a.title AS article_title,
+			a.description AS article_description, a.body AS article_body,
+			EXISTS (
+				SELECT 1 FROM follows f
+				WHERE f.follower_id = $2 AND f.following_id = u.id
+			) AS author_following
+		FROM comments c
+		JOIN users u ON u.id = c.user_id
+		JOIN articles a ON a.id = c.article_id
+		WHERE c.article_id = $1
+		`
+
+	var comments []repository.Comment
+
+	rows, err := r.db.QueryContext(ctx, query, articleID, currentUserID)
+	if err != nil {
+		return nil, repository.ErrInternal
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var comment repository.Comment
+		var authorBio, authorImage sql.NullString
+		comment.Author = repository.Profile{}
+		comment.Article = repository.Article{}
+
+		if err := rows.Scan(
+			&comment.ID, &comment.Body, &comment.CreatedAt, &comment.UpdatedAt,
+			&comment.Author.ID, &comment.Author.Username, &authorBio, &authorImage,
+			&comment.Article.ID, &comment.Article.Slug, &comment.Article.Title,
+			&comment.Article.Description, &comment.Article.Body,
+			&comment.Author.Following,
+		); err != nil {
+			if err == sql.ErrNoRows {
+				return nil, repository.ErrCommentNotFound
+			}
+			return nil, repository.ErrInternal
+		}
+
+		if authorBio.Valid {
+			comment.Author.Bio = authorBio.String
+		}
+		if authorImage.Valid {
+			comment.Author.Image = authorImage.String
+		}
+
+		comments = append(comments, comment)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, repository.ErrInternal
+	}
+
+	return comments, nil
+}
+
 // Create creates a new comment
 func (r *commentRepository) Create(
 	ctx context.Context,

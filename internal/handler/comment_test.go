@@ -17,8 +17,18 @@ import (
 
 // MockCommentService is a mock implementation of the CommentService interface
 type MockCommentService struct {
+	getCommentsFunc   func(ctx context.Context, slug string, userID *int64) ([]service.Comment, error)
 	createCommentFunc func(ctx context.Context, userID int64, slug string, body string) (*service.Comment, error)
 	deleteCommentFunc func(ctx context.Context, userID int64, slug string, commentID int64) error
+}
+
+// GetComments gets comments for an article in the mock service
+func (m *MockCommentService) GetComments(
+	ctx context.Context,
+	slug string,
+	userID *int64,
+) ([]service.Comment, error) {
+	return m.getCommentsFunc(ctx, slug, userID)
 }
 
 // CreateComment creates a comment in the mock service
