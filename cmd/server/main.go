@@ -116,6 +116,10 @@ func main() {
 		"POST /api/articles/{slug}/comments",
 		authMiddleware(commentHandler.CreateComment()),
 	)
+	router.HandleFunc(
+		"DELETE /api/articles/{slug}/comments/{id}",
+		authMiddleware(commentHandler.DeleteComment()),
+	)
 
 	// Create HTTP server
 	server := &http.Server{

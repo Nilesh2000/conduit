@@ -18,6 +18,7 @@ import (
 // MockCommentService is a mock implementation of the CommentService interface
 type MockCommentService struct {
 	createCommentFunc func(ctx context.Context, userID int64, slug string, body string) (*service.Comment, error)
+	deleteCommentFunc func(ctx context.Context, userID int64, slug string, commentID int64) error
 }
 
 // CreateComment creates a comment in the mock service
@@ -28,6 +29,16 @@ func (m *MockCommentService) CreateComment(
 	body string,
 ) (*service.Comment, error) {
 	return m.createCommentFunc(ctx, userID, slug, body)
+}
+
+// DeleteComment deletes a comment in the mock service
+func (m *MockCommentService) DeleteComment(
+	ctx context.Context,
+	userID int64,
+	slug string,
+	commentID int64,
+) error {
+	return m.deleteCommentFunc(ctx, userID, slug, commentID)
 }
 
 // TestCommentHandler_CreateComment tests the CreateComment method of the CommentHandler

@@ -19,7 +19,9 @@ type Comment struct {
 
 // CommentRepository is an interface for the comment repository
 type CommentRepository interface {
+	GetByID(ctx context.Context, commentID int64) (*repository.Comment, error)
 	Create(ctx context.Context, userID, articleID int64, body string) (*repository.Comment, error)
+	Delete(ctx context.Context, commentID int64) error
 }
 
 // commentService implements the CommentService interface
@@ -77,4 +79,36 @@ func (s *commentService) CreateComment(
 			Following: false,
 		},
 	}, nil
+}
+
+// DeleteComment deletes a comment
+func (s *commentService) DeleteComment(
+	ctx context.Context,
+	userID int64,
+	slug string,
+	commentID int64,
+) error {
+	// Get the comment by ID
+	comment, err := s.commentRepository.GetByID(ctx, commentID)
+	if err != nil {
+		switch {
+		case errors.Is(err, repository.ErrCommentNotFound):
+			return ErrCommentNotFound
+		default:
+			return ErrInternalServer
+		}
+	}
+
+	// Check if the comment is owned by the user
+	if comment.Author.ID != userID {
+		return ErrCommentNotAuthorized
+	}
+
+	// Delete the comment
+	err = s.commentRepository.Delete(ctx, commentID)
+	if err != nil {
+		return ErrInternalServer
+	}
+
+	return nil
 }

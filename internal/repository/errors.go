@@ -15,4 +15,6 @@ var (
 	ErrArticleNotFound = errors.New("article not found")
 
 	ErrCannotFollowSelf = errors.New("cannot follow yourself")
+
+	ErrCommentNotFound = errors.New("comment not found")
 )

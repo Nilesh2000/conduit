@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/Nilesh2000/conduit/internal/middleware"
 	"github.com/Nilesh2000/conduit/internal/response"
@@ -23,6 +24,7 @@ type CommentResponse struct {
 
 type CommentService interface {
 	CreateComment(ctx context.Context, userID int64, slug, body string) (*service.Comment, error)
+	DeleteComment(ctx context.Context, userID int64, slug string, commentID int64) error
 }
 
 type commentHandler struct {
@@ -81,5 +83,49 @@ func (h *commentHandler) CreateComment() http.HandlerFunc {
 			)
 			return
 		}
+	}
+}
+
+func (h *commentHandler) DeleteComment() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Set the content type to JSON
+		w.Header().Set("Content-Type", "application/json")
+
+		// Get user ID from context
+		userID, ok := middleware.GetUserIDFromContext(r.Context())
+		if !ok {
+			response.RespondWithError(w, http.StatusUnauthorized, []string{"Unauthorized"})
+			return
+		}
+
+		slug := r.PathValue("slug")
+		commentID := r.PathValue("id")
+		commentIDInt, err := strconv.ParseInt(commentID, 10, 64)
+		if err != nil {
+			response.RespondWithError(w, http.StatusBadRequest, []string{"Invalid comment ID"})
+			return
+		}
+
+		err = h.commentService.DeleteComment(r.Context(), userID, slug, commentIDInt)
+		if err != nil {
+			switch {
+			case errors.Is(err, service.ErrCommentNotAuthorized):
+				response.RespondWithError(
+					w,
+					http.StatusForbidden,
+					[]string{"You are not the author of this comment"},
+				)
+			case errors.Is(err, service.ErrCommentNotFound):
+				response.RespondWithError(w, http.StatusNotFound, []string{"Comment not found"})
+			default:
+				response.RespondWithError(
+					w,
+					http.StatusInternalServerError,
+					[]string{"Internal server error"},
+				)
+			}
+		}
+
+		w.WriteHeader(http.StatusOK)
 	}
 }

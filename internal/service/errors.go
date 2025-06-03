@@ -20,4 +20,7 @@ var (
 	ErrArticleAuthorCannotFavorite = errors.New("article author cannot favorite their own article")
 
 	ErrArticleNotAuthorized = errors.New("article not authorized")
+
+	ErrCommentNotFound      = errors.New("comment not found")
+	ErrCommentNotAuthorized = errors.New("comment not authorized")
 )
