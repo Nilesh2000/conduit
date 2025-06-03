@@ -332,6 +332,12 @@ func (h *articleHandler) FavoriteArticle() http.HandlerFunc {
 		// Handle errors
 		if err != nil {
 			switch {
+			case errors.Is(err, service.ErrArticleAuthorCannotFavorite):
+				response.RespondWithError(
+					w,
+					http.StatusForbidden,
+					[]string{"You cannot favorite your own article"},
+				)
 			case errors.Is(err, service.ErrUserNotFound):
 				response.RespondWithError(w, http.StatusNotFound, []string{"User not found"})
 			case errors.Is(err, service.ErrArticleNotFound):

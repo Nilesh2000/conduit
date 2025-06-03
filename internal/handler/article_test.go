@@ -1265,6 +1265,31 @@ func TestArticleHandler_FavoriteArticle(t *testing.T) {
 			},
 		},
 		{
+			name: "You cannot favorite your own article",
+			slug: "test-article",
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token jwt.token.here")
+				ctx := r.Context()
+				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
+				r = r.WithContext(ctx)
+				return r
+			},
+			setupMock: func() *MockArticleService {
+				mockService := &MockArticleService{
+					favoriteArticleFunc: func(ctx context.Context, userID int64, slug string) (*service.Article, error) {
+						return nil, service.ErrArticleAuthorCannotFavorite
+					},
+				}
+				return mockService
+			},
+			expectedStatus: http.StatusForbidden,
+			expectedResponse: response.GenericErrorModel{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"You cannot favorite your own article"}},
+			},
+		},
+		{
 			name: "Article not found",
 			slug: "non-existent-article",
 			setupAuth: func(r *http.Request) *http.Request {
