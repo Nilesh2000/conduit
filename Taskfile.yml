@@ -9,7 +9,7 @@ vars:
   AIR: air
   GOFUMPT: gofumpt
   GOLINES: golines
-  DB_URL: postgres://postgres:postgres@localhost:5432/conduit?sslmode=disable
+  DB_URL: postgres://postgres:admin@localhost:5432/conduit?sslmode=disable
 
 tasks:
   default:
