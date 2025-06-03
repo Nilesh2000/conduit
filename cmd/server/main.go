@@ -61,6 +61,9 @@ func main() {
 	// Setup router
 	router := http.NewServeMux()
 
+	// Apply middleware
+	handler := middleware.LoggingMiddleware(router)
+
 	// Public routes
 
 	// Auth routes
@@ -117,7 +120,7 @@ func main() {
 	// Create HTTP server
 	server := &http.Server{
 		Addr:              ":" + cfg.Server.Port,
-		Handler:           router,
+		Handler:           handler,
 		ReadHeaderTimeout: 10 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      30 * time.Second,
