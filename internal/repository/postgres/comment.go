@@ -48,6 +48,7 @@ func (r *commentRepository) Create(
 			a.description AS article_description, a.body AS article_body
 		FROM inserted_comment c
 		JOIN users u ON u.id = c.user_id
+		JOIN articles a ON a.id = c.article_id
 	`
 
 	now := time.Now()
