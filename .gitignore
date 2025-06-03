@@ -1,6 +1,9 @@
 # OS specific files
 .DS_Store
 
+# VSCode files
+.vscode/
+
 # Project binary
 conduit
 
