@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"log"
 	"net/http"
 	"os"
@@ -10,7 +11,6 @@ import (
 	"time"
 
 	"github.com/Nilesh2000/conduit/internal/config"
-	"github.com/Nilesh2000/conduit/internal/database"
 	"github.com/Nilesh2000/conduit/internal/handler"
 	"github.com/Nilesh2000/conduit/internal/middleware"
 	"github.com/Nilesh2000/conduit/internal/repository/postgres"
@@ -30,12 +30,27 @@ func main() {
 	}
 
 	// Setup database
-	db := database.Setup(cfg)
+	db, err := sql.Open("postgres", cfg.Database.GetDSN())
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
+	}
+
 	defer func() {
 		if err := db.Close(); err != nil {
 			log.Printf("Error closing database connection: %v", err)
 		}
 	}()
+
+	// Configure database connection pool
+	db.SetMaxOpenConns(cfg.Database.MaxOpenConns)
+	db.SetMaxIdleConns(cfg.Database.MaxIdleConns)
+	db.SetConnMaxLifetime(cfg.Database.ConnMaxLifetime)
+	db.SetConnMaxIdleTime(cfg.Database.ConnMaxIdleTime)
+
+	// Ping database to check connection
+	if err := db.Ping(); err != nil {
+		log.Fatalf("Failed to ping database: %v", err)
+	}
 
 	// Initialize repositories
 	userRepository := postgres.NewUserRepository(db)
