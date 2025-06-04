@@ -604,3 +604,229 @@ func TestCommentHandler_CreateComment(t *testing.T) {
 		})
 	}
 }
+
+// TestCommentHandler_DeleteComment tests the DeleteComment method of the CommentHandler
+func TestCommentHandler_DeleteComment(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name             string
+		slug             string
+		commentID        string
+		setupAuth        func(r *http.Request) *http.Request
+		setupMock        func() *MockCommentService
+		expectedStatus   int
+		expectedResponse any
+	}{
+		{
+			name:      "Successfully delete comment",
+			slug:      "test-slug",
+			commentID: "1",
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token jwt.token.here")
+				ctx := r.Context()
+				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
+				r = r.WithContext(ctx)
+				return r
+			},
+			setupMock: func() *MockCommentService {
+				mockService := &MockCommentService{
+					deleteCommentFunc: func(ctx context.Context, userID int64, slug string, commentID int64) error {
+						if userID != 1 {
+							t.Errorf("Expected userID 1, got %d", userID)
+						}
+						if slug != "test-slug" {
+							t.Errorf("Expected slug 'test-slug', got %q", slug)
+						}
+						if commentID != 1 {
+							t.Errorf("Expected commentID 1, got %d", commentID)
+						}
+
+						return nil
+					},
+				}
+				return mockService
+			},
+			expectedStatus:   http.StatusOK,
+			expectedResponse: nil,
+		},
+		{
+			name:      "Unauthenticated request",
+			slug:      "test-slug",
+			commentID: "1",
+			setupAuth: func(r *http.Request) *http.Request {
+				return r
+			},
+			setupMock: func() *MockCommentService {
+				mockService := &MockCommentService{
+					deleteCommentFunc: func(ctx context.Context, userID int64, slug string, commentID int64) error {
+						t.Errorf("DeleteComment should not be called for unauthenticated request")
+						return nil
+					},
+				}
+				return mockService
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedResponse: response.GenericErrorModel{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"Unauthorized"}},
+			},
+		},
+		{
+			name:      "Invalid comment ID",
+			slug:      "test-slug",
+			commentID: "invalid-comment-id",
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token jwt.token.here")
+				ctx := r.Context()
+				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
+				r = r.WithContext(ctx)
+				return r
+			},
+			setupMock: func() *MockCommentService {
+				mockService := &MockCommentService{
+					deleteCommentFunc: func(ctx context.Context, userID int64, slug string, commentID int64) error {
+						t.Errorf("DeleteComment should not be called for invalid comment ID")
+						return nil
+					},
+				}
+				return mockService
+			},
+			expectedStatus: http.StatusBadRequest,
+			expectedResponse: response.GenericErrorModel{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"Invalid comment ID"}},
+			},
+		},
+		{
+			name:      "Not the author of the comment",
+			slug:      "test-slug",
+			commentID: "1",
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token jwt.token.here")
+				ctx := r.Context()
+				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(2))
+				r = r.WithContext(ctx)
+				return r
+			},
+			setupMock: func() *MockCommentService {
+				mockService := &MockCommentService{
+					deleteCommentFunc: func(ctx context.Context, userID int64, slug string, commentID int64) error {
+						return service.ErrCommentNotAuthorized
+					},
+				}
+				return mockService
+			},
+			expectedStatus: http.StatusForbidden,
+			expectedResponse: response.GenericErrorModel{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"You are not the author of this comment"}},
+			},
+		},
+		{
+			name:      "Comment not found",
+			slug:      "test-slug",
+			commentID: "1",
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token jwt.token.here")
+				ctx := r.Context()
+				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
+				r = r.WithContext(ctx)
+				return r
+			},
+			setupMock: func() *MockCommentService {
+				mockService := &MockCommentService{
+					deleteCommentFunc: func(ctx context.Context, userID int64, slug string, commentID int64) error {
+						return service.ErrCommentNotFound
+					},
+				}
+				return mockService
+			},
+			expectedStatus: http.StatusNotFound,
+			expectedResponse: response.GenericErrorModel{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"Comment not found"}},
+			},
+		},
+		{
+			name:      "Internal server error",
+			slug:      "test-slug",
+			commentID: "1",
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token jwt.token.here")
+				ctx := r.Context()
+				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
+				r = r.WithContext(ctx)
+				return r
+			},
+			setupMock: func() *MockCommentService {
+				mockService := &MockCommentService{
+					deleteCommentFunc: func(ctx context.Context, userID int64, slug string, commentID int64) error {
+						return service.ErrInternalServer
+					},
+				}
+				return mockService
+			},
+			expectedStatus: http.StatusInternalServerError,
+			expectedResponse: response.GenericErrorModel{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"Internal server error"}},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			// Setup Mock Service
+			mockService := tt.setupMock()
+
+			// Create Handler
+			handler := NewCommentHandler(mockService)
+
+			// Create Request
+			req := httptest.NewRequest(
+				http.MethodDelete,
+				"/api/articles/"+tt.slug+"/comments/"+tt.commentID,
+				nil,
+			)
+			req.SetPathValue("slug", tt.slug)
+			req.SetPathValue("id", tt.commentID)
+
+			// Add authorization token and setup context
+			if tt.setupAuth != nil {
+				req = tt.setupAuth(req)
+			}
+
+			// Create Response Recorder
+			rr := httptest.NewRecorder()
+
+			// Serve Request
+			handler.DeleteComment()(rr, req)
+
+			// Check Status Code
+			var got any
+			if tt.expectedStatus == http.StatusOK {
+				got = nil
+			} else {
+				var resp response.GenericErrorModel
+				if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
+					t.Errorf("Failed to unmarshal response: %v", err)
+				}
+				got = resp
+			}
+
+			// Deep compare expected and got
+			if !reflect.DeepEqual(got, tt.expectedResponse) {
+				t.Errorf("Response body: got %v, want %v", got, tt.expectedResponse)
+			}
+		})
+	}
+}
