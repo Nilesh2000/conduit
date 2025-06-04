@@ -130,6 +130,12 @@ tasks:
       - echo "Starting godoc server at http://localhost:6060"
       - godoc -http=:6060
 
+  seed:
+    desc: Seed the database with sample data
+    cmds:
+      - echo "Seeding database with sample data..."
+      - "{{.GO}} run ./cmd/seed/main.go"
+
   list:
     desc: List all available tasks
     cmds:
