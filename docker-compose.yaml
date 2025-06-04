@@ -15,7 +15,7 @@ services:
       - DB_HOST=db
       - DB_PORT=5432
       - DB_USER=postgres
-      - DB_PASSWORD=postgres
+      - DB_PASSWORD=admin
       - DB_NAME=conduit
       - DB_SSLMODE=disable
       - JWT_SECRET_KEY=this-is-a-32-char-long-secret-key-123
