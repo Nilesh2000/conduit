@@ -20,7 +20,11 @@ type Comment struct {
 // CommentRepository is an interface for the comment repository
 type CommentRepository interface {
 	GetByID(ctx context.Context, commentID int64) (*repository.Comment, error)
-	GetByArticleID(ctx context.Context, articleID int64, currentUserID *int64) ([]repository.Comment, error)
+	GetByArticleID(
+		ctx context.Context,
+		articleID int64,
+		currentUserID *int64,
+	) ([]repository.Comment, error)
 	Create(ctx context.Context, userID, articleID int64, body string) (*repository.Comment, error)
 	Delete(ctx context.Context, commentID int64) error
 }

@@ -65,16 +65,23 @@ func (h *commentHandler) GetComments() http.HandlerFunc {
 			case errors.Is(err, service.ErrArticleNotFound):
 				response.RespondWithError(w, http.StatusNotFound, []string{"Article not found"})
 			default:
-				response.RespondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+				response.RespondWithError(
+					w,
+					http.StatusInternalServerError,
+					[]string{"Internal server error"},
+				)
 			}
 			return
 		}
 
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(CommentsResponse{Comments: comments}); err != nil {
-			response.RespondWithError(w, http.StatusInternalServerError, []string{"Internal server error"})
+			response.RespondWithError(
+				w,
+				http.StatusInternalServerError,
+				[]string{"Internal server error"},
+			)
 		}
-
 	}
 }
 
