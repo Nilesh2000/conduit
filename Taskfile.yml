@@ -67,7 +67,7 @@ tasks:
     desc: Run application
     cmds:
       - echo "Running application..."
-      - "{{.GO}} run ./cmd/..."
+      - "{{.GO}} run ./cmd/server/main.go"
 
   dev:
     desc: Run with hot reload (Air)
