@@ -15,10 +15,11 @@ import (
 
 // MockUserRepository is a mock implementation of the UserRepository interface
 type MockUserRepository struct {
-	createFunc      func(ctx context.Context, username, email, password string) (*repository.User, error)
-	findByEmailFunc func(ctx context.Context, email string) (*repository.User, error)
-	findByIDFunc    func(ctx context.Context, id int64) (*repository.User, error)
-	updateFunc      func(ctx context.Context, userID int64, username, email, password, bio, image *string) (*repository.User, error)
+	createFunc         func(ctx context.Context, username, email, password string) (*repository.User, error)
+	findByIDFunc       func(ctx context.Context, id int64) (*repository.User, error)
+	findByEmailFunc    func(ctx context.Context, email string) (*repository.User, error)
+	findByUsernameFunc func(ctx context.Context, username string) (*repository.User, error)
+	updateFunc         func(ctx context.Context, userID int64, username, email, password, bio, image *string) (*repository.User, error)
 }
 
 var _ UserRepository = (*MockUserRepository)(nil)
@@ -31,6 +32,11 @@ func (m *MockUserRepository) Create(
 	return m.createFunc(ctx, username, email, password)
 }
 
+// FindByID finds a user by ID in the repository
+func (m *MockUserRepository) FindByID(ctx context.Context, id int64) (*repository.User, error) {
+	return m.findByIDFunc(ctx, id)
+}
+
 // FindByEmail finds a user by email in the repository
 func (m *MockUserRepository) FindByEmail(
 	ctx context.Context,
@@ -39,9 +45,9 @@ func (m *MockUserRepository) FindByEmail(
 	return m.findByEmailFunc(ctx, email)
 }
 
-// FindByID finds a user by ID in the repository
-func (m *MockUserRepository) FindByID(ctx context.Context, id int64) (*repository.User, error) {
-	return m.findByIDFunc(ctx, id)
+// FindByUsername finds a user by username in the repository
+func (m *MockUserRepository) FindByUsername(ctx context.Context, username string) (*repository.User, error) {
+	return m.findByUsernameFunc(ctx, username)
 }
 
 // Update updates a user in the repository

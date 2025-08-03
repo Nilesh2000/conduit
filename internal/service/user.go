@@ -25,8 +25,9 @@ type User struct {
 // UserRepository defines the interface for user repository operations
 type UserRepository interface {
 	Create(ctx context.Context, username, email, password string) (*repository.User, error)
-	FindByEmail(ctx context.Context, email string) (*repository.User, error)
 	FindByID(ctx context.Context, id int64) (*repository.User, error)
+	FindByEmail(ctx context.Context, email string) (*repository.User, error)
+	FindByUsername(ctx context.Context, username string) (*repository.User, error)
 	Update(
 		ctx context.Context,
 		userID int64,

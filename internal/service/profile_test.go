@@ -4,28 +4,19 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/Nilesh2000/conduit/internal/repository"
 )
 
 // MockProfileRepository is a mock implementation of the ProfileRepository interface
 type MockProfileRepository struct {
-	getByUsernameFunc func(ctx context.Context, username string, currentUserID int64) (*repository.Profile, error)
-	followUserFunc    func(ctx context.Context, followerID int64, followingName string) (*repository.Profile, error)
-	unfollowUserFunc  func(ctx context.Context, followerID int64, followingName string) (*repository.Profile, error)
-	isFollowingFunc   func(ctx context.Context, followerID int64, followingID int64) (bool, error)
+	followUserFunc   func(ctx context.Context, followerID int64, followingName string) (*repository.Profile, error)
+	unfollowUserFunc func(ctx context.Context, followerID int64, followingName string) (*repository.Profile, error)
+	isFollowingFunc  func(ctx context.Context, followerID int64, followingID int64) (bool, error)
 }
 
 var _ ProfileRepository = (*MockProfileRepository)(nil)
-
-// GetByUsername returns a profile by username
-func (m *MockProfileRepository) GetByUsername(
-	ctx context.Context,
-	username string,
-	currentUserID int64,
-) (*repository.Profile, error) {
-	return m.getByUsernameFunc(ctx, username, currentUserID)
-}
 
 // FollowUser follows a user
 func (m *MockProfileRepository) FollowUser(
@@ -60,7 +51,7 @@ func Test_profileService_GetProfile(t *testing.T) {
 		name          string
 		username      string
 		currentUserID int64
-		setupMock     func() *MockProfileRepository
+		setupMock     func() (*MockUserRepository, *MockProfileRepository)
 		expectedError error
 		validate      func(*testing.T, *Profile)
 	}{
@@ -68,25 +59,31 @@ func Test_profileService_GetProfile(t *testing.T) {
 			name:          "Profile found (not following)",
 			username:      "testuser",
 			currentUserID: 2,
-			setupMock: func() *MockProfileRepository {
-				return &MockProfileRepository{
-					getByUsernameFunc: func(ctx context.Context, username string, currentUserID int64) (*repository.Profile, error) {
+			setupMock: func() (*MockUserRepository, *MockProfileRepository) {
+				userRepo := &MockUserRepository{
+					findByUsernameFunc: func(ctx context.Context, username string) (*repository.User, error) {
 						if username != "testuser" {
 							t.Errorf("Expected username to be testuser, got %q", username)
 						}
-						if currentUserID != 2 {
-							t.Errorf("Expected currentUserID to be 1, got %d", currentUserID)
-						}
 
-						return &repository.Profile{
-							ID:        1,
-							Username:  "testuser",
-							Bio:       "Test bio",
-							Image:     "https://example.com/testuser.jpg",
-							Following: false,
+						return &repository.User{
+							ID:           1,
+							Username:     "testuser",
+							Email:        "testuser@example.com",
+							PasswordHash: "hashedpassword",
+							Bio:          "Test bio",
+							Image:        "https://example.com/testuser.jpg",
+							CreatedAt:    time.Now(),
+							UpdatedAt:    time.Now(),
 						}, nil
 					},
 				}
+				profileRepo := &MockProfileRepository{
+					isFollowingFunc: func(ctx context.Context, followerID int64, followingID int64) (bool, error) {
+						return false, nil
+					},
+				}
+				return userRepo, profileRepo
 			},
 			expectedError: nil,
 			validate: func(t *testing.T, profile *Profile) {
@@ -111,30 +108,38 @@ func Test_profileService_GetProfile(t *testing.T) {
 			name:          "Profile found (following)",
 			username:      "followeduser",
 			currentUserID: 1,
-			setupMock: func() *MockProfileRepository {
-				return &MockProfileRepository{
-					getByUsernameFunc: func(ctx context.Context, username string, currentUserID int64) (*repository.Profile, error) {
+			setupMock: func() (*MockUserRepository, *MockProfileRepository) {
+				userRepo := &MockUserRepository{
+					findByUsernameFunc: func(ctx context.Context, username string) (*repository.User, error) {
 						if username != "followeduser" {
 							t.Errorf("Expected username to be followeduser, got %q", username)
 						}
-						if currentUserID != 1 {
-							t.Errorf("Expected currentUserID to be 1, got %d", currentUserID)
-						}
 
-						return &repository.Profile{
-							ID:        2,
-							Username:  "followeduser",
-							Bio:       "Another bio",
-							Image:     "https://example.com/another.jpg",
-							Following: true,
+						return &repository.User{
+							ID:           2,
+							Username:     "followeduser",
+							Email:        "followeduser@example.com",
+							PasswordHash: "hashedpassword",
+							Bio:          "Another bio",
+							Image:        "https://example.com/another.jpg",
+							CreatedAt:    time.Now(),
+							UpdatedAt:    time.Now(),
 						}, nil
 					},
 				}
+				profileRepo := &MockProfileRepository{
+					isFollowingFunc: func(ctx context.Context, followerID int64, followingID int64) (bool, error) {
+						return true, nil
+					},
+				}
+				return userRepo, profileRepo
 			},
 			expectedError: nil,
 			validate: func(t *testing.T, profile *Profile) {
 				if profile.Username != "followeduser" {
-					t.Errorf("Expected username to be followeduser, got %q", profile.Username)
+					t.Errorf("Expected username to be followeduser, got %q",
+						profile.Username,
+					)
 				}
 				if profile.Bio != "Another bio" {
 					t.Errorf("Expected bio to be Another bio, got %q", profile.Bio)
@@ -154,12 +159,18 @@ func Test_profileService_GetProfile(t *testing.T) {
 			name:          "User not found",
 			username:      "nonexistentuser",
 			currentUserID: 1,
-			setupMock: func() *MockProfileRepository {
-				return &MockProfileRepository{
-					getByUsernameFunc: func(ctx context.Context, username string, currentUserID int64) (*repository.Profile, error) {
+			setupMock: func() (*MockUserRepository, *MockProfileRepository) {
+				userRepo := &MockUserRepository{
+					findByUsernameFunc: func(ctx context.Context, username string) (*repository.User, error) {
 						return nil, repository.ErrUserNotFound
 					},
 				}
+				profileRepo := &MockProfileRepository{
+					isFollowingFunc: func(ctx context.Context, followerID int64, followingID int64) (bool, error) {
+						return false, nil
+					},
+				}
+				return userRepo, profileRepo
 			},
 			expectedError: ErrUserNotFound,
 			validate:      nil,
@@ -168,12 +179,18 @@ func Test_profileService_GetProfile(t *testing.T) {
 			name:          "Repository error",
 			username:      "testuser",
 			currentUserID: 1,
-			setupMock: func() *MockProfileRepository {
-				return &MockProfileRepository{
-					getByUsernameFunc: func(ctx context.Context, username string, currentUserID int64) (*repository.Profile, error) {
+			setupMock: func() (*MockUserRepository, *MockProfileRepository) {
+				userRepo := &MockUserRepository{
+					findByUsernameFunc: func(ctx context.Context, username string) (*repository.User, error) {
 						return nil, repository.ErrInternal
 					},
 				}
+				profileRepo := &MockProfileRepository{
+					isFollowingFunc: func(ctx context.Context, followerID int64, followingID int64) (bool, error) {
+						return false, nil
+					},
+				}
+				return userRepo, profileRepo
 			},
 			expectedError: ErrInternalServer,
 			validate:      nil,
@@ -186,16 +203,16 @@ func Test_profileService_GetProfile(t *testing.T) {
 			t.Parallel()
 
 			// Setup mock repository
-			mockRepo := tt.setupMock()
+			userRepo, profileRepo := tt.setupMock()
 
 			// Create service
-			service := NewProfileService(mockRepo)
+			service := NewProfileService(userRepo, profileRepo)
 
 			// Call GetProfile
 			profile, err := service.GetProfile(
 				context.Background(),
 				tt.username,
-				tt.currentUserID,
+				&tt.currentUserID,
 			)
 
 			// Validate results
@@ -217,7 +234,7 @@ func Test_profileService_FollowUser(t *testing.T) {
 		name          string
 		followerID    int64
 		followingName string
-		setupMock     func() *MockProfileRepository
+		setupMock     func() (*MockUserRepository, *MockProfileRepository)
 		expectedError error
 		validate      func(*testing.T, *Profile)
 	}{
@@ -225,8 +242,8 @@ func Test_profileService_FollowUser(t *testing.T) {
 			name:          "Successfully follow user",
 			followerID:    1,
 			followingName: "usertofollow",
-			setupMock: func() *MockProfileRepository {
-				return &MockProfileRepository{
+			setupMock: func() (*MockUserRepository, *MockProfileRepository) {
+				profileRepo := &MockProfileRepository{
 					followUserFunc: func(ctx context.Context, followerID int64, followingName string) (*repository.Profile, error) {
 						if followerID != 1 {
 							t.Errorf("Expected followerID to be 1, got %d", followerID)
@@ -247,6 +264,7 @@ func Test_profileService_FollowUser(t *testing.T) {
 						}, nil
 					},
 				}
+				return nil, profileRepo
 			},
 			expectedError: nil,
 			validate: func(t *testing.T, profile *Profile) {
@@ -271,12 +289,13 @@ func Test_profileService_FollowUser(t *testing.T) {
 			name:          "User not found",
 			followerID:    1,
 			followingName: "nonexistentuser",
-			setupMock: func() *MockProfileRepository {
-				return &MockProfileRepository{
+			setupMock: func() (*MockUserRepository, *MockProfileRepository) {
+				profileRepo := &MockProfileRepository{
 					followUserFunc: func(ctx context.Context, followerID int64, followingName string) (*repository.Profile, error) {
 						return nil, repository.ErrUserNotFound
 					},
 				}
+				return nil, profileRepo
 			},
 			expectedError: ErrUserNotFound,
 			validate:      nil,
@@ -285,12 +304,13 @@ func Test_profileService_FollowUser(t *testing.T) {
 			name:          "Cannot follow yourself",
 			followerID:    1,
 			followingName: "currentuser",
-			setupMock: func() *MockProfileRepository {
-				return &MockProfileRepository{
+			setupMock: func() (*MockUserRepository, *MockProfileRepository) {
+				profileRepo := &MockProfileRepository{
 					followUserFunc: func(ctx context.Context, followerID int64, followingName string) (*repository.Profile, error) {
 						return nil, repository.ErrCannotFollowSelf
 					},
 				}
+				return nil, profileRepo
 			},
 			expectedError: ErrCannotFollowSelf,
 			validate:      nil,
@@ -299,12 +319,13 @@ func Test_profileService_FollowUser(t *testing.T) {
 			name:          "Repository error",
 			followerID:    1,
 			followingName: "usertofollow",
-			setupMock: func() *MockProfileRepository {
-				return &MockProfileRepository{
+			setupMock: func() (*MockUserRepository, *MockProfileRepository) {
+				profileRepo := &MockProfileRepository{
 					followUserFunc: func(ctx context.Context, followerID int64, followingName string) (*repository.Profile, error) {
 						return nil, repository.ErrInternal
 					},
 				}
+				return nil, profileRepo
 			},
 			expectedError: ErrInternalServer,
 			validate:      nil,
@@ -317,10 +338,10 @@ func Test_profileService_FollowUser(t *testing.T) {
 			t.Parallel()
 
 			// Setup mock repository
-			mockRepo := tt.setupMock()
+			userRepo, profileRepo := tt.setupMock()
 
 			// Create service
-			service := NewProfileService(mockRepo)
+			service := NewProfileService(userRepo, profileRepo)
 
 			// Call FollowUser
 			profile, err := service.FollowUser(
@@ -348,7 +369,7 @@ func Test_profileService_UnfollowUser(t *testing.T) {
 		name          string
 		followerID    int64
 		followingName string
-		setupMock     func() *MockProfileRepository
+		setupMock     func() (*MockUserRepository, *MockProfileRepository)
 		expectedError error
 		validate      func(*testing.T, *Profile)
 	}{
@@ -356,8 +377,8 @@ func Test_profileService_UnfollowUser(t *testing.T) {
 			name:          "Successfully unfollow user",
 			followerID:    1,
 			followingName: "usertounfollow",
-			setupMock: func() *MockProfileRepository {
-				return &MockProfileRepository{
+			setupMock: func() (*MockUserRepository, *MockProfileRepository) {
+				profileRepo := &MockProfileRepository{
 					unfollowUserFunc: func(ctx context.Context, followerID int64, followingName string) (*repository.Profile, error) {
 						if followerID != 1 {
 							t.Errorf("Expected followerID to be 1, got %d", followerID)
@@ -378,6 +399,7 @@ func Test_profileService_UnfollowUser(t *testing.T) {
 						}, nil
 					},
 				}
+				return nil, profileRepo
 			},
 			expectedError: nil,
 			validate: func(t *testing.T, profile *Profile) {
@@ -402,12 +424,13 @@ func Test_profileService_UnfollowUser(t *testing.T) {
 			name:          "User not found",
 			followerID:    1,
 			followingName: "nonexistentuser",
-			setupMock: func() *MockProfileRepository {
-				return &MockProfileRepository{
+			setupMock: func() (*MockUserRepository, *MockProfileRepository) {
+				profileRepo := &MockProfileRepository{
 					unfollowUserFunc: func(ctx context.Context, followerID int64, followingName string) (*repository.Profile, error) {
 						return nil, repository.ErrUserNotFound
 					},
 				}
+				return nil, profileRepo
 			},
 			expectedError: ErrUserNotFound,
 			validate:      nil,
@@ -416,12 +439,13 @@ func Test_profileService_UnfollowUser(t *testing.T) {
 			name:          "Cannot unfollow yourself",
 			followerID:    1,
 			followingName: "currentuser",
-			setupMock: func() *MockProfileRepository {
-				return &MockProfileRepository{
+			setupMock: func() (*MockUserRepository, *MockProfileRepository) {
+				profileRepo := &MockProfileRepository{
 					unfollowUserFunc: func(ctx context.Context, followerID int64, followingName string) (*repository.Profile, error) {
 						return nil, repository.ErrCannotFollowSelf
 					},
 				}
+				return nil, profileRepo
 			},
 			expectedError: ErrCannotFollowSelf,
 			validate:      nil,
@@ -430,12 +454,13 @@ func Test_profileService_UnfollowUser(t *testing.T) {
 			name:          "Repository error",
 			followerID:    1,
 			followingName: "usertounfollow",
-			setupMock: func() *MockProfileRepository {
-				return &MockProfileRepository{
+			setupMock: func() (*MockUserRepository, *MockProfileRepository) {
+				profileRepo := &MockProfileRepository{
 					unfollowUserFunc: func(ctx context.Context, followerID int64, followingName string) (*repository.Profile, error) {
 						return nil, repository.ErrInternal
 					},
 				}
+				return nil, profileRepo
 			},
 			expectedError: ErrInternalServer,
 			validate:      nil,
@@ -448,10 +473,10 @@ func Test_profileService_UnfollowUser(t *testing.T) {
 			t.Parallel()
 
 			// Setup mock repository
-			mockRepo := tt.setupMock()
+			userRepo, profileRepo := tt.setupMock()
 
 			// Create service
-			service := NewProfileService(mockRepo)
+			service := NewProfileService(userRepo, profileRepo)
 
 			// Call UnfollowUser
 			profile, err := service.UnfollowUser(

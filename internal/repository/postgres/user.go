@@ -92,6 +92,34 @@ func (r *userRepository) Create(
 	return &user, nil
 }
 
+// FindByID finds a user by ID in the database
+func (r *userRepository) FindByID(ctx context.Context, id int64) (*repository.User, error) {
+	var user repository.User
+	var bio, image sql.NullString
+
+	err := r.db.QueryRowContext(
+		ctx,
+		"SELECT id, username, email, password_hash, bio, image, created_at, updated_at FROM users WHERE id = $1",
+		id,
+	).Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &bio, &image, &user.CreatedAt, &user.UpdatedAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, repository.ErrUserNotFound
+		}
+		return nil, repository.ErrInternal
+	}
+
+	// Handle nullable values
+	if bio.Valid {
+		user.Bio = bio.String
+	}
+	if image.Valid {
+		user.Image = image.String
+	}
+
+	return &user, nil
+}
+
 // FindByEmail finds a user by email in the database
 func (r *userRepository) FindByEmail(ctx context.Context, email string) (*repository.User, error) {
 	var user repository.User
@@ -120,15 +148,15 @@ func (r *userRepository) FindByEmail(ctx context.Context, email string) (*reposi
 	return &user, nil
 }
 
-// FindByID finds a user by ID in the database
-func (r *userRepository) FindByID(ctx context.Context, id int64) (*repository.User, error) {
+// FindByUsername finds a user by username in the database
+func (r *userRepository) FindByUsername(ctx context.Context, username string) (*repository.User, error) {
 	var user repository.User
 	var bio, image sql.NullString
 
 	err := r.db.QueryRowContext(
 		ctx,
-		"SELECT id, username, email, password_hash, bio, image, created_at, updated_at FROM users WHERE id = $1",
-		id,
+		"SELECT id, username, email, password_hash, bio, image, created_at, updated_at FROM users WHERE username = $1",
+		username,
 	).Scan(&user.ID, &user.Username, &user.Email, &user.PasswordHash, &bio, &image, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		if err == sql.ErrNoRows {

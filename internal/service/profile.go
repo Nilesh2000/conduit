@@ -17,11 +17,6 @@ type Profile struct {
 
 // ProfileRepository is an interface for the profile repository
 type ProfileRepository interface {
-	GetByUsername(
-		ctx context.Context,
-		username string,
-		currentUserID int64,
-	) (*repository.Profile, error)
 	FollowUser(
 		ctx context.Context,
 		followerID int64,
@@ -41,12 +36,14 @@ type ProfileRepository interface {
 
 // profileService implements the profileService interface
 type profileService struct {
+	userRepository    UserRepository
 	profileRepository ProfileRepository
 }
 
 // NewProfileService creates a new profile service
-func NewProfileService(profileRepository ProfileRepository) *profileService {
+func NewProfileService(userRepository UserRepository, profileRepository ProfileRepository) *profileService {
 	return &profileService{
+		userRepository:    userRepository,
 		profileRepository: profileRepository,
 	}
 }
@@ -55,9 +52,9 @@ func NewProfileService(profileRepository ProfileRepository) *profileService {
 func (s *profileService) GetProfile(
 	ctx context.Context,
 	username string,
-	currentUserID int64,
+	currentUserID *int64,
 ) (*Profile, error) {
-	profile, err := s.profileRepository.GetByUsername(ctx, username, currentUserID)
+	user, err := s.userRepository.FindByUsername(ctx, username)
 	if err != nil {
 		switch {
 		case errors.Is(err, repository.ErrUserNotFound):
@@ -67,11 +64,19 @@ func (s *profileService) GetProfile(
 		}
 	}
 
+	var following bool
+	if currentUserID != nil {
+		following, err = s.profileRepository.IsFollowing(ctx, *currentUserID, user.ID)
+		if err != nil {
+			return nil, ErrInternalServer
+		}
+	}
+
 	return &Profile{
-		Username:  profile.Username,
-		Bio:       profile.Bio,
-		Image:     profile.Image,
-		Following: profile.Following,
+		Username:  user.Username,
+		Bio:       user.Bio,
+		Image:     user.Image,
+		Following: following,
 	}, nil
 }
 

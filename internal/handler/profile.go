@@ -18,7 +18,7 @@ type ProfileResponse struct {
 
 // ProfileService is an interface for the profile service
 type ProfileService interface {
-	GetProfile(ctx context.Context, username string, currentUserID int64) (*service.Profile, error)
+	GetProfile(ctx context.Context, username string, currentUserID *int64) (*service.Profile, error)
 	FollowUser(
 		ctx context.Context,
 		followerID int64,
@@ -53,13 +53,13 @@ func (h *profileHandler) GetProfile() http.HandlerFunc {
 		username := r.PathValue("username")
 
 		// Get current user ID from context
-		currentUserID := int64(0)
+		var userID *int64
 		if id, ok := middleware.GetUserIDFromContext(r.Context()); ok {
-			currentUserID = id
+			userID = &id
 		}
 
 		// Get profile
-		profile, err := h.profileService.GetProfile(r.Context(), username, currentUserID)
+		profile, err := h.profileService.GetProfile(r.Context(), username, userID)
 		if err != nil {
 			switch {
 			case errors.Is(err, service.ErrUserNotFound):

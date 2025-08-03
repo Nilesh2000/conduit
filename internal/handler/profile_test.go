@@ -16,7 +16,7 @@ import (
 
 // MockProfileService is a mock implementation of the ProfileService interface
 type MockProfileService struct {
-	getProfileFunc   func(ctx context.Context, username string, currentUserID int64) (*service.Profile, error)
+	getProfileFunc   func(ctx context.Context, username string, currentUserID *int64) (*service.Profile, error)
 	followUserFunc   func(ctx context.Context, followerID int64, followingName string) (*service.Profile, error)
 	unfollowUserFunc func(ctx context.Context, followerID int64, followingName string) (*service.Profile, error)
 }
@@ -25,7 +25,7 @@ type MockProfileService struct {
 func (m *MockProfileService) GetProfile(
 	ctx context.Context,
 	username string,
-	currentUserID int64,
+	currentUserID *int64,
 ) (*service.Profile, error) {
 	return m.getProfileFunc(ctx, username, currentUserID)
 }
@@ -73,11 +73,11 @@ func Test_profileHandler_GetProfile(t *testing.T) {
 			},
 			setupMock: func() *MockProfileService {
 				mockService := &MockProfileService{
-					getProfileFunc: func(ctx context.Context, username string, currentUserID int64) (*service.Profile, error) {
+					getProfileFunc: func(ctx context.Context, username string, currentUserID *int64) (*service.Profile, error) {
 						if username != "testuser" {
 							t.Errorf("Expected username 'testuser', got %q", username)
 						}
-						if currentUserID != 1 {
+						if *currentUserID != 1 {
 							t.Errorf("Expected currentUserID 1, got %d", currentUserID)
 						}
 
@@ -110,12 +110,12 @@ func Test_profileHandler_GetProfile(t *testing.T) {
 			},
 			setupMock: func() *MockProfileService {
 				mockService := &MockProfileService{
-					getProfileFunc: func(ctx context.Context, username string, currentUserID int64) (*service.Profile, error) {
+					getProfileFunc: func(ctx context.Context, username string, currentUserID *int64) (*service.Profile, error) {
 						if username != "testuser" {
 							t.Errorf("Expected username 'testuser', got %q", username)
 						}
-						if currentUserID != 0 {
-							t.Errorf("Expected currentUserID 0, got %d", currentUserID)
+						if currentUserID != nil {
+							t.Errorf("Expected currentUserID nil, got %d", currentUserID)
 						}
 
 						return &service.Profile{
@@ -151,7 +151,7 @@ func Test_profileHandler_GetProfile(t *testing.T) {
 			},
 			setupMock: func() *MockProfileService {
 				return &MockProfileService{
-					getProfileFunc: func(ctx context.Context, username string, currentUserID int64) (*service.Profile, error) {
+					getProfileFunc: func(ctx context.Context, username string, currentUserID *int64) (*service.Profile, error) {
 						return nil, service.ErrUserNotFound
 					},
 				}
@@ -176,7 +176,7 @@ func Test_profileHandler_GetProfile(t *testing.T) {
 			},
 			setupMock: func() *MockProfileService {
 				return &MockProfileService{
-					getProfileFunc: func(ctx context.Context, username string, currentUserID int64) (*service.Profile, error) {
+					getProfileFunc: func(ctx context.Context, username string, currentUserID *int64) (*service.Profile, error) {
 						return nil, errors.New("internal server error")
 					},
 				}
