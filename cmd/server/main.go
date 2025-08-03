@@ -87,6 +87,8 @@ func main() {
 	router.HandleFunc("GET /health", healthHandler.Health())
 
 	// Article routes
+	router.HandleFunc("GET /api/articles", articleHandler.ListArticles())
+	router.HandleFunc("GET /api/articles/feed", authMiddleware(articleHandler.GetArticlesFeed()))
 	router.HandleFunc("POST /api/articles", authMiddleware(articleHandler.CreateArticle()))
 	router.HandleFunc("GET /api/articles/{slug}", articleHandler.GetArticle())
 	router.HandleFunc("PUT /api/articles/{slug}", authMiddleware(articleHandler.UpdateArticle()))

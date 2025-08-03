@@ -3,7 +3,9 @@ package postgres
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/Nilesh2000/conduit/internal/repository"
@@ -182,7 +184,7 @@ func (r *articleRepository) GetBySlug(
 	// Get tags for the article
 	rows, err := r.db.QueryContext(
 		ctx,
-		"SELECT t.name FROM tags t JOIN article_tags at ON t.id = at.tag_id WHERE at.article_id = $1",
+		"SELECT t.name FROM tags t JOIN article_tags at ON t.id = at.tag_id WHERE at.article_id = $1 ORDER BY t.name ASC",
 		article.ID,
 	)
 	if err != nil {
@@ -275,7 +277,7 @@ func (r *articleRepository) Update(
 	// Get tags for the article
 	rows, err := r.db.QueryContext(
 		ctx,
-		"SELECT t.name FROM tags t JOIN article_tags at ON t.id = at.tag_id WHERE at.article_id = $1",
+		"SELECT t.name FROM tags t JOIN article_tags at ON t.id = at.tag_id WHERE at.article_id = $1 ORDER BY t.name ASC",
 		article.ID,
 	)
 	if err != nil {
@@ -438,4 +440,290 @@ func (r *articleRepository) IsFavorited(
 	}
 
 	return exists, nil
+}
+
+// ListArticles lists articles with optional filters
+func (r *articleRepository) ListArticles(
+	ctx context.Context,
+	filters repository.ArticleFilters,
+	currentUserID *int64,
+) (*repository.ArticleListResult, error) {
+	// Build the base query
+	baseQuery := `
+		SELECT DISTINCT
+			a.id, a.slug, a.title, a.description, a.body, a.author_id, a.created_at, a.updated_at,
+			u.id, u.username, u.bio, u.image
+		FROM articles a
+		JOIN users u ON a.author_id = u.id
+	`
+
+	// Build WHERE clause based on filters
+	var conditions []string
+	var args []interface{}
+	argIndex := 1
+
+	if filters.Tag != nil {
+		conditions = append(
+			conditions,
+			fmt.Sprintf(
+				"EXISTS (SELECT 1 FROM article_tags at JOIN tags t ON at.tag_id = t.id WHERE at.article_id = a.id AND t.name = $%d)",
+				argIndex,
+			),
+		)
+		args = append(args, *filters.Tag)
+		argIndex++
+	}
+
+	if filters.Author != nil {
+		conditions = append(conditions, fmt.Sprintf("u.username = $%d", argIndex))
+		args = append(args, *filters.Author)
+		argIndex++
+	}
+
+	if filters.Favorited != nil {
+		conditions = append(
+			conditions,
+			fmt.Sprintf(
+				"EXISTS (SELECT 1 FROM favorites f JOIN users fu ON f.user_id = fu.id WHERE f.article_id = a.id AND fu.username = $%d)",
+				argIndex,
+			),
+		)
+		args = append(args, *filters.Favorited)
+		argIndex++
+	}
+
+	whereClause := ""
+	if len(conditions) > 0 {
+		whereClause = "WHERE " + strings.Join(conditions, " AND ")
+	}
+
+	// Build the complete query with ORDER BY, LIMIT, and OFFSET
+	query := baseQuery + " " + whereClause + " ORDER BY a.created_at DESC"
+
+	// Add LIMIT and OFFSET
+	if filters.Limit > 0 {
+		query += fmt.Sprintf(" LIMIT $%d", argIndex)
+		args = append(args, filters.Limit)
+		argIndex++
+	}
+
+	if filters.Offset > 0 {
+		query += fmt.Sprintf(" OFFSET $%d", argIndex)
+		args = append(args, filters.Offset)
+	}
+
+	// Execute the query
+	rows, err := r.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, repository.ErrInternal
+	}
+	defer func() {
+		if err := rows.Close(); err != nil {
+			log.Printf("error closing rows: %v", err)
+		}
+	}()
+
+	var articles []*repository.Article
+	for rows.Next() {
+		var article repository.Article
+		article.Author = &repository.User{}
+		var authorBio, authorImage sql.NullString
+
+		err := rows.Scan(
+			&article.ID,
+			&article.Slug,
+			&article.Title,
+			&article.Description,
+			&article.Body,
+			&article.AuthorID,
+			&article.CreatedAt,
+			&article.UpdatedAt,
+			&article.Author.ID,
+			&article.Author.Username,
+			&authorBio,
+			&authorImage,
+		)
+		if err != nil {
+			return nil, repository.ErrInternal
+		}
+
+		// Handle nullable values
+		if authorBio.Valid {
+			article.Author.Bio = authorBio.String
+		}
+		if authorImage.Valid {
+			article.Author.Image = authorImage.String
+		}
+
+		// Get tags for the article
+		tagRows, err := r.db.QueryContext(
+			ctx,
+			"SELECT t.name FROM tags t JOIN article_tags at ON t.id = at.tag_id WHERE at.article_id = $1 ORDER BY t.name ASC",
+			article.ID,
+		)
+		if err != nil {
+			return nil, repository.ErrInternal
+		}
+
+		var tagList []string
+		for tagRows.Next() {
+			var tag string
+			if err := tagRows.Scan(&tag); err != nil {
+				tagRows.Close()
+				return nil, repository.ErrInternal
+			}
+			tagList = append(tagList, tag)
+		}
+		tagRows.Close()
+
+		if err := tagRows.Err(); err != nil {
+			return nil, repository.ErrInternal
+		}
+
+		article.TagList = tagList
+		articles = append(articles, &article)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, repository.ErrInternal
+	}
+
+	// Get total count for pagination
+	countQuery := "SELECT COUNT(DISTINCT a.id) FROM articles a JOIN users u ON a.author_id = u.id"
+	if len(conditions) > 0 {
+		countQuery += " " + whereClause
+	}
+
+	var count int
+	// Use args without LIMIT and OFFSET for count query
+	countArgs := args
+	if filters.Limit > 0 {
+		countArgs = countArgs[:len(countArgs)-1]
+	}
+	if filters.Offset > 0 {
+		countArgs = countArgs[:len(countArgs)-1]
+	}
+	err = r.db.QueryRowContext(ctx, countQuery, countArgs...).Scan(&count)
+	if err != nil {
+		return nil, repository.ErrInternal
+	}
+
+	return &repository.ArticleListResult{
+		Articles: articles,
+		Count:    count,
+	}, nil
+}
+
+// GetArticlesFeed gets articles from users that the current user follows
+func (r *articleRepository) GetArticlesFeed(
+	ctx context.Context,
+	userID int64,
+	limit, offset int,
+) (*repository.ArticleListResult, error) {
+	query := `
+		SELECT DISTINCT
+			a.id, a.slug, a.title, a.description, a.body, a.author_id, a.created_at, a.updated_at,
+			u.id, u.username, u.bio, u.image
+		FROM articles a
+		JOIN users u ON a.author_id = u.id
+		JOIN follows f ON u.id = f.following_id
+		WHERE f.follower_id = $1
+		ORDER BY a.created_at DESC
+		LIMIT $2 OFFSET $3
+	`
+
+	rows, err := r.db.QueryContext(ctx, query, userID, limit, offset)
+	if err != nil {
+		return nil, repository.ErrInternal
+	}
+	defer func() {
+		if err := rows.Close(); err != nil {
+			log.Printf("error closing rows: %v", err)
+		}
+	}()
+
+	var articles []*repository.Article
+	for rows.Next() {
+		var article repository.Article
+		article.Author = &repository.User{}
+		var authorBio, authorImage sql.NullString
+
+		err := rows.Scan(
+			&article.ID,
+			&article.Slug,
+			&article.Title,
+			&article.Description,
+			&article.Body,
+			&article.AuthorID,
+			&article.CreatedAt,
+			&article.UpdatedAt,
+			&article.Author.ID,
+			&article.Author.Username,
+			&authorBio,
+			&authorImage,
+		)
+		if err != nil {
+			return nil, repository.ErrInternal
+		}
+
+		// Handle nullable values
+		if authorBio.Valid {
+			article.Author.Bio = authorBio.String
+		}
+		if authorImage.Valid {
+			article.Author.Image = authorImage.String
+		}
+
+		// Get tags for the article
+		tagRows, err := r.db.QueryContext(
+			ctx,
+			"SELECT t.name FROM tags t JOIN article_tags at ON t.id = at.tag_id WHERE at.article_id = $1 ORDER BY t.name ASC",
+			article.ID,
+		)
+		if err != nil {
+			return nil, repository.ErrInternal
+		}
+
+		var tagList []string
+		for tagRows.Next() {
+			var tag string
+			if err := tagRows.Scan(&tag); err != nil {
+				tagRows.Close()
+				return nil, repository.ErrInternal
+			}
+			tagList = append(tagList, tag)
+		}
+		tagRows.Close()
+
+		if err := tagRows.Err(); err != nil {
+			return nil, repository.ErrInternal
+		}
+
+		article.TagList = tagList
+		articles = append(articles, &article)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, repository.ErrInternal
+	}
+
+	// Get total count for pagination
+	countQuery := `
+		SELECT COUNT(DISTINCT a.id)
+		FROM articles a
+		JOIN users u ON a.author_id = u.id
+		JOIN follows f ON u.id = f.following_id
+		WHERE f.follower_id = $1
+	`
+
+	var count int
+	err = r.db.QueryRowContext(ctx, countQuery, userID).Scan(&count)
+	if err != nil {
+		return nil, repository.ErrInternal
+	}
+
+	return &repository.ArticleListResult{
+		Articles: articles,
+		Count:    count,
+	}, nil
 }

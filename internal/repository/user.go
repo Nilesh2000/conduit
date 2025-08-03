@@ -12,4 +12,5 @@ type User struct {
 	Image        string
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
+	Following    bool
 }

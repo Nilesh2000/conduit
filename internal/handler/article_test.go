@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/Nilesh2000/conduit/internal/middleware"
+	"github.com/Nilesh2000/conduit/internal/repository"
 	"github.com/Nilesh2000/conduit/internal/response"
 	"github.com/Nilesh2000/conduit/internal/service"
 )
@@ -23,6 +24,8 @@ type MockArticleService struct {
 	deleteArticleFunc     func(ctx context.Context, userID int64, slug string) error
 	favoriteArticleFunc   func(ctx context.Context, userID int64, slug string) (*service.Article, error)
 	unfavoriteArticleFunc func(ctx context.Context, userID int64, slug string) (*service.Article, error)
+	listArticlesFunc      func(ctx context.Context, filters repository.ArticleFilters, currentUserID *int64) (*repository.ArticleListResult, error)
+	getArticlesFeedFunc   func(ctx context.Context, userID int64, limit, offset int) (*repository.ArticleListResult, error)
 }
 
 // CreateArticle is a mock implementation of the CreateArticle method
@@ -79,6 +82,24 @@ func (m *MockArticleService) UnfavoriteArticle(
 	slug string,
 ) (*service.Article, error) {
 	return m.unfavoriteArticleFunc(ctx, userID, slug)
+}
+
+// ListArticles is a mock implementation of the ListArticles method
+func (m *MockArticleService) ListArticles(
+	ctx context.Context,
+	filters repository.ArticleFilters,
+	currentUserID *int64,
+) (*repository.ArticleListResult, error) {
+	return m.listArticlesFunc(ctx, filters, currentUserID)
+}
+
+// GetArticlesFeed is a mock implementation of the GetArticlesFeed method
+func (m *MockArticleService) GetArticlesFeed(
+	ctx context.Context,
+	userID int64,
+	limit, offset int,
+) (*repository.ArticleListResult, error) {
+	return m.getArticlesFeedFunc(ctx, userID, limit, offset)
 }
 
 // TestArticleHandler_CreateArticle tests the CreateArticle method of the ArticleHandler
@@ -1183,7 +1204,6 @@ func TestArticleHandler_FavoriteArticle(t *testing.T) {
 			slug: "test-article",
 			setupAuth: func(r *http.Request) *http.Request {
 				r.Header.Set("Authorization", "Token jwt.token.here")
-
 				ctx := r.Context()
 				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
 				r = r.WithContext(ctx)
@@ -1198,7 +1218,6 @@ func TestArticleHandler_FavoriteArticle(t *testing.T) {
 						if slug != "test-article" {
 							t.Errorf("Expected slug 'test-article', got %q", slug)
 						}
-
 						now := time.Now()
 						return &service.Article{
 							Slug:           "test-article",
@@ -1262,31 +1281,6 @@ func TestArticleHandler_FavoriteArticle(t *testing.T) {
 				Errors: struct {
 					Body []string `json:"body"`
 				}{Body: []string{"Unauthorized"}},
-			},
-		},
-		{
-			name: "You cannot favorite your own article",
-			slug: "test-article",
-			setupAuth: func(r *http.Request) *http.Request {
-				r.Header.Set("Authorization", "Token jwt.token.here")
-				ctx := r.Context()
-				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
-				r = r.WithContext(ctx)
-				return r
-			},
-			setupMock: func() *MockArticleService {
-				mockService := &MockArticleService{
-					favoriteArticleFunc: func(ctx context.Context, userID int64, slug string) (*service.Article, error) {
-						return nil, service.ErrArticleAuthorCannotFavorite
-					},
-				}
-				return mockService
-			},
-			expectedStatus: http.StatusForbidden,
-			expectedResponse: response.GenericErrorModel{
-				Errors: struct {
-					Body []string `json:"body"`
-				}{Body: []string{"You cannot favorite your own article"}},
 			},
 		},
 		{
@@ -1420,7 +1414,6 @@ func TestArticleHandler_UnfavoriteArticle(t *testing.T) {
 			slug: "test-article",
 			setupAuth: func(r *http.Request) *http.Request {
 				r.Header.Set("Authorization", "Token jwt.token.here")
-
 				ctx := r.Context()
 				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
 				r = r.WithContext(ctx)
@@ -1435,7 +1428,6 @@ func TestArticleHandler_UnfavoriteArticle(t *testing.T) {
 						if slug != "test-article" {
 							t.Errorf("Expected slug 'test-article', got %q", slug)
 						}
-
 						now := time.Now()
 						return &service.Article{
 							Slug:           "test-article",
@@ -1557,7 +1549,6 @@ func TestArticleHandler_UnfavoriteArticle(t *testing.T) {
 
 	for _, tt := range tests {
 		tt := tt
-
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -1613,6 +1604,621 @@ func TestArticleHandler_UnfavoriteArticle(t *testing.T) {
 			// Deep compare expected and got
 			if !reflect.DeepEqual(got, tt.expectedResponse) {
 				t.Errorf("Response body: got %v, want %v", got, tt.expectedResponse)
+			}
+		})
+	}
+}
+
+// TestArticleHandler_ListArticles tests the ListArticles method of the ArticleHandler
+func TestArticleHandler_ListArticles(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name             string
+		queryParams      string
+		setupAuth        func(r *http.Request) *http.Request
+		setupMock        func() *MockArticleService
+		expectedStatus   int
+		expectedResponse any
+	}{
+		{
+			name:        "Successfully list articles without filters",
+			queryParams: "",
+			setupAuth: func(r *http.Request) *http.Request {
+				// Optional authentication
+				return r
+			},
+			setupMock: func() *MockArticleService {
+				mockService := &MockArticleService{
+					listArticlesFunc: func(ctx context.Context, filters repository.ArticleFilters, currentUserID *int64) (*repository.ArticleListResult, error) {
+						if filters.Limit != 20 {
+							t.Errorf("Expected limit 20, got %d", filters.Limit)
+						}
+						if filters.Offset != 0 {
+							t.Errorf("Expected offset 0, got %d", filters.Offset)
+						}
+
+						now := time.Now()
+						articles := []*repository.Article{
+							{
+								ID:             1,
+								Slug:           "test-article-1",
+								Title:          "Test Article 1",
+								Description:    "Test Description 1",
+								Body:           "Test Body 1",
+								TagList:        []string{"tag1", "tag2"},
+								CreatedAt:      now,
+								UpdatedAt:      now,
+								Favorited:      false,
+								FavoritesCount: 0,
+								Author: &repository.User{
+									ID:        1,
+									Username:  "testuser1",
+									Bio:       "Test Bio 1",
+									Image:     "https://example.com/image1.jpg",
+									Following: false,
+								},
+							},
+							{
+								ID:             2,
+								Slug:           "test-article-2",
+								Title:          "Test Article 2",
+								Description:    "Test Description 2",
+								Body:           "Test Body 2",
+								TagList:        []string{"tag3"},
+								CreatedAt:      now,
+								UpdatedAt:      now,
+								Favorited:      true,
+								FavoritesCount: 5,
+								Author: &repository.User{
+									ID:        2,
+									Username:  "testuser2",
+									Bio:       "Test Bio 2",
+									Image:     "https://example.com/image2.jpg",
+									Following: true,
+								},
+							},
+						}
+
+						return &repository.ArticleListResult{
+							Articles: articles,
+							Count:    2,
+						}, nil
+					},
+				}
+				return mockService
+			},
+			expectedStatus: http.StatusOK,
+			expectedResponse: MultipleArticlesResponse{
+				Articles: []service.Article{
+					{
+						Slug:           "test-article-1",
+						Title:          "Test Article 1",
+						Description:    "Test Description 1",
+						Body:           "Test Body 1",
+						TagList:        []string{"tag1", "tag2"},
+						CreatedAt:      time.Time{},
+						UpdatedAt:      time.Time{},
+						Favorited:      false,
+						FavoritesCount: 0,
+						Author: service.Profile{
+							Username:  "testuser1",
+							Bio:       "Test Bio 1",
+							Image:     "https://example.com/image1.jpg",
+							Following: false,
+						},
+					},
+					{
+						Slug:           "test-article-2",
+						Title:          "Test Article 2",
+						Description:    "Test Description 2",
+						Body:           "Test Body 2",
+						TagList:        []string{"tag3"},
+						CreatedAt:      time.Time{},
+						UpdatedAt:      time.Time{},
+						Favorited:      true,
+						FavoritesCount: 5,
+						Author: service.Profile{
+							Username:  "testuser2",
+							Bio:       "Test Bio 2",
+							Image:     "https://example.com/image2.jpg",
+							Following: true,
+						},
+					},
+				},
+				ArticlesCount: 2,
+			},
+		},
+		{
+			name:        "Successfully list articles with filters",
+			queryParams: "?tag=test&author=testuser&limit=10&offset=5",
+			setupAuth: func(r *http.Request) *http.Request {
+				// Optional authentication
+				return r
+			},
+			setupMock: func() *MockArticleService {
+				mockService := &MockArticleService{
+					listArticlesFunc: func(ctx context.Context, filters repository.ArticleFilters, currentUserID *int64) (*repository.ArticleListResult, error) {
+						if *filters.Tag != "test" {
+							t.Errorf("Expected tag 'test', got %s", *filters.Tag)
+						}
+						if *filters.Author != "testuser" {
+							t.Errorf("Expected author 'testuser', got %s", *filters.Author)
+						}
+						if filters.Limit != 10 {
+							t.Errorf("Expected limit 10, got %d", filters.Limit)
+						}
+						if filters.Offset != 5 {
+							t.Errorf("Expected offset 5, got %d", filters.Offset)
+						}
+
+						return &repository.ArticleListResult{
+							Articles: []*repository.Article{},
+							Count:    0,
+						}, nil
+					},
+				}
+				return mockService
+			},
+			expectedStatus: http.StatusOK,
+			expectedResponse: MultipleArticlesResponse{
+				Articles:      []service.Article{},
+				ArticlesCount: 0,
+			},
+		},
+		{
+			name:        "Internal server error",
+			queryParams: "",
+			setupAuth: func(r *http.Request) *http.Request {
+				return r
+			},
+			setupMock: func() *MockArticleService {
+				mockService := &MockArticleService{
+					listArticlesFunc: func(ctx context.Context, filters repository.ArticleFilters, currentUserID *int64) (*repository.ArticleListResult, error) {
+						return nil, service.ErrInternalServer
+					},
+				}
+				return mockService
+			},
+			expectedStatus: http.StatusInternalServerError,
+			expectedResponse: response.GenericErrorModel{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"Internal server error"}},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			// Setup Mock
+			mockService := tt.setupMock()
+
+			// Create Handler
+			handler := NewArticleHandler(mockService)
+
+			// Create Request
+			req := httptest.NewRequest(
+				http.MethodGet,
+				"/api/articles"+tt.queryParams,
+				nil,
+			)
+
+			// Setup Auth if provided
+			if tt.setupAuth != nil {
+				req = tt.setupAuth(req)
+			}
+
+			// Create Response Recorder
+			rr := httptest.NewRecorder()
+
+			// Serve Request
+			handler.ListArticles()(rr, req)
+
+			// Check Status Code
+			if status := rr.Code; status != tt.expectedStatus {
+				t.Errorf("Status code: got %v, want %v", status, tt.expectedStatus)
+			}
+
+			// Check Response Body
+			if tt.expectedStatus == http.StatusOK {
+				var resp MultipleArticlesResponse
+				if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
+					t.Errorf("Failed to unmarshal response: %v", err)
+				}
+				// Reset timestamps for comparison
+				for i := range resp.Articles {
+					resp.Articles[i].CreatedAt = time.Time{}
+					resp.Articles[i].UpdatedAt = time.Time{}
+				}
+
+				expected := tt.expectedResponse.(MultipleArticlesResponse)
+				if resp.ArticlesCount != expected.ArticlesCount {
+					t.Errorf(
+						"ArticlesCount: got %d, want %d",
+						resp.ArticlesCount,
+						expected.ArticlesCount,
+					)
+				}
+				if len(resp.Articles) != len(expected.Articles) {
+					t.Errorf(
+						"Articles length: got %d, want %d",
+						len(resp.Articles),
+						len(expected.Articles),
+					)
+				}
+				for i, article := range resp.Articles {
+					if i >= len(expected.Articles) {
+						break
+					}
+					expectedArticle := expected.Articles[i]
+					if article.Slug != expectedArticle.Slug {
+						t.Errorf(
+							"Article[%d].Slug: got %s, want %s",
+							i,
+							article.Slug,
+							expectedArticle.Slug,
+						)
+					}
+					if article.Title != expectedArticle.Title {
+						t.Errorf(
+							"Article[%d].Title: got %s, want %s",
+							i,
+							article.Title,
+							expectedArticle.Title,
+						)
+					}
+					if article.Favorited != expectedArticle.Favorited {
+						t.Errorf(
+							"Article[%d].Favorited: got %t, want %t",
+							i,
+							article.Favorited,
+							expectedArticle.Favorited,
+						)
+					}
+					if article.FavoritesCount != expectedArticle.FavoritesCount {
+						t.Errorf(
+							"Article[%d].FavoritesCount: got %d, want %d",
+							i,
+							article.FavoritesCount,
+							expectedArticle.FavoritesCount,
+						)
+					}
+					if article.Author.Username != expectedArticle.Author.Username {
+						t.Errorf(
+							"Article[%d].Author.Username: got %s, want %s",
+							i,
+							article.Author.Username,
+							expectedArticle.Author.Username,
+						)
+					}
+					if article.Author.Following != expectedArticle.Author.Following {
+						t.Errorf(
+							"Article[%d].Author.Following: got %t, want %t",
+							i,
+							article.Author.Following,
+							expectedArticle.Author.Following,
+						)
+					}
+				}
+			} else {
+				var resp response.GenericErrorModel
+				if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
+					t.Errorf("Failed to unmarshal response: %v", err)
+				}
+				expected := tt.expectedResponse.(response.GenericErrorModel)
+				if !reflect.DeepEqual(resp, expected) {
+					t.Errorf("Response body: got %v, want %v", resp, expected)
+				}
+			}
+		})
+	}
+}
+
+// TestArticleHandler_GetArticlesFeed tests the GetArticlesFeed method of the ArticleHandler
+func TestArticleHandler_GetArticlesFeed(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name             string
+		queryParams      string
+		setupAuth        func(r *http.Request) *http.Request
+		setupMock        func() *MockArticleService
+		expectedStatus   int
+		expectedResponse any
+	}{
+		{
+			name:        "Successfully get articles feed",
+			queryParams: "",
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token jwt.token.here")
+				ctx := r.Context()
+				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
+				r = r.WithContext(ctx)
+				return r
+			},
+			setupMock: func() *MockArticleService {
+				mockService := &MockArticleService{
+					getArticlesFeedFunc: func(ctx context.Context, userID int64, limit, offset int) (*repository.ArticleListResult, error) {
+						if userID != 1 {
+							t.Errorf("Expected userID 1, got %d", userID)
+						}
+						if limit != 20 {
+							t.Errorf("Expected limit 20, got %d", limit)
+						}
+						if offset != 0 {
+							t.Errorf("Expected offset 0, got %d", offset)
+						}
+
+						now := time.Now()
+						articles := []*repository.Article{
+							{
+								ID:             1,
+								Slug:           "feed-article-1",
+								Title:          "Feed Article 1",
+								Description:    "Feed Description 1",
+								Body:           "Feed Body 1",
+								TagList:        []string{"feed", "tag1"},
+								CreatedAt:      now,
+								UpdatedAt:      now,
+								Favorited:      true,
+								FavoritesCount: 3,
+								Author: &repository.User{
+									ID:        2,
+									Username:  "followeduser",
+									Bio:       "Followed User Bio",
+									Image:     "https://example.com/followed.jpg",
+									Following: true,
+								},
+							},
+						}
+
+						return &repository.ArticleListResult{
+							Articles: articles,
+							Count:    1,
+						}, nil
+					},
+				}
+				return mockService
+			},
+			expectedStatus: http.StatusOK,
+			expectedResponse: MultipleArticlesResponse{
+				Articles: []service.Article{
+					{
+						Slug:           "feed-article-1",
+						Title:          "Feed Article 1",
+						Description:    "Feed Description 1",
+						Body:           "Feed Body 1",
+						TagList:        []string{"feed", "tag1"},
+						CreatedAt:      time.Time{},
+						UpdatedAt:      time.Time{},
+						Favorited:      true,
+						FavoritesCount: 3,
+						Author: service.Profile{
+							Username:  "followeduser",
+							Bio:       "Followed User Bio",
+							Image:     "https://example.com/followed.jpg",
+							Following: true,
+						},
+					},
+				},
+				ArticlesCount: 1,
+			},
+		},
+		{
+			name:        "Successfully get articles feed with pagination",
+			queryParams: "?limit=5&offset=10",
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token jwt.token.here")
+				ctx := r.Context()
+				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
+				r = r.WithContext(ctx)
+				return r
+			},
+			setupMock: func() *MockArticleService {
+				mockService := &MockArticleService{
+					getArticlesFeedFunc: func(ctx context.Context, userID int64, limit, offset int) (*repository.ArticleListResult, error) {
+						if userID != 1 {
+							t.Errorf("Expected userID 1, got %d", userID)
+						}
+						if limit != 5 {
+							t.Errorf("Expected limit 5, got %d", limit)
+						}
+						if offset != 10 {
+							t.Errorf("Expected offset 10, got %d", offset)
+						}
+
+						return &repository.ArticleListResult{
+							Articles: []*repository.Article{},
+							Count:    0,
+						}, nil
+					},
+				}
+				return mockService
+			},
+			expectedStatus: http.StatusOK,
+			expectedResponse: MultipleArticlesResponse{
+				Articles:      []service.Article{},
+				ArticlesCount: 0,
+			},
+		},
+		{
+			name:        "Unauthenticated request",
+			queryParams: "",
+			setupAuth: func(r *http.Request) *http.Request {
+				// Don't add user ID to context to simulate unauthenticated request
+				return r
+			},
+			setupMock: func() *MockArticleService {
+				mockService := &MockArticleService{
+					getArticlesFeedFunc: func(ctx context.Context, userID int64, limit, offset int) (*repository.ArticleListResult, error) {
+						t.Errorf("GetArticlesFeed should not be called for unauthenticated request")
+						return nil, nil
+					},
+				}
+				return mockService
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedResponse: response.GenericErrorModel{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"Unauthorized"}},
+			},
+		},
+		{
+			name:        "Internal server error",
+			queryParams: "",
+			setupAuth: func(r *http.Request) *http.Request {
+				r.Header.Set("Authorization", "Token jwt.token.here")
+				ctx := r.Context()
+				ctx = context.WithValue(ctx, middleware.UserIDContextKey, int64(1))
+				r = r.WithContext(ctx)
+				return r
+			},
+			setupMock: func() *MockArticleService {
+				mockService := &MockArticleService{
+					getArticlesFeedFunc: func(ctx context.Context, userID int64, limit, offset int) (*repository.ArticleListResult, error) {
+						return nil, service.ErrInternalServer
+					},
+				}
+				return mockService
+			},
+			expectedStatus: http.StatusInternalServerError,
+			expectedResponse: response.GenericErrorModel{
+				Errors: struct {
+					Body []string `json:"body"`
+				}{Body: []string{"Internal server error"}},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			// Setup Mock
+			mockService := tt.setupMock()
+
+			// Create Handler
+			handler := NewArticleHandler(mockService)
+
+			// Create Request
+			req := httptest.NewRequest(
+				http.MethodGet,
+				"/api/articles/feed"+tt.queryParams,
+				nil,
+			)
+
+			// Setup Auth if provided
+			if tt.setupAuth != nil {
+				req = tt.setupAuth(req)
+			}
+
+			// Create Response Recorder
+			rr := httptest.NewRecorder()
+
+			// Serve Request
+			handler.GetArticlesFeed()(rr, req)
+
+			// Check Status Code
+			if status := rr.Code; status != tt.expectedStatus {
+				t.Errorf("Status code: got %v, want %v", status, tt.expectedStatus)
+			}
+
+			// Check Response Body
+			if tt.expectedStatus == http.StatusOK {
+				var resp MultipleArticlesResponse
+				if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
+					t.Errorf("Failed to unmarshal response: %v", err)
+				}
+				// Reset timestamps for comparison
+				for i := range resp.Articles {
+					resp.Articles[i].CreatedAt = time.Time{}
+					resp.Articles[i].UpdatedAt = time.Time{}
+				}
+
+				expected := tt.expectedResponse.(MultipleArticlesResponse)
+				if resp.ArticlesCount != expected.ArticlesCount {
+					t.Errorf(
+						"ArticlesCount: got %d, want %d",
+						resp.ArticlesCount,
+						expected.ArticlesCount,
+					)
+				}
+				if len(resp.Articles) != len(expected.Articles) {
+					t.Errorf(
+						"Articles length: got %d, want %d",
+						len(resp.Articles),
+						len(expected.Articles),
+					)
+				}
+				for i, article := range resp.Articles {
+					if i >= len(expected.Articles) {
+						break
+					}
+					expectedArticle := expected.Articles[i]
+					if article.Slug != expectedArticle.Slug {
+						t.Errorf(
+							"Article[%d].Slug: got %s, want %s",
+							i,
+							article.Slug,
+							expectedArticle.Slug,
+						)
+					}
+					if article.Title != expectedArticle.Title {
+						t.Errorf(
+							"Article[%d].Title: got %s, want %s",
+							i,
+							article.Title,
+							expectedArticle.Title,
+						)
+					}
+					if article.Favorited != expectedArticle.Favorited {
+						t.Errorf(
+							"Article[%d].Favorited: got %t, want %t",
+							i,
+							article.Favorited,
+							expectedArticle.Favorited,
+						)
+					}
+					if article.FavoritesCount != expectedArticle.FavoritesCount {
+						t.Errorf(
+							"Article[%d].FavoritesCount: got %d, want %d",
+							i,
+							article.FavoritesCount,
+							expectedArticle.FavoritesCount,
+						)
+					}
+					if article.Author.Username != expectedArticle.Author.Username {
+						t.Errorf(
+							"Article[%d].Author.Username: got %s, want %s",
+							i,
+							article.Author.Username,
+							expectedArticle.Author.Username,
+						)
+					}
+					if article.Author.Following != expectedArticle.Author.Following {
+						t.Errorf(
+							"Article[%d].Author.Following: got %t, want %t",
+							i,
+							article.Author.Following,
+							expectedArticle.Author.Following,
+						)
+					}
+				}
+			} else {
+				var resp response.GenericErrorModel
+				if err := json.Unmarshal(rr.Body.Bytes(), &resp); err != nil {
+					t.Errorf("Failed to unmarshal response: %v", err)
+				}
+				expected := tt.expectedResponse.(response.GenericErrorModel)
+				if !reflect.DeepEqual(resp, expected) {
+					t.Errorf("Response body: got %v, want %v", resp, expected)
+				}
 			}
 		})
 	}

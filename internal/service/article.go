@@ -65,6 +65,16 @@ type ArticleRepository interface {
 		userID int64,
 		articleID int64,
 	) (bool, error)
+	ListArticles(
+		ctx context.Context,
+		filters repository.ArticleFilters,
+		currentUserID *int64,
+	) (*repository.ArticleListResult, error)
+	GetArticlesFeed(
+		ctx context.Context,
+		userID int64,
+		limit, offset int,
+	) (*repository.ArticleListResult, error)
 }
 
 // articleService implements the articleService interface
@@ -310,11 +320,6 @@ func (s *articleService) FavoriteArticle(
 		}
 	}
 
-	// Check if author is the same as the user
-	if article.Author.ID == userID {
-		return nil, ErrArticleAuthorCannotFavorite
-	}
-
 	// Favorite the article
 	err = s.articleRepository.Favorite(ctx, userID, article.ID)
 	if err != nil {
@@ -410,6 +415,95 @@ func (s *articleService) UnfavoriteArticle(
 			Following: following,
 		},
 	}, nil
+}
+
+// ListArticles lists articles with optional filters
+func (s *articleService) ListArticles(
+	ctx context.Context,
+	filters repository.ArticleFilters,
+	currentUserID *int64,
+) (*repository.ArticleListResult, error) {
+	result, err := s.articleRepository.ListArticles(ctx, filters, currentUserID)
+	if err != nil {
+		return nil, ErrInternalServer
+	}
+
+	// Process each article to add favorites and following information
+	for _, article := range result.Articles {
+		// Get favorites count
+		favoritesCount, err := s.articleRepository.GetFavoritesCount(ctx, article.ID)
+		if err != nil {
+			return nil, ErrInternalServer
+		}
+
+		// Check if user has favorited the article
+		favorited := false
+		if currentUserID != nil {
+			favorited, err = s.articleRepository.IsFavorited(ctx, *currentUserID, article.ID)
+			if err != nil {
+				return nil, ErrInternalServer
+			}
+		}
+
+		// Check if user is following the author
+		following := false
+		if currentUserID != nil && article.Author != nil {
+			following, err = s.profileRepository.IsFollowing(ctx, *currentUserID, article.Author.ID)
+			if err != nil {
+				return nil, ErrInternalServer
+			}
+		}
+
+		// Update the article with the calculated fields
+		article.Favorited = favorited
+		article.FavoritesCount = favoritesCount
+		article.Author.Following = following
+	}
+
+	return result, nil
+}
+
+// GetArticlesFeed gets articles from users that the current user follows
+func (s *articleService) GetArticlesFeed(
+	ctx context.Context,
+	userID int64,
+	limit, offset int,
+) (*repository.ArticleListResult, error) {
+	result, err := s.articleRepository.GetArticlesFeed(ctx, userID, limit, offset)
+	if err != nil {
+		return nil, ErrInternalServer
+	}
+
+	// Process each article to add favorites and following information
+	for _, article := range result.Articles {
+		// Get favorites count
+		favoritesCount, err := s.articleRepository.GetFavoritesCount(ctx, article.ID)
+		if err != nil {
+			return nil, ErrInternalServer
+		}
+
+		// Check if user has favorited the article
+		favorited, err := s.articleRepository.IsFavorited(ctx, userID, article.ID)
+		if err != nil {
+			return nil, ErrInternalServer
+		}
+
+		// Check if user is following the author
+		following := false
+		if article.Author != nil {
+			following, err = s.profileRepository.IsFollowing(ctx, userID, article.Author.ID)
+			if err != nil {
+				return nil, ErrInternalServer
+			}
+		}
+
+		// Update the article with the calculated fields
+		article.Favorited = favorited
+		article.FavoritesCount = favoritesCount
+		article.Author.Following = following
+	}
+
+	return result, nil
 }
 
 // generateSlug generates a slug from a title

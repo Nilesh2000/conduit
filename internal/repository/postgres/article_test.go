@@ -249,7 +249,7 @@ func Test_articleRepository_GetBySlug(t *testing.T) {
 					AddRow("tag1").
 					AddRow("tag2")
 
-				mock.ExpectQuery(`SELECT t.name FROM tags t JOIN article_tags at ON t.id = at.tag_id WHERE at.article_id = \$1`).
+				mock.ExpectQuery(`SELECT t.name FROM tags t JOIN article_tags at ON t.id = at.tag_id WHERE at.article_id = \$1 ORDER BY t.name ASC`).
 					WithArgs(1).
 					WillReturnRows(tagRows)
 			},

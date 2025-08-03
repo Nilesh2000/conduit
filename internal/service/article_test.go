@@ -21,6 +21,8 @@ type MockArticleRepository struct {
 	unfavoriteFunc        func(ctx context.Context, userID int64, articleID int64) error
 	getFavoritesCountFunc func(ctx context.Context, articleID int64) (int, error)
 	isFavoritedFunc       func(ctx context.Context, userID int64, articleID int64) (bool, error)
+	listArticlesFunc      func(ctx context.Context, filters repository.ArticleFilters, currentUserID *int64) (*repository.ArticleListResult, error)
+	getArticlesFeedFunc   func(ctx context.Context, userID int64, limit, offset int) (*repository.ArticleListResult, error)
 }
 
 // Create is a mock implementation of the Create method
@@ -92,6 +94,24 @@ func (m *MockArticleRepository) IsFavorited(
 	articleID int64,
 ) (bool, error) {
 	return m.isFavoritedFunc(ctx, userID, articleID)
+}
+
+// ListArticles is a mock implementation of the ListArticles method
+func (m *MockArticleRepository) ListArticles(
+	ctx context.Context,
+	filters repository.ArticleFilters,
+	currentUserID *int64,
+) (*repository.ArticleListResult, error) {
+	return m.listArticlesFunc(ctx, filters, currentUserID)
+}
+
+// GetArticlesFeed is a mock implementation of the GetArticlesFeed method
+func (m *MockArticleRepository) GetArticlesFeed(
+	ctx context.Context,
+	userID int64,
+	limit, offset int,
+) (*repository.ArticleListResult, error) {
+	return m.getArticlesFeedFunc(ctx, userID, limit, offset)
 }
 
 // Test_articleService_CreateArticle tests the CreateArticle method of the articleService

@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strconv"
 
 	"github.com/Nilesh2000/conduit/internal/middleware"
+	"github.com/Nilesh2000/conduit/internal/repository"
 	"github.com/Nilesh2000/conduit/internal/response"
 	"github.com/Nilesh2000/conduit/internal/service"
 	"github.com/Nilesh2000/conduit/internal/validation"
@@ -38,6 +40,12 @@ type ArticleResponse struct {
 	Article service.Article `json:"article"`
 }
 
+// MultipleArticlesResponse is the response body for multiple articles
+type MultipleArticlesResponse struct {
+	Articles      []service.Article `json:"articles"`
+	ArticlesCount int               `json:"articlesCount"`
+}
+
 // ArticleService defines the interface for article service operations
 type ArticleService interface {
 	CreateArticle(
@@ -56,6 +64,16 @@ type ArticleService interface {
 	DeleteArticle(ctx context.Context, userID int64, slug string) error
 	FavoriteArticle(ctx context.Context, userID int64, slug string) (*service.Article, error)
 	UnfavoriteArticle(ctx context.Context, userID int64, slug string) (*service.Article, error)
+	ListArticles(
+		ctx context.Context,
+		filters repository.ArticleFilters,
+		currentUserID *int64,
+	) (*repository.ArticleListResult, error)
+	GetArticlesFeed(
+		ctx context.Context,
+		userID int64,
+		limit, offset int,
+	) (*repository.ArticleListResult, error)
 }
 
 // articleHandler is a handler for article operations
@@ -332,12 +350,6 @@ func (h *articleHandler) FavoriteArticle() http.HandlerFunc {
 		// Handle errors
 		if err != nil {
 			switch {
-			case errors.Is(err, service.ErrArticleAuthorCannotFavorite):
-				response.RespondWithError(
-					w,
-					http.StatusForbidden,
-					[]string{"You cannot favorite your own article"},
-				)
 			case errors.Is(err, service.ErrUserNotFound):
 				response.RespondWithError(w, http.StatusNotFound, []string{"User not found"})
 			case errors.Is(err, service.ErrArticleNotFound):
@@ -406,6 +418,182 @@ func (h *articleHandler) UnfavoriteArticle() http.HandlerFunc {
 		// Respond with unfavorite article
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(ArticleResponse{Article: *article}); err != nil {
+			response.RespondWithError(
+				w,
+				http.StatusInternalServerError,
+				[]string{"Internal server error"},
+			)
+		}
+	}
+}
+
+// ListArticles is a handler function for listing articles with optional filters
+func (h *articleHandler) ListArticles() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Set the content type to JSON
+		w.Header().Set("Content-Type", "application/json")
+
+		// Get current user ID from context (optional)
+		var userID *int64
+		if id, ok := middleware.GetUserIDFromContext(r.Context()); ok {
+			userID = &id
+		}
+
+		// Parse query parameters
+		filters := repository.ArticleFilters{
+			Limit:  20, // Default limit
+			Offset: 0,  // Default offset
+		}
+
+		// Parse tag filter
+		if tag := r.URL.Query().Get("tag"); tag != "" {
+			filters.Tag = &tag
+		}
+
+		// Parse author filter
+		if author := r.URL.Query().Get("author"); author != "" {
+			filters.Author = &author
+		}
+
+		// Parse favorited filter
+		if favorited := r.URL.Query().Get("favorited"); favorited != "" {
+			filters.Favorited = &favorited
+		}
+
+		// Parse limit parameter
+		if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+			if limit, err := strconv.Atoi(limitStr); err == nil && limit > 0 {
+				filters.Limit = limit
+			}
+		}
+
+		// Parse offset parameter
+		if offsetStr := r.URL.Query().Get("offset"); offsetStr != "" {
+			if offset, err := strconv.Atoi(offsetStr); err == nil && offset >= 0 {
+				filters.Offset = offset
+			}
+		}
+
+		// Call service to list articles
+		result, err := h.articleService.ListArticles(r.Context(), filters, userID)
+		if err != nil {
+			response.RespondWithError(
+				w,
+				http.StatusInternalServerError,
+				[]string{"Internal server error"},
+			)
+			return
+		}
+
+		// Convert repository articles to service articles
+		var articles []service.Article
+		for _, repoArticle := range result.Articles {
+			article := service.Article{
+				Slug:           repoArticle.Slug,
+				Title:          repoArticle.Title,
+				Description:    repoArticle.Description,
+				Body:           repoArticle.Body,
+				TagList:        repoArticle.TagList,
+				CreatedAt:      repoArticle.CreatedAt,
+				UpdatedAt:      repoArticle.UpdatedAt,
+				Favorited:      repoArticle.Favorited,
+				FavoritesCount: repoArticle.FavoritesCount,
+				Author: service.Profile{
+					Username:  repoArticle.Author.Username,
+					Bio:       repoArticle.Author.Bio,
+					Image:     repoArticle.Author.Image,
+					Following: repoArticle.Author.Following,
+				},
+			}
+			articles = append(articles, article)
+		}
+
+		// Respond with articles
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(MultipleArticlesResponse{
+			Articles:      articles,
+			ArticlesCount: result.Count,
+		}); err != nil {
+			response.RespondWithError(
+				w,
+				http.StatusInternalServerError,
+				[]string{"Internal server error"},
+			)
+		}
+	}
+}
+
+// GetArticlesFeed is a handler function for getting articles from followed users
+func (h *articleHandler) GetArticlesFeed() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Set the content type to JSON
+		w.Header().Set("Content-Type", "application/json")
+
+		// Get user ID from context (required for feed)
+		userID, ok := middleware.GetUserIDFromContext(r.Context())
+		if !ok {
+			response.RespondWithError(w, http.StatusUnauthorized, []string{"Unauthorized"})
+			return
+		}
+
+		// Parse query parameters
+		limit := 20 // Default limit
+		offset := 0 // Default offset
+
+		// Parse limit parameter
+		if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+			if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+				limit = l
+			}
+		}
+
+		// Parse offset parameter
+		if offsetStr := r.URL.Query().Get("offset"); offsetStr != "" {
+			if o, err := strconv.Atoi(offsetStr); err == nil && o >= 0 {
+				offset = o
+			}
+		}
+
+		// Call service to get articles feed
+		result, err := h.articleService.GetArticlesFeed(r.Context(), userID, limit, offset)
+		if err != nil {
+			response.RespondWithError(
+				w,
+				http.StatusInternalServerError,
+				[]string{"Internal server error"},
+			)
+			return
+		}
+
+		// Convert repository articles to service articles
+		var articles []service.Article
+		for _, repoArticle := range result.Articles {
+			article := service.Article{
+				Slug:           repoArticle.Slug,
+				Title:          repoArticle.Title,
+				Description:    repoArticle.Description,
+				Body:           repoArticle.Body,
+				TagList:        repoArticle.TagList,
+				CreatedAt:      repoArticle.CreatedAt,
+				UpdatedAt:      repoArticle.UpdatedAt,
+				Favorited:      repoArticle.Favorited,
+				FavoritesCount: repoArticle.FavoritesCount,
+				Author: service.Profile{
+					Username:  repoArticle.Author.Username,
+					Bio:       repoArticle.Author.Bio,
+					Image:     repoArticle.Author.Image,
+					Following: repoArticle.Author.Following,
+				},
+			}
+			articles = append(articles, article)
+		}
+
+		// Respond with articles
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(MultipleArticlesResponse{
+			Articles:      articles,
+			ArticlesCount: result.Count,
+		}); err != nil {
 			response.RespondWithError(
 				w,
 				http.StatusInternalServerError,
