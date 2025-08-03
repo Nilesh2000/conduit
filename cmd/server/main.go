@@ -83,43 +83,25 @@ func main() {
 	// Apply middleware
 	handler := middleware.LoggingMiddleware(router)
 
-	// Public routes
+	// Health endpoint
 	router.HandleFunc("GET /health", healthHandler.Health())
-
-	// Auth routes
-	router.HandleFunc("POST /api/users", userHandler.Register())
-	router.HandleFunc("POST /api/users/login", userHandler.Login())
-
-	// Profile routes
-	router.HandleFunc("GET /api/profiles/{username}", profileHandler.GetProfile())
-
-	// Article routes
-	router.HandleFunc("GET /api/articles/{slug}", articleHandler.GetArticle())
-
-	// Comment routes
-	router.HandleFunc("GET /api/articles/{slug}/comments", commentHandler.GetComments())
-
-	// Tag routes
-	router.HandleFunc("GET /api/tags", tagHandler.GetTags())
-
-	// User routes
-	router.HandleFunc("GET /api/user", authMiddleware(userHandler.GetCurrentUser()))
-	router.HandleFunc("PUT /api/user", authMiddleware(userHandler.UpdateCurrentUser()))
-
-	// Profile routes
-	router.HandleFunc(
-		"POST /api/profiles/{username}/follow",
-		authMiddleware(profileHandler.Follow()),
-	)
-	router.HandleFunc(
-		"DELETE /api/profiles/{username}/follow",
-		authMiddleware(profileHandler.Unfollow()),
-	)
 
 	// Article routes
 	router.HandleFunc("POST /api/articles", authMiddleware(articleHandler.CreateArticle()))
+	router.HandleFunc("GET /api/articles/{slug}", articleHandler.GetArticle())
 	router.HandleFunc("PUT /api/articles/{slug}", authMiddleware(articleHandler.UpdateArticle()))
 	router.HandleFunc("DELETE /api/articles/{slug}", authMiddleware(articleHandler.DeleteArticle()))
+
+	// Comment routes
+	router.HandleFunc("GET /api/articles/{slug}/comments", commentHandler.GetComments())
+	router.HandleFunc(
+		"POST /api/articles/{slug}/comments",
+		authMiddleware(commentHandler.CreateComment()),
+	)
+	router.HandleFunc(
+		"DELETE /api/articles/{slug}/comments/{id}",
+		authMiddleware(commentHandler.DeleteComment()),
+	)
 
 	// Favorite routes
 	router.HandleFunc(
@@ -131,15 +113,25 @@ func main() {
 		authMiddleware(articleHandler.UnfavoriteArticle()),
 	)
 
-	// Comment routes
+	// Profile routes
+	router.HandleFunc("GET /api/profiles/{username}", profileHandler.GetProfile())
 	router.HandleFunc(
-		"POST /api/articles/{slug}/comments",
-		authMiddleware(commentHandler.CreateComment()),
+		"POST /api/profiles/{username}/follow",
+		authMiddleware(profileHandler.Follow()),
 	)
 	router.HandleFunc(
-		"DELETE /api/articles/{slug}/comments/{id}",
-		authMiddleware(commentHandler.DeleteComment()),
+		"DELETE /api/profiles/{username}/follow",
+		authMiddleware(profileHandler.Unfollow()),
 	)
+
+	// Tag routes
+	router.HandleFunc("GET /api/tags", tagHandler.GetTags())
+
+	// User and Authentication routes
+	router.HandleFunc("POST /api/users/login", userHandler.Login())
+	router.HandleFunc("POST /api/users", userHandler.Register())
+	router.HandleFunc("GET /api/user", authMiddleware(userHandler.GetCurrentUser()))
+	router.HandleFunc("PUT /api/user", authMiddleware(userHandler.UpdateCurrentUser()))
 
 	// Create HTTP server
 	server := &http.Server{
