@@ -5,6 +5,8 @@ import (
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/joho/godotenv"
 )
 
 // Config represents the application configuration.
@@ -12,6 +14,7 @@ type Config struct {
 	Database Database
 	JWT      JWT
 	Server   Server
+	Version  string
 }
 
 // Database represents the database configuration.
@@ -42,6 +45,16 @@ type Server struct {
 
 // Load loads the configuration from the environment variables.
 func Load() (*Config, error) {
+	// Load .env file if it exists
+	// This will load environment variables from .env file into the current process
+	if err := godotenv.Load(); err != nil {
+		// It's okay if .env file doesn't exist, we'll use system environment variables
+		// Only log if it's a different error (like permission issues)
+		if !os.IsNotExist(err) {
+			fmt.Printf("Warning: Could not load .env file: %v\n", err)
+		}
+	}
+
 	jwtExpiry := getEnv("JWT_EXPIRY", "24h")
 	expiry, err := time.ParseDuration(jwtExpiry)
 	if err != nil {
@@ -69,6 +82,7 @@ func Load() (*Config, error) {
 		Server: Server{
 			Port: getEnv("SERVER_PORT", "8080"),
 		},
+		Version: getEnv("APP_VERSION", "1.0.0"),
 	}
 
 	return cfg, nil

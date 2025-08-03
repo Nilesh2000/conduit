@@ -72,6 +72,10 @@ func main() {
 	articleHandler := handler.NewArticleHandler(articleService)
 	tagHandler := handler.NewTagHandler(tagService)
 	commentHandler := handler.NewCommentHandler(commentService)
+	healthHandler := handler.NewHealthHandler(cfg.Version)
+
+	// Initialize middleware
+	authMiddleware := middleware.RequireAuth([]byte(cfg.JWT.SecretKey))
 
 	// Setup router
 	router := http.NewServeMux()
@@ -80,6 +84,7 @@ func main() {
 	handler := middleware.LoggingMiddleware(router)
 
 	// Public routes
+	router.HandleFunc("GET /health", healthHandler.Health())
 
 	// Auth routes
 	router.HandleFunc("POST /api/users", userHandler.Register())
@@ -96,9 +101,6 @@ func main() {
 
 	// Tag routes
 	router.HandleFunc("GET /api/tags", tagHandler.GetTags())
-
-	// Protected routes
-	authMiddleware := middleware.RequireAuth([]byte(cfg.JWT.SecretKey))
 
 	// User routes
 	router.HandleFunc("GET /api/user", authMiddleware(userHandler.GetCurrentUser()))
