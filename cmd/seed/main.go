@@ -11,6 +11,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// Seeder is a struct that contains the database connection.
 type Seeder struct {
 	db *sql.DB
 }

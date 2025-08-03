@@ -12,3 +12,6 @@ coverage.out
 
 # Temporary files
 tmp/
+
+# Environment variables
+.env

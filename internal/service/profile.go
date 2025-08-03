@@ -41,7 +41,10 @@ type profileService struct {
 }
 
 // NewProfileService creates a new profile service
-func NewProfileService(userRepository UserRepository, profileRepository ProfileRepository) *profileService {
+func NewProfileService(
+	userRepository UserRepository,
+	profileRepository ProfileRepository,
+) *profileService {
 	return &profileService{
 		userRepository:    userRepository,
 		profileRepository: profileRepository,

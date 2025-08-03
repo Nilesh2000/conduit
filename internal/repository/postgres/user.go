@@ -149,7 +149,10 @@ func (r *userRepository) FindByEmail(ctx context.Context, email string) (*reposi
 }
 
 // FindByUsername finds a user by username in the database
-func (r *userRepository) FindByUsername(ctx context.Context, username string) (*repository.User, error) {
+func (r *userRepository) FindByUsername(
+	ctx context.Context,
+	username string,
+) (*repository.User, error) {
 	var user repository.User
 	var bio, image sql.NullString
 

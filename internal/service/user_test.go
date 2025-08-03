@@ -46,7 +46,10 @@ func (m *MockUserRepository) FindByEmail(
 }
 
 // FindByUsername finds a user by username in the repository
-func (m *MockUserRepository) FindByUsername(ctx context.Context, username string) (*repository.User, error) {
+func (m *MockUserRepository) FindByUsername(
+	ctx context.Context,
+	username string,
+) (*repository.User, error) {
 	return m.findByUsernameFunc(ctx, username)
 }
 
